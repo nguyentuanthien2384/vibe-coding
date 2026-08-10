@@ -1,0 +1,306 @@
+// =============================================================================
+// ECOMMERCE PLATFORM - PRISMA SCHEMA
+// Tech Stack: NestJS + Prisma ORM + MySQL
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum BannerType {
+  HERO_BANNER
+  PROMOTION_BANNER
+  SOCIAL_PROOF
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  CUSTOMER
+}
+
+enum ShippingMethod {
+  STANDARD
+  EXPRESS
+}
+
+enum PaymentMethod {
+  COD
+  QR_CODE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPING
+  DELIVERED
+  CANCELLED
+}
+
+enum VoucherDiscountType {
+  FIXED_AMOUNT
+  PERCENTAGE
+}
+
+// =============================================================================
+// MODULE: HOME PAGE
+// Source: .docs/backend-plans/home-plan.md
+// =============================================================================
+
+/// Lưu thông tin các Banner quảng cáo (Hero Banner, Social Proof, Promotion) trên Trang chủ.
+model Banner {
+  id        Int        @id @default(autoincrement())
+  title     String     @db.VarChar(255)
+  subtitle  String?    @db.VarChar(255)
+  imageUrl  String     @db.VarChar(500)
+  linkUrl   String?    @db.VarChar(500)
+  type      BannerType @default(HERO_BANNER)
+  position  Int        @default(0)
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([type, isActive, position], name: "idx_banner_type_active")
+  @@map("banners")
+}
+
+/// Danh mục món ăn/sản phẩm. Hỗ trợ cấu trúc cây (Parent-Child).
+model Category {
+  id        Int        @id @default(autoincrement())
+  name      String     @db.VarChar(100)
+  slug      String     @unique @db.VarChar(100)
+  iconUrl   String?    @db.VarChar(500)
+  parentId  Int?
+  position  Int        @default(0)
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
+
+  @@index([slug], name: "idx_category_slug")
+  @@index([isActive, position], name: "idx_category_active_position")
+  @@map("categories")
+}
+
+/// Sản phẩm / Món ăn. Hỗ trợ hiển thị danh sách nổi bật ở Trang chủ.
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  slug        String   @unique @db.VarChar(255)
+  description String?  @db.Text
+  price       Decimal  @db.Decimal(10, 2)
+  salePrice   Decimal? @db.Decimal(10, 2)
+  stock       Int      @default(0)
+  imageUrl    String   @db.VarChar(500)
+  categoryId  Int
+  isFeatured  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category   Category    @relation(fields: [categoryId], references: [id])
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([isFeatured, isActive, createdAt(sort: Desc)], name: "idx_product_featured_active")
+  @@index([categoryId, isActive], name: "idx_product_category")
+  @@index([slug], name: "idx_product_slug")
+  @@index([isActive, name], name: "idx_product_active_name")
+  @@index([name], name: "idx_product_name")
+  @@map("products")
+}
+
+// =============================================================================
+// MODULE: AUTH & USER MANAGEMENT
+// Source: .docs/backend-plans/register-plan.md
+// =============================================================================
+
+/// Bảng quản lý người dùng hệ thống (Khách hàng, Nhân viên, Quản trị viên)
+model User {
+  id          Int       @id @default(autoincrement())
+  email       String    @unique @db.VarChar(255)
+  password    String    @db.VarChar(255)
+  fullName    String    @db.VarChar(100)
+  phone       String?   @db.VarChar(20)
+  avatarUrl   String?   @db.VarChar(500)
+  role        Role      @default(CUSTOMER)
+  isActive    Boolean   @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  cart      Cart?
+  orders    Order[]
+  addresses Address[]
+
+  @@index([email], name: "idx_user_email")
+  @@index([role, isActive], name: "idx_user_role_active")
+  @@map("users")
+}
+
+/// Sổ địa chỉ giao hàng của người dùng (nhiều địa chỉ, 1 địa chỉ mặc định)
+model Address {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  recipientName String   @db.VarChar(100)
+  phone         String   @db.VarChar(20)
+  provinceCode  String   @db.VarChar(50)
+  provinceName  String   @db.VarChar(100)
+  districtCode  String   @db.VarChar(50)
+  districtName  String   @db.VarChar(100)
+  wardCode      String   @db.VarChar(50)
+  wardName      String   @db.VarChar(100)
+  detailAddress String   @db.VarChar(500)
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isDefault], name: "idx_address_user_default")
+  @@map("addresses")
+}
+
+// =============================================================================
+// MODULE: CART & SHOPPING
+// Source: .docs/backend-plans/cart-plan.md
+// =============================================================================
+
+/// Bảng Giỏ hàng (Mỗi User có tối đa 1 Giỏ hàng chủ động)
+model Cart {
+  id        Int        @id @default(autoincrement())
+  userId    Int?       @unique
+  sessionId String?    @unique @db.VarChar(255)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user  User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  @@index([userId], name: "idx_cart_user")
+  @@index([sessionId], name: "idx_cart_session")
+  @@map("carts")
+}
+
+/// Chi tiết từng dòng sản phẩm nằm trong Giỏ Hàng
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  cartId    Int
+  productId Int
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId], name: "idx_cart_product_unique")
+  @@index([cartId], name: "idx_cart_items_cart")
+  @@map("cart_items")
+}
+
+// =============================================================================
+// MODULE: CHECKOUT & ORDERS
+// Source: .docs/backend-plans/checkout-plan.md
+// =============================================================================
+
+/// Bảng lưu Đơn hàng (immutable snapshot)
+model Order {
+  id             Int            @id @default(autoincrement())
+  orderCode      String         @unique @db.VarChar(50)
+  userId         Int?
+  sessionId      String?        @db.VarChar(255)
+  customerName   String         @db.VarChar(100)
+  customerEmail  String         @db.VarChar(255)
+  customerPhone  String         @db.VarChar(20)
+  provinceName   String         @db.VarChar(100)
+  districtName   String         @db.VarChar(100)
+  wardName       String         @db.VarChar(100)
+  detailAddress  String         @db.VarChar(500)
+  shippingMethod ShippingMethod @default(STANDARD)
+  shippingFee    Decimal        @db.Decimal(10, 2)
+  subtotal       Decimal        @db.Decimal(10, 2)
+  discountAmount Decimal        @default(0) @db.Decimal(10, 2)
+  totalAmount    Decimal        @db.Decimal(10, 2)
+  voucherCode    String?        @db.VarChar(50)
+  orderNote      String?        @db.VarChar(500)
+  paymentMethod  PaymentMethod  @default(QR_CODE)
+  paymentStatus  PaymentStatus  @default(PENDING)
+  orderStatus    OrderStatus    @default(PENDING)
+  paidAt         DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  orderItems OrderItem[]
+
+  @@index([orderCode], name: "idx_order_code")
+  @@index([userId, createdAt(sort: Desc)], name: "idx_order_user_created")
+  @@index([sessionId], name: "idx_order_session")
+  @@index([paymentStatus, orderStatus], name: "idx_order_status")
+  @@map("orders")
+}
+
+/// Bảng lưu Chi tiết từng sản phẩm trong Đơn hàng (Bất biến tại thời điểm mua)
+model OrderItem {
+  id              Int      @id @default(autoincrement())
+  orderId         Int
+  productId       Int
+  productName     String   @db.VarChar(255)
+  productImageUrl String   @db.VarChar(500)
+  price           Decimal  @db.Decimal(10, 2)
+  originalPrice   Decimal? @db.Decimal(10, 2)
+  quantity        Int
+  itemTotal       Decimal  @db.Decimal(10, 2)
+  createdAt       DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId], name: "idx_order_items_order")
+  @@index([productId], name: "idx_order_items_product")
+  @@map("order_items")
+}
+
+/// Bảng quản lý Mã giảm giá (Vouchers)
+model Voucher {
+  id                Int                 @id @default(autoincrement())
+  code              String              @unique @db.VarChar(50)
+  title             String              @db.VarChar(255)
+  discountType      VoucherDiscountType @default(FIXED_AMOUNT)
+  discountValue     Decimal             @db.Decimal(10, 2)
+  minOrderAmount    Decimal?            @db.Decimal(10, 2)
+  maxDiscountAmount Decimal?            @db.Decimal(10, 2)
+  usageLimit        Int?
+  usedCount         Int                 @default(0)
+  startDate         DateTime?
+  endDate           DateTime?
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([code, isActive], name: "idx_voucher_code_active")
+  @@map("vouchers")
+}
+
+
