@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keithston Coffee Shop - Sweet Treats, Perfect Eats</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sansita+Swashed:wght@300..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Inter:wght@100..900&family=Playball&family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            cursive: ['Playball', 'cursive'],
+            sans: ['Poppins', 'sans-serif'],
+            sansita: ['Sansita Swashed', 'cursive'],
+            playfair: ['Playfair Display', 'serif'],
+            jakarta: ['Plus Jakarta Sans', 'sans-serif'],
+            inter: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: '#924824', /* Nâu cam */
+            darkbg: '#161616', /* Nền đen họa tiết */
+            cardbg: '#1a1a1a',
+            // Colors from DESIGN.md
+            'wheat-primary': '#5C3A21',
+            'wheat-primary-light': '#7B5034',
+            'wheat-primary-dark': '#3B2414',
+            'wheat-secondary': '#D4A373',
+            'wheat-secondary-light': '#E9D8A6',
+            'wheat-secondary-dark': '#7A4F2D',
+            'wheat-tertiary': '#C5929D',
+            'wheat-bg': '#FEFCEB',
+            'wheat-surface': '#FFFFFF',
+            'wheat-text': '#2C221E',
+            'wheat-text-muted': '#8C7A73',
+            'wheat-accent': '#D98A3F',
+            'wheat-border': '#EADDC9',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Tùy chỉnh thêm một chút background patterns nếu cần */
+    .bg-texture {
+      background-image: url('https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1920&auto=format&fit=crop');
+      background-size: cover;
+      background-position: center;
+      background-blend-mode: overlay;
+      background-color: rgba(10, 10, 10, 0.85);
+    }
+
+    .bg-light-texture {
+      background-image: url('https://images.unsplash.com/photo-1555507036-ab1f4022115c?q=80&w=1920&auto=format&fit=crop');
+      background-size: cover;
+      background-position: center;
+      background-blend-mode: overlay;
+      background-color: rgba(245, 245, 245, 0.9);
+    }
+
+    /* Hero section background */
+    .bg-hero {
+      background-image: url('images/hero-bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    /* Product card background */
+    .bg-product-card {
+      background-image: url('images/product-bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    /* Discount section background */
+    .bg-discount {
+      background-image: url('images/offer-bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    /* About Us section background */
+    .bg-about {
+      background-image: url('images/about-bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    /* Footer section background */
+    .bg-footer {
+      background-image: url('images/footer-bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    /* Hide scrollbar for premium scrollable areas */
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+  </style>
+</head>
+
+<body class="font-sans antialiased text-gray-800 bg-white">
+
+  <header class="bg-hero min-h-[650px] md:min-h-[800px] flex flex-col justify-between pb-12">
+    <nav class="container mx-auto px-6 py-8 flex justify-between items-center md:justify-start text-white">
+      <a href="#" class="flex items-center transition-transform duration-300 hover:scale-105">
+        <img src="images/logo.png" alt="Keithston Coffee Shop Logo" class="h-16 md:h-[84px] w-auto object-contain">
+      </a>
+      <ul class="hidden md:flex ml-16 md:ml-24 space-x-10 text-[15px] font-medium font-sans tracking-wide items-center">
+        <li><a href="index.html" class="text-wheat-secondary hover:text-wheat-secondary-light transition duration-300">Home</a></li>
+        <li><a href="products.html" class="text-white/90 hover:text-wheat-secondary transition duration-300">Products</a></li>
+        <li><a href="#" class="text-white/90 hover:text-wheat-secondary transition duration-300">Blog</a></li>
+        <li><a href="#" class="text-white/90 hover:text-wheat-secondary transition duration-300">Contact Us</a></li>
+        <li><a href="#" class="text-white/90 hover:text-wheat-secondary transition duration-300">Services</a></li>
+      </ul>
+      <button id="mobile-menu-btn" class="md:hidden text-white focus:outline-none hover:text-wheat-secondary transition duration-300">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+    </nav>
+
+    <div class="container mx-auto px-6 flex-grow flex items-center py-12">
+      <div class="max-w-xl text-white">
+        <h3 class="text-wheat-secondary font-inter font-semibold text-lg md:text-xl tracking-wider mb-2">Delicious Cafe
+        </h3>
+        <h1 class="font-sansita text-5xl md:text-7xl font-medium text-white leading-[1.15] mb-8">Sweet
+          Treats,<br>Perfect
+          Eats</h1>
+        <div class="flex items-center space-x-8">
+          <a href="products.html"
+            class="flex items-center justify-center bg-[#8E3D24] hover:bg-[#76301A] text-white px-9 py-3.5 rounded-[8px] text-[15px] font-semibold font-inter shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0">Shop
+            Now</a>
+          <a href="products.html"
+            class="text-wheat-secondary hover:text-wheat-secondary-light text-[15px] font-semibold font-inter transition-colors duration-300">Learn
+            More</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="py-20 bg-white">
+    <div class="container mx-auto px-6">
+      <h2 class="text-center font-sansita text-4xl md:text-5xl text-[#111111] font-bold mb-14">Top Products</h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <!-- Card 1 -->
+        <div
+          class="bg-product-card rounded-xl p-6 relative overflow-hidden group shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+          <div class="w-full h-48 flex justify-center items-center mb-6 relative z-10">
+            <img src="images/product-1.png" alt="Whole Grain Bread"
+              class="h-44 object-contain transition-transform duration-500 group-hover:scale-105">
+          </div>
+          <div class="relative z-10 font-inter">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-white font-bold text-lg md:text-xl">$40</span>
+              <button class="transition-opacity duration-300 hover:opacity-80">
+                <img src="images/info-icon.png" alt="Info" class="w-5 h-5 object-contain">
+              </button>
+            </div>
+            <div class="flex justify-between items-end">
+              <h4 class="text-white text-[15px] font-medium leading-tight tracking-wide">Whole Grain<br>Bread</h4>
+              <button
+                class="bg-[#8E3D24] hover:bg-[#76301A] text-white px-5 py-2 rounded-[6px] text-xs font-semibold tracking-wide transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0">Add</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div
+          class="bg-product-card rounded-xl p-6 relative overflow-hidden group shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+          <div class="w-full h-48 flex justify-center items-center mb-6 relative z-10">
+            <img src="images/product-2.png" alt="Whole Grain Bread"
+              class="h-44 object-contain transition-transform duration-500 group-hover:scale-105">
+          </div>
+          <div class="relative z-10 font-inter">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-white font-bold text-lg md:text-xl">$40</span>
+              <button class="transition-opacity duration-300 hover:opacity-80">
+                <img src="images/info-icon.png" alt="Info" class="w-5 h-5 object-contain">
+              </button>
+            </div>
+            <div class="flex justify-between items-end">
+              <h4 class="text-white text-[15px] font-medium leading-tight tracking-wide">Whole Grain<br>Bread</h4>
+              <button
+                class="bg-[#8E3D24] hover:bg-[#76301A] text-white px-5 py-2 rounded-[6px] text-xs font-semibold tracking-wide transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0">Add</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div
+          class="bg-product-card rounded-xl p-6 relative overflow-hidden group shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+          <div class="w-full h-48 flex justify-center items-center mb-6 relative z-10">
+            <img src="images/product-3.png" alt="Whole Grain Bread"
+              class="h-44 object-contain transition-transform duration-500 group-hover:scale-105">
+          </div>
+          <div class="relative z-10 font-inter">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-white font-bold text-lg md:text-xl">$40</span>
+              <button class="transition-opacity duration-300 hover:opacity-80">
+                <img src="images/info-icon.png" alt="Info" class="w-5 h-5 object-contain">
+              </button>
+            </div>
+            <div class="flex justify-between items-end">
+              <h4 class="text-white text-[15px] font-medium leading-tight tracking-wide">Whole Grain<br>Bread</h4>
+              <button
+                class="bg-[#8E3D24] hover:bg-[#76301A] text-white px-5 py-2 rounded-[6px] text-xs font-semibold tracking-wide transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0">Add</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div
+          class="bg-product-card rounded-xl p-6 relative overflow-hidden group shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+          <div class="w-full h-48 flex justify-center items-center mb-6 relative z-10">
+            <img src="images/product-4.png" alt="Whole Grain Bread"
+              class="h-44 object-contain transition-transform duration-500 group-hover:scale-105">
+          </div>
+          <div class="relative z-10 font-inter">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-white font-bold text-lg md:text-xl">$40</span>
+              <button class="transition-opacity duration-300 hover:opacity-80">
+                <img src="images/info-icon.png" alt="Info" class="w-5 h-5 object-contain">
+              </button>
+            </div>
+            <div class="flex justify-between items-end">
+              <h4 class="text-white text-[15px] font-medium leading-tight tracking-wide">Whole Grain<br>Bread</h4>
+              <button
+                class="bg-[#8E3D24] hover:bg-[#76301A] text-white px-5 py-2 rounded-[6px] text-xs font-semibold tracking-wide transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0">Add</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5 -->
+        <div
+          class="bg-product-card rounded-xl p-6 relative overflow-hidden group shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+          <div class="w-full h-48 flex justify-center items-center mb-6 relative z-10">
+            <img src="images/product-5.png" alt="Whole Grain Bread"
+              class="h-44 object-contain transition-transform duration-500 group-hover:scale-105">
+          </div>
+          <div class="relative z-10 font-inter">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-white font-bold text-lg md:text-xl">$40</span>
+              <button class="transition-opacity duration-300 hover:opacity-80">
+                <img src="images/info-icon.png" alt="Info" class="w-5 h-5 object-contain">
+              </button>
+            </div>
+            <div class="flex justify-between items-end">
+              <h4 class="text-white text-[15px] font-medium leading-tight tracking-wide">Whole Grain<br>Bread</h4>
+              <button
+                class="bg-[#8E3D24] hover:bg-[#76301A] text-white px-5 py-2 rounded-[6px] text-xs font-semibold tracking-wide transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0">Add</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 6 -->
+        <div
+          class="bg-product-card rounded-xl p-6 relative overflow-hidden group shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+          <div class="w-full h-48 flex justify-center items-center mb-6 relative z-10">
+            <img src="images/product-6.png" alt="Whole Grain Bread"
+              class="h-44 object-contain transition-transform duration-500 group-hover:scale-105">
+          </div>
+          <div class="relative z-10 font-inter">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-white font-bold text-lg md:text-xl">$40</span>
+              <button class="transition-opacity duration-300 hover:opacity-80">
+                <img src="images/info-icon.png" alt="Info" class="w-5 h-5 object-contain">
+              </button>
+            </div>
+            <div class="flex justify-between items-end">
+              <h4 class="text-white text-[15px] font-medium leading-tight tracking-wide">Whole Grain<br>Bread</h4>
+              <button
+                class="bg-[#8E3D24] hover:bg-[#76301A] text-white px-5 py-2 rounded-[6px] text-xs font-semibold tracking-wide transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0">Add</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="py-24 bg-discount text-center relative">
+    <div class="container mx-auto px-6 relative z-10">
+      <h2 class="text-[#8E3D24] font-sansita text-4xl md:text-5xl font-bold leading-tight mb-6">20% Off Your<br>First
+        Order</h2>
+      <p
+        class="text-wheat-text/80 font-inter max-w-lg mx-auto mb-8 text-[15px] md:text-[17px] leading-relaxed font-medium">
+        Suspendisse ac rhoncus nisl,<br>eu tempor urna. Curabitur vel<br>bibenjgg.</p>
+      <button
+        class="bg-[#8E3D24] hover:bg-[#76301A] text-white px-9 py-3.5 rounded-[8px] text-[15px] font-semibold font-inter shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0">Learn
+        More</button>
+    </div>
+  </section>
+
+  <section class="py-20 bg-white">
+    <div class="container mx-auto px-6">
+      <h2 class="text-center font-sansita text-4xl md:text-5xl text-[#111111] font-semibold mb-10">Explore More</h2>
+
+      <ul
+        class="flex items-center justify-start md:justify-center space-x-6 md:space-x-10 text-[15px] font-sans mb-12 border-b border-[#EADDC9] max-w-5xl mx-auto overflow-x-auto whitespace-nowrap scrollbar-none px-4 md:px-0">
+        <li
+          class="border-b-[3px] border-[#8E3D24] text-[#5C3A21] pb-2 font-semibold cursor-pointer -mb-[1px] relative z-10 flex-shrink-0">
+          Cake</li>
+        <li
+          class="pb-2 text-[#5D5D5D] hover:text-[#5C3A21] cursor-pointer transition-colors duration-300 font-medium -mb-[1px] relative flex-shrink-0">
+          Muffins</li>
+        <li
+          class="pb-2 text-[#5D5D5D] hover:text-[#5C3A21] cursor-pointer transition-colors duration-300 font-medium -mb-[1px] relative flex-shrink-0">
+          Croissant</li>
+        <li
+          class="pb-2 text-[#5D5D5D] hover:text-[#5C3A21] cursor-pointer transition-colors duration-300 font-medium -mb-[1px] relative flex-shrink-0">
+          Bread</li>
+        <li
+          class="pb-2 text-[#5D5D5D] hover:text-[#5C3A21] cursor-pointer transition-colors duration-300 font-medium -mb-[1px] relative flex-shrink-0">
+          Tart</li>
+        <li
+          class="pb-2 text-[#5D5D5D] hover:text-[#5C3A21] cursor-pointer transition-colors duration-300 font-medium -mb-[1px] relative flex-shrink-0">
+          Favorite</li>
+      </ul>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
+        <img src="images/explo-01.png" alt="Muffins"
+          class="w-full aspect-square object-cover rounded-[12px] shadow-sm transition-transform duration-500 hover:scale-[1.03] hover:shadow-md">
+        <img src="images/explo-02.png" alt="Berries Cheesecake"
+          class="w-full aspect-square object-cover rounded-[12px] shadow-sm transition-transform duration-500 hover:scale-[1.03] hover:shadow-md">
+        <img src="images/explo-03.png" alt="Crumble Cake"
+          class="w-full aspect-square object-cover rounded-[12px] shadow-sm transition-transform duration-500 hover:scale-[1.03] hover:shadow-md">
+        <img src="images/explo-04.png" alt="Pound Cake"
+          class="w-full aspect-square object-cover rounded-[12px] shadow-sm transition-transform duration-500 hover:scale-[1.03] hover:shadow-md">
+        <img src="images/explo-05.png" alt="Chocolate Brownie"
+          class="w-full aspect-square object-cover rounded-[12px] shadow-sm transition-transform duration-500 hover:scale-[1.03] hover:shadow-md">
+        <img src="images/explo-06.png" alt="Cupcake"
+          class="w-full aspect-square object-cover rounded-[12px] shadow-sm transition-transform duration-500 hover:scale-[1.03] hover:shadow-md">
+      </div>
+    </div>
+  </section>
+
+  <section class="py-24 bg-about text-center text-white relative">
+    <div class="container mx-auto px-6 relative z-10">
+      <h2 class="font-sansita text-4xl md:text-5xl font-bold mb-6">About us</h2>
+      <p class="max-w-xl mx-auto text-white/85 font-inter text-[15px] md:text-[17px] leading-relaxed mb-8">Suspendisse
+        ac rhoncus nisl,<br>eu tempor urna. Curabitur vel<br>bibendum lorem. Morbi<br>convallis.</p>
+      <button
+        class="bg-[#8E3D24] hover:bg-[#76301A] text-white px-9 py-3.5 rounded-[8px] text-[15px] font-semibold font-inter shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0">Read
+        More</button>
+    </div>
+  </section>
+
+  <section class="py-20 bg-white">
+    <div class="container mx-auto px-6">
+      <h2 class="text-center font-sansita text-4xl md:text-5xl text-[#111111] font-semibold mb-14">Featured Treats</h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <!-- Card 1 -->
+        <div class="group">
+          <div
+            class="overflow-hidden rounded-[12px] shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+            <img src="images/treat-1.png" alt="Puff Pastry"
+              class="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105">
+          </div>
+          <div
+            class="flex justify-between items-center mt-5 px-7 text-[17px] font-semibold font-inter text-[#111111] tracking-wide">
+            <span>Puff Pastry</span>
+            <span>$8</span>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="group">
+          <div
+            class="overflow-hidden rounded-[12px] shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+            <img src="images/treat-2.png" alt="Doughnuts"
+              class="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105">
+          </div>
+          <div
+            class="flex justify-between items-center mt-5 px-7 text-[17px] font-semibold font-inter text-[#111111] tracking-wide">
+            <span>Doughnuts</span>
+            <span>$8</span>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="group">
+          <div
+            class="overflow-hidden rounded-[12px] shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+            <img src="images/treat-3.png" alt="Brownies"
+              class="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105">
+          </div>
+          <div
+            class="flex justify-between items-center mt-5 px-7 text-[17px] font-semibold font-inter text-[#111111] tracking-wide">
+            <span>Brownies</span>
+            <span>$8</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-footer text-gray-300 py-16 relative">
+    <div class="container mx-auto px-6 relative z-10">
+      <!-- Top Row: Logo & Follow Us + Icons -->
+      <div class="flex flex-col md:flex-row justify-between items-center mb-10 border-b border-[#D4A373]/20 pb-8">
+        <a href="#" class="flex items-center mb-6 md:mb-0 transition-transform duration-300 hover:scale-105">
+          <img src="images/logo.png" alt="Keithston Logo" class="h-16 w-auto object-contain">
+        </a>
+        <div class="flex items-center space-x-5 font-inter">
+          <span class="text-wheat-secondary font-bold text-[17px] tracking-wide">Follow us</span>
+          <div class="flex items-center space-x-4">
+            <a href="#" class="transition-transform duration-300 hover:scale-110">
+              <img src="images/facebook-icon.png" alt="Facebook" class="w-8 h-8 object-contain">
+            </a>
+            <a href="#" class="transition-transform duration-300 hover:scale-110">
+              <img src="images/pinterest-icon.png" alt="Pinterest" class="w-8 h-8 object-contain">
+            </a>
+            <a href="#" class="transition-transform duration-300 hover:scale-110">
+              <img src="images/phone-icon.png" alt="Phone" class="w-8 h-8 object-contain">
+            </a>
+            <a href="#" class="transition-transform duration-300 hover:scale-110">
+              <img src="images/instagram-icon.png" alt="Instagram" class="w-8 h-8 object-contain">
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Columns Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-10 text-base mb-12 font-sans">
+        <!-- Col 1: About Us -->
+        <div>
+          <h4 class="text-wheat-secondary font-bold text-xl mb-5 tracking-wide font-inter">About Us</h4>
+          <ul class="space-y-3.5 text-white/90 font-medium">
+            <li>(456) 789-12301</li>
+            <li>info@modrino.co.uk</li>
+            <li>South 13th street</li>
+            <li>New york America</li>
+          </ul>
+        </div>
+
+        <!-- Col 2: Explore -->
+        <div>
+          <h4 class="text-wheat-secondary font-bold text-xl mb-5 tracking-wide font-inter">Explore</h4>
+          <ul class="space-y-3.5 text-white/90 font-medium">
+            <li><a href="index.html" class="hover:text-wheat-secondary transition-colors duration-300">Home</a></li>
+            <li><a href="products.html" class="hover:text-wheat-secondary transition-colors duration-300">Products</a></li>
+            <li><a href="#" class="hover:text-wheat-secondary transition-colors duration-300">Blog</a></li>
+            <li><a href="#" class="hover:text-wheat-secondary transition-colors duration-300">Contact us</a></li>
+            <li><a href="#" class="hover:text-wheat-secondary transition-colors duration-300">Services</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 3: Recent News -->
+        <div>
+          <h4 class="text-wheat-secondary font-bold text-xl mb-5 tracking-wide font-inter">Recent News</h4>
+          <div class="space-y-5">
+            <!-- News 1 -->
+            <div class="flex items-center space-x-4 group cursor-pointer">
+              <div class="overflow-hidden rounded-[6px] w-16 h-12 flex-shrink-0">
+                <img src="images/product-2.png" alt="News 1" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+              </div>
+              <div>
+                <span class="text-xs text-wheat-secondary font-semibold block mb-0.5">June 14, 2024</span>
+                <p class="text-white font-medium hover:text-[#D4A373] transition-colors duration-300 text-[15px] leading-snug">Puff pastry bliss.</p>
+              </div>
+            </div>
+            <!-- News 2 -->
+            <div class="flex items-center space-x-4 group cursor-pointer">
+              <div class="overflow-hidden rounded-[6px] w-16 h-12 flex-shrink-0">
+                <img src="images/explo-01.png" alt="News 2" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+              </div>
+              <div>
+                <span class="text-xs text-wheat-secondary font-semibold block mb-0.5">June 14, 2024</span>
+                <p class="text-white font-medium hover:text-[#D4A373] transition-colors duration-300 text-[15px] leading-snug">Puff pastry bliss.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Copyright Section -->
+      <div class="text-center text-[13px] text-white/60 pt-6 border-t border-[#D4A373]/10 font-sans tracking-wide">
+        &copy; 2024 Bake House. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mobile Drawer Overlay -->
+  <div id="mobile-drawer-overlay" class="fixed inset-0 bg-black/60 z-50 opacity-0 pointer-events-none transition-opacity duration-300 ease-in-out"></div>
+  
+  <!-- Mobile Drawer Sidebar (Slides in from Left) -->
+  <div id="mobile-drawer" class="fixed top-0 bottom-0 left-0 w-[290px] bg-[#161616] z-50 -translate-x-full transition-transform duration-300 ease-in-out shadow-2xl flex flex-col justify-between p-8 font-sans border-r border-[#D4A373]/10">
+    <div>
+      <!-- Header of Drawer -->
+      <div class="flex justify-between items-center mb-10">
+        <img src="images/logo.png" alt="Keithston Logo" class="h-14 w-auto object-contain">
+        <button id="close-drawer-btn" class="text-white hover:text-wheat-secondary transition duration-300 focus:outline-none">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Links -->
+      <nav class="flex flex-col space-y-6 text-lg font-medium font-sans text-white/90">
+        <a href="index.html" class="hover:text-wheat-secondary transition duration-300">Home</a>
+        <a href="products.html" class="text-wheat-secondary hover:text-wheat-secondary-light transition duration-300">Products</a>
+        <a href="#" class="hover:text-wheat-secondary transition duration-300">Blog</a>
+        <a href="#" class="hover:text-wheat-secondary transition duration-300">Contact Us</a>
+        <a href="#" class="hover:text-wheat-secondary transition duration-300">Services</a>
+      </nav>
+    </div>
+    
+    <!-- Footer of Drawer -->
+    <div class="pt-6 border-t border-white/10 flex flex-col space-y-4">
+      <span class="text-wheat-secondary text-sm font-semibold tracking-wider font-inter">Follow us</span>
+      <div class="flex space-x-4">
+        <a href="#" class="hover:scale-105 transition duration-300"><img src="images/facebook-icon.png" alt="Facebook" class="w-6 h-6 object-contain"></a>
+        <a href="#" class="hover:scale-105 transition duration-300"><img src="images/pinterest-icon.png" alt="Pinterest" class="w-6 h-6 object-contain"></a>
+        <a href="#" class="hover:scale-105 transition duration-300"><img src="images/phone-icon.png" alt="Phone" class="w-6 h-6 object-contain"></a>
+        <a href="#" class="hover:scale-105 transition duration-300"><img src="images/instagram-icon.png" alt="Instagram" class="w-6 h-6 object-contain"></a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const closeDrawerBtn = document.getElementById('close-drawer-btn');
+    const drawerOverlay = document.getElementById('mobile-drawer-overlay');
+    const drawer = document.getElementById('mobile-drawer');
+
+    function openDrawer() {
+      drawerOverlay.classList.remove('pointer-events-none');
+      drawerOverlay.classList.add('opacity-100');
+      drawer.classList.remove('-translate-x-full');
+      document.body.style.overflow = 'hidden'; // prevent scrolling when drawer is open
+    }
+
+    function closeDrawer() {
+      drawerOverlay.classList.add('pointer-events-none');
+      drawerOverlay.classList.remove('opacity-100');
+      drawer.classList.add('-translate-x-full');
+      document.body.style.overflow = ''; // restore scrolling
+    }
+
+    mobileMenuBtn.addEventListener('click', openDrawer);
+    closeDrawerBtn.addEventListener('click', closeDrawer);
+    drawerOverlay.addEventListener('click', closeDrawer);
+  </script>
+</body>
+
+</html>
