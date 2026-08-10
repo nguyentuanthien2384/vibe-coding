@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -13,6 +14,7 @@ import { RedisModule } from './redis/redis.module';
 import { VouchersModule } from './vouchers/vouchers.module';
 import { OrdersModule } from './orders/orders.module';
 import { AddressesModule } from './addresses/addresses.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -22,6 +24,7 @@ import { AddressesModule } from './addresses/addresses.module';
         limit: 100,
       },
     ]),
+    EventEmitterModule.forRoot(),
     PrismaModule,
     RedisModule,
     BannersModule,
@@ -32,6 +35,7 @@ import { AddressesModule } from './addresses/addresses.module';
     VouchersModule,
     OrdersModule,
     AddressesModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [
@@ -43,4 +47,5 @@ import { AddressesModule } from './addresses/addresses.module';
   ],
 })
 export class AppModule {}
+
 

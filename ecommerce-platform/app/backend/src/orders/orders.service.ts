@@ -4,11 +4,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { VouchersService } from '../vouchers/vouchers.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PaymentWebhookDto } from './dto/payment-webhook.dto';
+import { OrderConfirmedEvent } from '../mail/events/mail.events';
 import {
   PaymentMethod,
   PaymentStatus,
@@ -22,6 +24,7 @@ export class OrdersService {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly vouchersService: VouchersService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -225,6 +228,28 @@ export class OrdersService {
         'PENDING',
       );
     }
+
+    this.eventEmitter.emit(
+      'order.created',
+      new OrderConfirmedEvent({
+        userId: result.userId || undefined,
+        email: result.customerEmail,
+        customerName: result.customerName,
+        orderCode: result.orderCode,
+        totalAmount: Number(result.totalAmount),
+        shippingFee: Number(result.shippingFee),
+        discountAmount: Number(result.discountAmount),
+        paymentMethod: result.paymentMethod,
+        shippingAddress: `${result.detailAddress}, ${result.wardName}, ${result.districtName}, ${result.provinceName}`,
+        items: result.orderItems.map((item) => ({
+          productName: item.productName,
+          quantity: item.quantity,
+          price: Number(item.price),
+          itemTotal: Number(item.itemTotal),
+        })),
+        createdAt: result.createdAt,
+      }),
+    );
 
     return {
       orderId: result.id,

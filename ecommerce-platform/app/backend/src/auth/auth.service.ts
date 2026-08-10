@@ -9,8 +9,14 @@ import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import {
+  UserRegisteredEvent,
+  PasswordChangedEvent,
+  TokenCompromisedEvent,
+} from '../mail/events/mail.events';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -32,6 +38,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -81,7 +88,7 @@ export class AuthService {
       jti: refreshJti,
     };
 
-    const jwtSecret = process.env.JWT_SECRET || 'techbite-ecommerce-jwt-access-secret-2026';
+    const jwtSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'techbite-ecommerce-jwt-access-secret-2026';
     const refreshSecret = process.env.JWT_REFRESH_SECRET || 'techbite-ecommerce-jwt-refresh-secret-2026';
 
     const accessToken = this.jwtService.sign(accessPayload, {
@@ -97,6 +104,16 @@ export class AuthService {
     const refreshTtlSeconds = 7 * 24 * 60 * 60;
     const redisKey = `auth:refresh:${newUser.id}:${refreshJti}`;
     await this.redisService.setEx(redisKey, refreshTtlSeconds, 'active');
+
+    this.eventEmitter.emit(
+      'user.registered',
+      new UserRegisteredEvent({
+        userId: newUser.id,
+        email: newUser.email,
+        fullName: newUser.fullName,
+        registeredAt: newUser.createdAt,
+      }),
+    );
 
     this.logger.log(`✅ Đăng ký người dùng thành công: User ID ${newUser.id} (${newUser.email})`);
 
@@ -160,7 +177,7 @@ export class AuthService {
       jti: refreshJti,
     };
 
-    const jwtSecret = process.env.JWT_SECRET || 'techbite-ecommerce-jwt-access-secret-2026';
+    const jwtSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'techbite-ecommerce-jwt-access-secret-2026';
     const refreshSecret = process.env.JWT_REFRESH_SECRET || 'techbite-ecommerce-jwt-refresh-secret-2026';
 
     const accessToken = this.jwtService.sign(accessPayload, {
@@ -237,6 +254,20 @@ export class AuthService {
       // ⚠️ CẢNH BÁO BẢO MẬT REPLAY ATTACK: Token này đã bị dùng lại hoặc bị thu hồi từ trước!
       this.logger.warn(`🚨 REPLAY ATTACK DETECTED for User ID ${userId}! Thu hồi toàn bộ phiên đăng nhập.`);
       await this.redisService.delByPattern(`auth:refresh:${userId}:*`);
+
+      const compromisedUser = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (compromisedUser) {
+        this.eventEmitter.emit(
+          'security.token_compromised',
+          new TokenCompromisedEvent({
+            userId: compromisedUser.id,
+            email: compromisedUser.email,
+            fullName: compromisedUser.fullName,
+            detectedAt: new Date(),
+          }),
+        );
+      }
+
       throw new UnauthorizedException('Phiên đăng nhập không hợp lệ hoặc đã bị thu hồi. Vui lòng đăng nhập lại');
     }
 
@@ -256,7 +287,7 @@ export class AuthService {
     const newAccessJti = this.generateJti();
     const newRefreshJti = this.generateJti();
 
-    const jwtSecret = process.env.JWT_SECRET || 'techbite-ecommerce-jwt-access-secret-2026';
+    const jwtSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'techbite-ecommerce-jwt-access-secret-2026';
 
     const accessPayload: JwtPayload = {
       sub: user.id,
@@ -451,6 +482,16 @@ export class AuthService {
     // 3. Xóa toàn bộ Refresh Token của User trong Redis trên mọi trình duyệt
     await this.redisService.delByPattern(`auth:refresh:${userId}:*`);
     this.logger.log(`🧹 Đã thu hồi toàn bộ Refresh Tokens trong Redis cho User ID ${userId}`);
+
+    this.eventEmitter.emit(
+      'password.changed',
+      new PasswordChangedEvent({
+        userId: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        changedAt: new Date(),
+      }),
+    );
 
     this.logger.log(`🔑 Đổi mật khẩu thành công cho User ID ${userId} (${user.email})`);
   }

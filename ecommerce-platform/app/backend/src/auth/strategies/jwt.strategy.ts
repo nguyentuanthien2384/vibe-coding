@@ -20,7 +20,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         cookieExtractor,
       ]),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'techbite-ecommerce-jwt-access-secret-2026',
+      secretOrKey: process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'techbite-ecommerce-jwt-access-secret-2026',
     });
   }
 

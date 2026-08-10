@@ -15,7 +15,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     RedisModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'techbite-ecommerce-jwt-access-secret-2026',
+      secret: process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'techbite-ecommerce-jwt-access-secret-2026',
       signOptions: { expiresIn: '15m' },
     }),
   ],

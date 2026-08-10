@@ -58,6 +58,19 @@ enum VoucherDiscountType {
   PERCENTAGE
 }
 
+enum EmailType {
+  REGISTER_WELCOME
+  ORDER_CONFIRMATION
+  PASSWORD_CHANGED
+  SECURITY_ALERT
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 // =============================================================================
 // MODULE: HOME PAGE
 // Source: .docs/backend-plans/home-plan.md
@@ -82,15 +95,15 @@ model Banner {
 
 /// Danh mục món ăn/sản phẩm. Hỗ trợ cấu trúc cây (Parent-Child).
 model Category {
-  id        Int        @id @default(autoincrement())
-  name      String     @db.VarChar(100)
-  slug      String     @unique @db.VarChar(100)
-  iconUrl   String?    @db.VarChar(500)
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  slug      String   @unique @db.VarChar(100)
+  iconUrl   String?  @db.VarChar(500)
   parentId  Int?
-  position  Int        @default(0)
-  isActive  Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  position  Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children Category[] @relation("CategoryHierarchy")
@@ -151,6 +164,7 @@ model User {
   cart      Cart?
   orders    Order[]
   addresses Address[]
+  emailLogs EmailLog[]
 
   @@index([email], name: "idx_user_email")
   @@index([role, isActive], name: "idx_user_role_active")
@@ -187,11 +201,11 @@ model Address {
 
 /// Bảng Giỏ hàng (Mỗi User có tối đa 1 Giỏ hàng chủ động)
 model Cart {
-  id        Int        @id @default(autoincrement())
-  userId    Int?       @unique
-  sessionId String?    @unique @db.VarChar(255)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @unique
+  sessionId String?  @unique @db.VarChar(255)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user  User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   items CartItem[]
@@ -303,4 +317,30 @@ model Voucher {
   @@map("vouchers")
 }
 
+// =============================================================================
+// MODULE: MAIL NOTIFICATIONS
+// Source: .docs/backend-plans/mail-notification-plan.md
+// =============================================================================
 
+/// Bảng lưu trữ nhật ký gửi Email thông báo của hệ thống
+model EmailLog {
+  id           Int         @id @default(autoincrement())
+  userId       Int?
+  recipient    String      @db.VarChar(255)
+  subject      String      @db.VarChar(255)
+  type         EmailType
+  status       EmailStatus @default(PENDING)
+  metadata     Json?
+  retryCount   Int         @default(0)
+  sentAt       DateTime?
+  failedReason String?     @db.Text
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([recipient], name: "idx_email_log_recipient")
+  @@index([type, status], name: "idx_email_log_type_status")
+  @@index([createdAt], name: "idx_email_log_created_at")
+  @@map("email_logs")
+}
