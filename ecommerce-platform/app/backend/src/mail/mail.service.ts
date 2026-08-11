@@ -231,6 +231,62 @@ export class MailService {
   }
 
   /**
+   * Lấy danh sách thông báo Email của riêng User đang đăng nhập (Lọc chính xác theo userId hoặc recipient email)
+   */
+  async getMyNotifications(userId: number, recipientEmail: string, queryDto: EmailLogQueryDto) {
+    const page = Number(queryDto.page) || 1;
+    const limit = Number(queryDto.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const normalizedEmail = recipientEmail ? recipientEmail.trim().toLowerCase() : '';
+
+    const userCondition: any[] = [{ userId }];
+    if (normalizedEmail) {
+      userCondition.push({ recipient: { equals: normalizedEmail } });
+    }
+
+    const where: any = {
+      OR: userCondition,
+    };
+
+    if (queryDto.type) {
+      where.type = queryDto.type;
+    }
+
+    if (queryDto.status) {
+      where.status = queryDto.status;
+    }
+
+    if (queryDto.search) {
+      where.AND = [
+        {
+          subject: { contains: queryDto.search.trim() },
+        },
+      ];
+    }
+
+    const [items, totalItems] = await Promise.all([
+      this.prisma.emailLog.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.emailLog.count({ where }),
+    ]);
+
+    return {
+      items,
+      meta: {
+        page,
+        limit,
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+      },
+    };
+  }
+
+  /**
    * API Quản trị: Gửi lại email bị thất bại
    */
   async resendEmail(id: number) {

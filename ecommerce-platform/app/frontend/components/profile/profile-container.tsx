@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ProfileSidebar } from './profile-sidebar';
+import { ProfileSidebar, ProfileTab } from './profile-sidebar';
 import { ProfileInfoCard } from './profile-info-card';
 import { ChangePasswordCard } from './change-password-card';
 import { OrderHistoryList } from './order-history-list';
 import { AddressManagerCard } from './address-manager-card';
+import { MyNotificationsCard } from './my-notifications-card';
 import { OrderSummaryItem, OrderStatusCounts } from '../../types/auth.types';
 import { QRPaymentInfo } from '../../types/checkout';
 import { showToast } from '../ui/toast';
@@ -22,7 +23,7 @@ export const ProfileContainer: React.FC = () => {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
 
-  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'addresses' | 'favorites'>('info');
+  const [activeTab, setActiveTab] = useState<ProfileTab>('info');
   const [isLoading, setIsLoading] = useState(!user);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -286,6 +287,10 @@ export const ProfileContainer: React.FC = () => {
             <h2 className="text-xl font-extrabold text-slate-900">Món ăn yêu thích</h2>
             <p className="text-sm text-slate-500">Danh sách các món ăn vặt & thức uống bạn đã thả tim ⚡</p>
           </div>
+        )}
+
+        {activeTab === 'notifications' && (
+          <MyNotificationsCard />
         )}
 
         {/* VietQR Payment Modal */}

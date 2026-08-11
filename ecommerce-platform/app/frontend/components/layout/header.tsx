@@ -92,6 +92,14 @@ export const Header = () => {
             <Link href="/deals" className="hover:text-orange-600 transition-colors">
               Khuyến mãi 🔥
             </Link>
+            {mounted && user?.role === 'ADMIN' && (
+              <Link
+                href="/admin/email-logs"
+                className="text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+              >
+                <span>⚡</span> Email Logs
+              </Link>
+            )}
           </nav>
 
           {/* Desktop Search Bar */}

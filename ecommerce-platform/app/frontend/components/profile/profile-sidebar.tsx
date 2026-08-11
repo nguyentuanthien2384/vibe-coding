@@ -1,12 +1,15 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 import { UserProfile } from '../../types/auth.types';
+
+export type ProfileTab = 'info' | 'orders' | 'addresses' | 'favorites' | 'notifications';
 
 interface ProfileSidebarProps {
   user: UserProfile;
-  activeTab: 'info' | 'orders' | 'addresses' | 'favorites';
-  onTabChange: (tab: 'info' | 'orders' | 'addresses' | 'favorites') => void;
+  activeTab: ProfileTab;
+  onTabChange: (tab: ProfileTab) => void;
   onLogout: () => void;
 }
 
@@ -104,6 +107,31 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
           </svg>
           <span className="whitespace-nowrap truncate">Món yêu thích</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => onTabChange('notifications')}
+          className={`flex items-center gap-3 px-4 py-3 text-sm transition-all text-left w-full cursor-pointer min-w-0 ${
+            activeTab === 'notifications'
+              ? 'bg-orange-50 text-orange-600 font-bold border-l-4 border-orange-600 rounded-r-xl shadow-xs'
+              : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900 rounded-xl font-medium border-l-4 border-transparent'
+          }`}
+        >
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9" />
+          </svg>
+          <span className="whitespace-nowrap truncate">Thông báo của tôi</span>
+        </button>
+
+        {user.role === 'ADMIN' && (
+          <Link
+            href="/admin/email-logs"
+            className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-xl border border-amber-200 transition-all text-left w-full cursor-pointer min-w-0"
+          >
+            <span className="text-base">⚡</span>
+            <span className="whitespace-nowrap truncate">Quản lý Email Logs</span>
+          </Link>
+        )}
 
         <div className="pt-3 mt-3 border-t border-gray-100">
           <button

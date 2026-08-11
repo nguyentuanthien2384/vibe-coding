@@ -1,5 +1,9 @@
 import * as Handlebars from 'handlebars';
 
+function getFrontendUrl(): string {
+  return (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+}
+
 const BASE_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="vi">
@@ -79,6 +83,10 @@ const BASE_TEMPLATE = `
       margin-bottom: 24px;
       color: #881337;
     }
+    .cta-container {
+      text-align: center;
+      margin-top: 32px;
+    }
     .cta-btn {
       display: inline-block;
       background-color: #ff8c42;
@@ -90,6 +98,20 @@ const BASE_TEMPLATE = `
       border-radius: 12px;
       text-align: center;
       box-shadow: 0 4px 12px rgba(255, 140, 66, 0.3);
+      margin: 4px;
+    }
+    .cta-btn-secondary {
+      display: inline-block;
+      background-color: #ffffff;
+      color: #475569 !important;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 13px 24px;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      text-align: center;
+      margin: 4px;
     }
     .footer {
       background-color: #f8fafc;
@@ -141,6 +163,7 @@ const BASE_TEMPLATE = `
 `;
 
 export function renderRegisterWelcomeEmail(fullName: string): { subject: string; html: string } {
+  const frontendUrl = getFrontendUrl();
   const subject = 'Chào mừng bạn đến với TechBite 🚀';
   const bodyContent = `
     <div class="greeting">Xin chào ${fullName}!</div>
@@ -155,8 +178,9 @@ export function renderRegisterWelcomeEmail(fullName: string): { subject: string;
         <li>Nhận ưu đãi voucher dành riêng cho thành viên</li>
       </ul>
     </div>
-    <div style="text-align: center; margin-top: 32px;">
-      <a href="http://localhost:3000/login" class="cta-btn">Khám phá TechBite ngay ⚡</a>
+    <div class="cta-container">
+      <a href="${frontendUrl}/products" class="cta-btn">Khám phá Thực đơn ngay ⚡</a>
+      <a href="${frontendUrl}/login" class="cta-btn-secondary">Đăng nhập tài khoản</a>
     </div>
   `;
 
@@ -172,6 +196,7 @@ export function renderOrderConfirmationEmail(data: {
   shippingAddress: string;
   items: Array<{ productName: string; quantity: number; price: number; itemTotal: number }>;
 }): { subject: string; html: string } {
+  const frontendUrl = getFrontendUrl();
   const subject = `Xác nhận đơn hàng #${data.orderCode} - TechBite`;
   const itemsHtml = data.items
     .map(
@@ -211,8 +236,9 @@ export function renderOrderConfirmationEmail(data: {
         <span style="font-size: 20px; font-weight: 800; color: #ff8c42; margin-left: 8px;">${data.totalAmount.toLocaleString('vi-VN')} đ</span>
       </div>
     </div>
-    <div style="text-align: center; margin-top: 32px;">
-      <a href="http://localhost:3000/orders/${data.orderCode}" class="cta-btn">Theo dõi đơn hàng 🚚</a>
+    <div class="cta-container">
+      <a href="${frontendUrl}/orders/${data.orderCode}" class="cta-btn">Theo dõi đơn hàng 🚚</a>
+      <a href="${frontendUrl}/profile" class="cta-btn-secondary">Lịch sử đơn hàng</a>
     </div>
   `;
 
@@ -221,6 +247,7 @@ export function renderOrderConfirmationEmail(data: {
 }
 
 export function renderPasswordChangedEmail(fullName: string, ipAddress?: string): { subject: string; html: string } {
+  const frontendUrl = getFrontendUrl();
   const subject = 'Cảnh báo bảo mật: Mật khẩu của bạn đã được thay đổi - TechBite';
   const bodyContent = `
     <div class="greeting">Xin chào ${fullName}!</div>
@@ -233,7 +260,11 @@ export function renderPasswordChangedEmail(fullName: string, ipAddress?: string)
       <p style="margin: 4px 0; font-size: 14px;"><strong>Hành động đã thực hiện:</strong> Thu hồi toàn bộ Refresh Token cũ trên tất cả các thiết bị khác.</p>
     </div>
     <div class="alert-box">
-      ⚠️ <strong>Lưu ý:</strong> Nếu bạn KHÔNG thực hiện thao tác đổi mật khẩu này, hãy nhanh chóng liên hệ với đội ngũ CSKH của chúng tôi ngay lập tức để bảo vệ tài khoản.
+      ⚠️ <strong>Lưu ý:</strong> Nếu bạn KHÔNG thực hiện thao tác đổi mật khẩu này, hãy nhanh chóng liên hệ với đội ngũ CSKH của chúng tôi hoặc truy cập trang cá nhân để bảo vệ tài khoản ngay.
+    </div>
+    <div class="cta-container">
+      <a href="${frontendUrl}/login" class="cta-btn">Đăng nhập lại tài khoản 🔒</a>
+      <a href="${frontendUrl}/profile" class="cta-btn-secondary">Kiểm tra thông tin cá nhân</a>
     </div>
   `;
 
@@ -242,6 +273,7 @@ export function renderPasswordChangedEmail(fullName: string, ipAddress?: string)
 }
 
 export function renderSecurityAlertEmail(fullName: string, ipAddress?: string): { subject: string; html: string } {
+  const frontendUrl = getFrontendUrl();
   const subject = '🚨 CẢNH BÁO BẢO MẬT KHẨN CẤP: Phát hiện dấu hiệu xâm nhập tài khoản';
   const bodyContent = `
     <div class="greeting" style="color: #A63D40;">CẢNH BÁO BẢO MẬT THÔNG TIN!</div>
@@ -256,8 +288,9 @@ export function renderSecurityAlertEmail(fullName: string, ipAddress?: string): 
         <li>Đã đưa các Access Token liên quan vào danh sách cấm (Blacklist).</li>
       </ul>
     </div>
-    <div style="text-align: center; margin-top: 32px;">
-      <a href="http://localhost:3000/login" class="cta-btn" style="background-color: #A63D40;">Đăng nhập & Đổi mật khẩu ngay 🔒</a>
+    <div class="cta-container">
+      <a href="${frontendUrl}/login" class="cta-btn" style="background-color: #A63D40;">Đăng nhập & Đổi mật khẩu ngay 🔒</a>
+      <a href="${frontendUrl}/profile" class="cta-btn-secondary" style="border-color: #A63D40; color: #A63D40 !important;">Kiểm tra tài khoản</a>
     </div>
   `;
 
