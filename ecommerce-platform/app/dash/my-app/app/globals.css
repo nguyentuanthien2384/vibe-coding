@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+:root {
+  --header-height: 70px;
+}
+
+@theme inline {
+  --font-sans: var(--font-nunito, ui-sans-serif, system-ui, sans-serif);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Thin scrollbar for sidebar nav */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thumb-slate-200::-webkit-scrollbar-thumb {
+  background-color: rgb(226 232 240 / 0.8);
+  border-radius: 2px;
+}
