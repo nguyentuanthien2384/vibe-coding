@@ -120,4 +120,12 @@
 - **Thay link Chuyên mục Trang chủ ([category-rail.tsx](file:///d:/vibe_coding/ecommerce-platform/app/frontend/components/home/category-rail.tsx)):** Cập nhật `CategoryRail` trên Trang chủ sử dụng Next.js `<Link>` dẫn trực tiếp đến `/categories/${slug}` (hoặc `/products` đối với mục "Tất cả").
 - **Đồng bộ Header & Footer ([header.tsx](file:///d:/vibe_coding/ecommerce-platform/app/frontend/components/layout/header.tsx), [footer.tsx](file:///d:/vibe_coding/ecommerce-platform/app/frontend/components/layout/footer.tsx)):** Đã cập nhật tất cả liên kết danh mục trên Header drawer và Footer sang cấu trúc `/categories/ten-slug`. 0 lỗi TypeScript (`npx tsc --noEmit`).
 
+## [2026-08-11] Hoàn thành Master Layout Admin Dashboard (app/dash)
+- Xây dựng toàn bộ cấu trúc layout Admin Dashboard tại `app/dash/my-app`: `LayoutShell`, `AdminSidebar`, `AdminHeader`, `SidebarNav`, `SidebarNavItem`, `SidebarNavGroup`, `SidebarFooter`, `AdminSearchBar`, `HeaderActions`, `AdminMainContent`, `BreadcrumbNav`.
+- Cấu hình Zustand store `sidebar.store.ts` & `admin-auth.store.ts`, định nghĩa domain types (`admin-user.types.ts`, `nav.types.ts`, `notification.types.ts`).
+- Build thành công, 0 lỗi TypeScript.
 
+## [2026-08-11] Hoàn thành UI Trang Quản lý Chuyên mục (Admin Dashboard — Categories)
+- Quy hoạch kỹ thuật Frontend (`01-category-plan.md`) từ idea `01-category-idea.md`, mockup `dash-products/index.html`.
+- Xây dựng hoàn chỉnh 10 components: `CategoryPageClient` (Client Container, useState + useDebounce 300ms, CRUD mock), `CategoryPageHeader`, `CategoryFilterBar`, `CategoryTable`, `CategoryTableRow`, `StatusBadge`, `CategoryPagination`, `CategoryFormModal` (Add/Edit, auto-slug), `DeleteConfirmModal`, `page.tsx` (Server Component).
+- Thêm `'use client'` đúng chỗ để onClick handlers hoạt động; xóa double padding với `AdminMainContent`. Build thành công, 0 lỗi TypeScript.
