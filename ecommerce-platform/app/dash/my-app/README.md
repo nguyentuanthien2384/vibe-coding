@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛠️ TechBite E-Commerce — Admin Dashboard (`app/dash/my-app`)
 
-## Getting Started
+Ứng dụng Quản trị Hệ thống (Admin Dashboard) được xây dựng trên nền tảng **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS v4**, **TypeScript** và **Zustand**.
 
-First, run the development server:
+---
+
+## 🎨 Giao diện UI/UX & Các tính năng
+
+- **Master Layout Shell**:
+  - Sidebar co giãn (Collapsible Sidebar) với trạng thái lưu trong `Zustand`.
+  - Header tích hợp Thanh tìm kiếm nhanh, Popover Thông báo (Notification Bell Popover) và Popover Hồ sơ Quản trị viên (Profile Dropdown).
+  - Thanh điều hướng Breadcrumb đồng bộ theo URL Route.
+- **Quản lý Chuyên mục (`/categories`, `/category`)**:
+  - Bảng hiển thị chuyên mục kèm Status Badge (`Hoạt động` / `Ẩn`).
+  - Thanh lọc tìm kiếm có tích hợp custom hook `useDebounce` (300ms) tối ưu hiệu năng.
+  - Modal Thêm / Sửa chuyên mục tự sinh Slug tự động chuẩn SEO.
+  - Modal Xác nhận xóa an toàn.
+  - Phân trang chuẩn UI.
+- **Quản lý Sản phẩm (`/products`, `/product`)**:
+  - Bảng danh sách sản phẩm hiển thị Ảnh thumbnail, tên sản phẩm, slug, giá gốc, giá khuyến mãi, tồn kho (stock) và nhãn chuyên mục.
+  - Bộ lọc theo Trạng thái & Chuyên mục.
+  - Modal Thêm/Sửa/Xóa sản phẩm.
+
+---
+
+## 🚀 Khởi chạy ứng dụng
 
 ```bash
+# Di chuyển vào thư mục dự án
+cd app/dash/my-app
+
+# Cài đặt các thư viện phụ thuộc
+npm install
+
+# Khởi chạy dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Mở trình duyệt tại: [http://localhost:3001](http://localhost:3001) (hoặc `http://localhost:3002`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🏗️ Cấu trúc thư mục
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```text
+app/dash/my-app/
+├── app/
+│   ├── (dashboard)/        # Main Layout Shell & Admin Pages
+│   │   ├── categories/     # Trang Quản lý Chuyên mục
+│   │   ├── products/       # Trang Quản lý Sản phẩm
+│   │   ├── dashboard/      # Trang Tổng quan Dashboard
+│   │   └── layout.tsx      # Master Layout Server Component
+│   ├── globals.css         # CSS Tokens & Tailwind Setup
+│   └── layout.tsx          # Root Layout
+├── components/
+│   ├── layout/             # Sidebar, Header, BreadcrumbNav, SearchBar
+│   └── ui/                 # Reusable UI components (Notification, Avatar...)
+├── features/
+│   ├── categories/         # Modals, Tables, Forms, Hooks của Category
+│   └── products/           # Modals, Tables, Forms, Hooks của Product
+├── store/                  # Zustand stores (sidebar.store, admin-auth.store)
+└── types/                  # TypeScript Interface & Type Definitions
+```
