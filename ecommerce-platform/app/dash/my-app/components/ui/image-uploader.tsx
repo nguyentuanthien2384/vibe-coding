@@ -112,11 +112,21 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       {value ? (
         // Preview State
         (() => {
-          const previewUrl = getImageUrl(value);
+          const rawVal = value.trim();
+          const isImage =
+            rawVal.startsWith('/') ||
+            rawVal.startsWith('http://') ||
+            rawVal.startsWith('https://') ||
+            rawVal.startsWith('data:') ||
+            rawVal.includes('/uploads/') ||
+            /\.(png|jpg|jpeg|webp|svg)($|\?)/i.test(rawVal);
+
+          const previewUrl = getImageUrl(rawVal);
+
           return (
             <div className="relative group flex items-center gap-4 p-3 border border-gray-200 rounded-2xl bg-gray-50/50">
               <div className="w-14 h-14 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0 relative">
-                {previewUrl ? (
+                {isImage && previewUrl ? (
                   <Image
                     src={previewUrl}
                     alt="Icon preview"
@@ -126,11 +136,13 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                     className="object-contain p-1"
                     onError={() => setError('Không thể tải ảnh từ URL này')}
                   />
-                ) : null}
+                ) : (
+                  <span className="text-2xl">{value}</span>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-gray-700 truncate">{value}</p>
-                <p className="text-[11px] text-green-600 font-semibold mt-0.5">✓ Ảnh đã chọn</p>
+                <p className="text-[11px] text-green-600 font-semibold mt-0.5">✓ Icon đã chọn</p>
               </div>
               <button
                 type="button"

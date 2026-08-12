@@ -10,41 +10,7 @@ import {
   AdminProductMutateResponse,
   ProductFormData,
 } from '../features/products/types/product.types';
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
-async function getAccessToken(): Promise<string | null> {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('admin_access_token');
-}
-
-async function adminFetch<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const token = await getAccessToken();
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const res = await fetch(`${BASE_URL}/api/v1${path}`, {
-    ...options,
-    headers,
-  });
-
-  if (!res.ok) {
-    const errorBody = await res.json().catch(() => ({ message: 'Lỗi hệ thống' }));
-    throw new Error(
-      (errorBody as { message?: string }).message || `HTTP ${res.status}`,
-    );
-  }
-
-  return res.json() as Promise<T>;
-}
+import { adminFetch } from './admin-api';
 
 export interface GetAdminProductsParams {
   search?: string;

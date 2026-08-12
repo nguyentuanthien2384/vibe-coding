@@ -14,25 +14,43 @@ export interface CategoryTableRowProps {
 }
 
 const CategoryTableRow = ({ category, onEdit, onDelete }: CategoryTableRowProps) => {
-  const iconFullUrl = getImageUrl(category.iconUrl);
+  const renderCategoryIcon = () => {
+    const rawIcon = category.iconUrl?.trim();
+    if (!rawIcon) {
+      return <Tag className="w-5 h-5 text-gray-300" />;
+    }
+
+    const isImage =
+      rawIcon.startsWith('/') ||
+      rawIcon.startsWith('http://') ||
+      rawIcon.startsWith('https://') ||
+      rawIcon.startsWith('data:') ||
+      rawIcon.includes('/uploads/') ||
+      /\.(png|jpg|jpeg|webp|svg)($|\?)/i.test(rawIcon);
+
+    if (isImage) {
+      const fullUrl = getImageUrl(rawIcon);
+      return (
+        <Image
+          src={fullUrl}
+          alt={category.name}
+          width={40}
+          height={40}
+          unoptimized
+          className="object-contain hover:scale-110 transition-transform duration-500"
+        />
+      );
+    }
+
+    return <span className="text-xl leading-none">{rawIcon}</span>;
+  };
 
   return (
     <tr className="transition-colors duration-200 hover:bg-gray-50/80 border-b border-gray-100 last:border-b-0">
       {/* Icon */}
       <td className="px-6 py-4">
         <div className="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shadow-inner">
-          {iconFullUrl ? (
-            <Image
-              src={iconFullUrl}
-              alt={category.name}
-              width={40}
-              height={40}
-              unoptimized
-              className="object-contain hover:scale-110 transition-transform duration-500"
-            />
-          ) : (
-            <Tag className="w-5 h-5 text-gray-300" />
-          )}
+          {renderCategoryIcon()}
         </div>
       </td>
 
@@ -67,7 +85,7 @@ const CategoryTableRow = ({ category, onEdit, onDelete }: CategoryTableRowProps)
       <td className="px-6 py-4">
         <div className="flex items-center justify-end gap-1.5">
           <Link
-            href={`http://localhost:3001/categories/${category.slug}`}
+            href={`${process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'}/categories/${category.slug}`}
             target="_blank"
             rel="noopener noreferrer"
             title="Xem trên frontend"

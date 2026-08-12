@@ -5,20 +5,25 @@
  */
 
 import { cookies } from 'next/headers';
-import {
-  AdminCategoriesListResponse,
-} from '../../features/categories/types/category.types';
+import { AdminCategoriesListResponse } from '../../features/categories/types/category.types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+/**
+ * Server-side fetch helper cho Server Components.
+ * Lưu ý: Server Components trong Next.js App Router là read-only đối với Cookies.
+ * Không xoay (rotate) Refresh Token ở đây để tránh làm mất token của Client.
+ * Nếu 401, Server Component ném lỗi và để Client Component tự fetch & refresh token qua Route Handler.
+ */
 async function serverAdminFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const cookieStore = await cookies();
-  const token = cookieStore.get('admin_access_token')?.value;
+  const token = cookieStore.get('admin_access_token')?.value || cookieStore.get('accessToken')?.value;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   };
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -26,8 +31,7 @@ async function serverAdminFetch<T>(path: string, options: RequestInit = {}): Pro
   const res = await fetch(`${BASE_URL}/api/v1${path}`, {
     ...options,
     headers,
-    // Không cache kết quả admin — luôn lấy data mới nhất
-    cache: 'no-store',
+    cache: options.cache ?? 'no-store',
   });
 
   if (!res.ok) {

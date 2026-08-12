@@ -131,7 +131,7 @@ cd app/frontend
 npm install
 npm run dev
 ```
-*Customer Storefront Running at:* `http://localhost:3002`
+*Customer Storefront Running at:* `http://localhost:3000`
 
 ### Khởi chạy Admin Dashboard (`app/dash/my-app`)
 ```bash
@@ -139,7 +139,7 @@ cd app/dash/my-app
 npm install
 npm run dev
 ```
-*Admin Dashboard Running at:* `http://localhost:3000`
+*Admin Dashboard Running at:* `http://localhost:3002`
 
 ---
 

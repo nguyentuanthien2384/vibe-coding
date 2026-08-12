@@ -12,7 +12,7 @@ const AdminLogoutButton = ({ isCollapsed = false }: AdminLogoutButtonProps) => {
 
   const handleLogout = async () => {
     await logout();
-    window.location.href = '/login';
+    window.location.assign('/login');
   };
 
   return (
