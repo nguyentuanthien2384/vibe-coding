@@ -263,10 +263,12 @@ model Order {
   totalAmount    Decimal        @db.Decimal(10, 2)
   voucherCode    String?        @db.VarChar(50)
   orderNote      String?        @db.VarChar(500)
+  cancelReason   String?        @db.VarChar(500)
   paymentMethod  PaymentMethod  @default(QR_CODE)
   paymentStatus  PaymentStatus  @default(PENDING)
   orderStatus    OrderStatus    @default(PENDING)
   paidAt         DateTime?
+  completedAt    DateTime?
   cancelledAt    DateTime?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
@@ -278,6 +280,9 @@ model Order {
   @@index([userId, createdAt(sort: Desc)], name: "idx_order_user_created")
   @@index([sessionId], name: "idx_order_session")
   @@index([paymentStatus, orderStatus], name: "idx_order_status")
+  @@index([orderStatus, paymentStatus, createdAt(sort: Desc)], name: "idx_order_admin_filter")
+  @@index([customerPhone], name: "idx_order_customer_phone")
+  @@index([customerEmail], name: "idx_order_customer_email")
   @@map("orders")
 }
 
