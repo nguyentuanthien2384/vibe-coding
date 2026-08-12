@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { MiniCartItemData } from "../../../types/checkout";
+import { getImageUrl } from "../../../lib/image-url";
 
 interface MiniCartItemProps {
   item: MiniCartItemData;
@@ -17,7 +18,7 @@ export const MiniCartItem: React.FC<MiniCartItemProps> = ({ item }) => {
       <div className="w-16 h-16 rounded-xl bg-gray-100 flex-shrink-0 relative overflow-hidden border border-gray-100">
         {item.image ? (
           <Image
-            src={item.image}
+            src={getImageUrl(item.image)}
             alt={item.name}
             fill
             className="object-cover"

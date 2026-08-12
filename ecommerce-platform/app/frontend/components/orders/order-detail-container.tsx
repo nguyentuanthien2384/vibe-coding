@@ -12,6 +12,7 @@ import { ProfileSidebar } from "../profile/profile-sidebar";
 import { useAuthStore } from "../../store/use-auth-store";
 import { useCartStore } from "../../store/use-cart-store";
 import { logoutApi } from "../../lib/auth";
+import { getImageUrl } from "../../lib/image-url";
 
 interface OrderDetailContainerProps {
   orderCode: string;
@@ -349,7 +350,7 @@ export const OrderDetailContainer: React.FC<OrderDetailContainerProps> = ({
                     <div className="flex items-center gap-3.5 min-w-0">
                       {item.productImageUrl ? (
                         <Image
-                          src={item.productImageUrl}
+                          src={getImageUrl(item.productImageUrl)}
                           alt={item.productName}
                           width={56}
                           height={56}

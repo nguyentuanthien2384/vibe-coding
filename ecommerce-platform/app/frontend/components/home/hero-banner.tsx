@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getImageUrl } from "../../lib/image-url";
 
 interface HeroBannerProps {
   badgeLabel: string;
@@ -21,7 +22,7 @@ export const HeroBanner = ({
   return (
     <div className="relative w-full rounded-3xl overflow-hidden bg-slate-900 min-h-[380px] sm:min-h-[440px] flex items-center shadow-xl">
       <Image
-        src={imageUrl}
+        src={getImageUrl(imageUrl)}
         alt={title}
         fill
         priority

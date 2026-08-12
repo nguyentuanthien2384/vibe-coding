@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { ProductCardListProps } from '@/types/product-list';
+import { getImageUrl } from '@/lib/image-url';
 
 const ProductCardList = ({ product, onAddToCart }: ProductCardListProps) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -57,7 +58,7 @@ const ProductCardList = ({ product, onAddToCart }: ProductCardListProps) => {
       {/* Image */}
       <Link href={productUrl} className="relative w-full aspect-square bg-slate-100 overflow-hidden block">
         <Image
-          src={product.imageUrl}
+          src={getImageUrl(product.imageUrl)}
           alt={product.name}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"

@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { CartItemProps } from "../../types/cart";
 import { QuantityCounter } from "../ui/quantity-counter";
+import { getImageUrl } from "../../lib/image-url";
 
 export const CartItem: React.FC<CartItemProps> = ({
   item,
@@ -25,7 +26,7 @@ export const CartItem: React.FC<CartItemProps> = ({
       {/* Thumbnail (1:1 aspect ratio) */}
       <div className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-100">
         <Image
-          src={item.image}
+          src={getImageUrl(item.image)}
           alt={item.name}
           fill
           sizes="88px"

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { getImageUrl } from "../../lib/image-url";
 
 interface ProductGalleryProps {
   mainImageUrl: string;
@@ -46,7 +47,7 @@ export const ProductGallery = ({
         )}
 
         <Image
-          src={activeImage}
+          src={getImageUrl(activeImage)}
           alt={productName}
           fill
           priority
@@ -71,7 +72,7 @@ export const ProductGallery = ({
               }`}
             >
               <Image
-                src={imgUrl}
+                src={getImageUrl(imgUrl)}
                 alt={`${productName} thumbnail ${index + 1}`}
                 fill
                 sizes="(max-width: 640px) 25vw, 15vw"

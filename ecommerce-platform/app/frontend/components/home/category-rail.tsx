@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { getImageUrl } from "../../lib/image-url";
 
 export interface Category {
   name: string;
@@ -26,6 +27,26 @@ export const CategoryRail = ({
     ...categories,
   ];
 
+  const renderCategoryIcon = (iconUrl: string) => {
+    if (!iconUrl) return null;
+    const isImage =
+      iconUrl.startsWith("/") ||
+      iconUrl.startsWith("http://") ||
+      iconUrl.startsWith("https://") ||
+      iconUrl.includes("/uploads/");
+
+    if (isImage) {
+      return (
+        <img
+          src={getImageUrl(iconUrl)}
+          alt=""
+          className="w-5 h-5 object-contain shrink-0"
+        />
+      );
+    }
+    return <span className="text-lg sm:text-xl leading-none">{iconUrl}</span>;
+  };
+
   return (
     <div className="py-4 sm:py-6 md:py-8">
       <div className="flex flex-nowrap md:flex-wrap md:justify-center gap-2.5 sm:gap-3 md:gap-4 overflow-x-auto pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory">
@@ -44,9 +65,7 @@ export const CategoryRail = ({
                     : "bg-white border-slate-200 text-slate-700 hover:border-orange-400 hover:shadow-md hover:-translate-y-0.5"
                 }`}
               >
-                {cat.iconUrl && (
-                  <span className="text-lg sm:text-xl leading-none">{cat.iconUrl}</span>
-                )}
+                {renderCategoryIcon(cat.iconUrl)}
                 <span
                   className={`text-xs sm:text-sm font-medium ${
                     isActive ? "text-white" : "text-slate-700"
@@ -68,9 +87,7 @@ export const CategoryRail = ({
                   : "bg-white border-slate-200 text-slate-700 hover:border-orange-400 hover:shadow-md hover:-translate-y-0.5"
               }`}
             >
-              {cat.iconUrl && (
-                <span className="text-lg sm:text-xl leading-none">{cat.iconUrl}</span>
-              )}
+              {renderCategoryIcon(cat.iconUrl)}
               <span
                 className={`text-xs sm:text-sm font-medium ${
                   isActive ? "text-white" : "text-slate-700"

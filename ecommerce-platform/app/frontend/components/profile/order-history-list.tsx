@@ -9,6 +9,7 @@ import { useDebounce } from "../../hooks/use-debounce";
 import { OrderTrackingModal } from "./order-tracking-modal";
 import { useCartStore } from "../../store/use-cart-store";
 import { showToast } from "../ui/toast";
+import { getImageUrl } from "../../lib/image-url";
 
 /** Helper hiển thị badge Trạng thái Đơn hàng (Order Status) */
 function getOrderStatusBadge(status?: string) {
@@ -613,7 +614,7 @@ export const OrderHistoryList: React.FC<OrderHistoryListProps> = ({
                               <div className="flex items-center gap-3 min-w-0">
                                 {item.productImageUrl ? (
                                   <Image
-                                    src={item.productImageUrl}
+                                    src={getImageUrl(item.productImageUrl)}
                                     alt={item.productName}
                                     width={40}
                                     height={40}

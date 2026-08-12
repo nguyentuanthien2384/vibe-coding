@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useCartStore } from "../../store/use-cart-store";
+import { getImageUrl } from "../../lib/image-url";
 
 export interface Product {
   id: string;
@@ -60,7 +61,7 @@ export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
       {/* Image Container */}
       <Link href={productUrl} className="relative aspect-square bg-gray-100 overflow-hidden block">
         <Image
-          src={product.imageUrl}
+          src={getImageUrl(product.imageUrl)}
           alt={product.name}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"

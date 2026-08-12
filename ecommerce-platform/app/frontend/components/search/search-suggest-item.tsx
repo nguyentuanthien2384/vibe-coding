@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { SearchSuggestItemProps } from "../../types/search.types";
+import { getImageUrl } from "../../lib/image-url";
 
 export const SearchSuggestItem = ({ item, query, onClick }: SearchSuggestItemProps) => {
   const formatPrice = (amount: number) => {
@@ -34,7 +35,7 @@ export const SearchSuggestItem = ({ item, query, onClick }: SearchSuggestItemPro
       {/* Product Thumbnail */}
       <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-100 border border-slate-200/60 shrink-0 aspect-square group-hover:scale-105 group-hover:shadow-md transition-all duration-200">
         <Image
-          src={item.imageUrl}
+          src={getImageUrl(item.imageUrl)}
           alt={item.name}
           fill
           className="object-cover"

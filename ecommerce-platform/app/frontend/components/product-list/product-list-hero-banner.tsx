@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ProductListHeroBannerProps } from '@/types/product-list';
+import { getImageUrl } from '@/lib/image-url';
 
 const ProductListHeroBanner = ({ banners }: ProductListHeroBannerProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -39,7 +40,7 @@ const ProductListHeroBanner = ({ banners }: ProductListHeroBannerProps) => {
       {/* Background Image */}
       <Image
         key={currentBanner.id}
-        src={currentBanner.imageUrl}
+        src={getImageUrl(currentBanner.imageUrl)}
         alt={currentBanner.title}
         fill
         sizes="(max-width: 768px) 100vw, 1280px"

@@ -7,6 +7,7 @@ import { getOrderDetailApi } from "../../lib/orders";
 import { OrderDetailData } from "../../types/auth.types";
 import { showToast } from "../ui/toast";
 import { useCartStore } from "../../store/use-cart-store";
+import { getImageUrl } from "../../lib/image-url";
 
 interface OrderTrackingModalProps {
   isOpen: boolean;
@@ -341,7 +342,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                       <div className="flex items-center gap-3 min-w-0">
                         {item.productImageUrl ? (
                           <Image
-                            src={item.productImageUrl}
+                            src={getImageUrl(item.productImageUrl)}
                             alt={item.productName}
                             width={44}
                             height={44}
