@@ -1,15 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X, Save, Plus } from 'lucide-react';
-import { Category, CategoryFormData, CategoryStatus } from '../types/category.types';
+import { X, Save, Plus, Loader2, AlertCircle } from 'lucide-react';
+import { Category, CategoryFormData } from '../types/category.types';
+import { ImageUploader } from '../../../components/ui/image-uploader';
 
 export interface CategoryFormModalProps {
   isOpen: boolean;
   editingCategory: Category | null;
   categories: Category[];
+  isSubmitting: boolean;
+  submitError: string | null;
   onClose: () => void;
-  onSubmit: (data: CategoryFormData) => void;
+  onSubmit: (data: CategoryFormData) => Promise<void>;
 }
 
 const EMPTY_FORM: CategoryFormData = {
@@ -17,7 +20,7 @@ const EMPTY_FORM: CategoryFormData = {
   slug: '',
   iconUrl: '',
   parentId: null,
-  status: 'ACTIVE',
+  isActive: true,
 };
 
 const toSlug = (str: string) =>
@@ -34,6 +37,8 @@ const CategoryFormModal = ({
   isOpen,
   editingCategory,
   categories,
+  isSubmitting,
+  submitError,
   onClose,
   onSubmit,
 }: CategoryFormModalProps) => {
@@ -47,7 +52,7 @@ const CategoryFormModal = ({
           slug: editingCategory.slug,
           iconUrl: editingCategory.iconUrl ?? '',
           parentId: editingCategory.parentId,
-          status: editingCategory.status,
+          isActive: editingCategory.isActive,
         });
       } else {
         setForm(EMPTY_FORM);
@@ -59,17 +64,19 @@ const CategoryFormModal = ({
     setForm((prev) => ({
       ...prev,
       name,
-      slug: toSlug(name),
+      // Chỉ auto-gen slug khi đang tạo mới
+      ...(editingCategory ? {} : { slug: toSlug(name) }),
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    await onSubmit(form);
   };
 
+  // Loại trừ chính mình khỏi danh sách chuyên mục cha
   const parentOptions = categories.filter(
-    (c) => editingCategory ? c.id !== editingCategory.id : true
+    (c) => (editingCategory ? c.id !== editingCategory.id : true),
   );
 
   if (!isOpen) return null;
@@ -91,11 +98,20 @@ const CategoryFormModal = ({
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+            disabled={isSubmitting}
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-all disabled:opacity-50"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Submit Error Banner */}
+        {submitError && (
+          <div className="mx-6 mt-4 flex items-center gap-2.5 px-3.5 py-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{submitError}</span>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
@@ -114,7 +130,8 @@ const CategoryFormModal = ({
               onChange={(e) => handleNameChange(e.target.value)}
               placeholder="Ví dụ: Điện thoại thông minh"
               required
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              disabled={isSubmitting}
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400"
             />
           </div>
 
@@ -132,27 +149,17 @@ const CategoryFormModal = ({
               value={form.slug}
               onChange={(e) => setForm((p) => ({ ...p, slug: e.target.value }))}
               placeholder="dien-thoai-thong-minh"
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm font-mono bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              disabled={isSubmitting}
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm font-mono bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:text-gray-400"
             />
           </div>
 
-          {/* Icon URL */}
-          <div>
-            <label
-              htmlFor="field-icon"
-              className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5"
-            >
-              URL Ảnh icon
-            </label>
-            <input
-              id="field-icon"
-              type="url"
-              value={form.iconUrl}
-              onChange={(e) => setForm((p) => ({ ...p, iconUrl: e.target.value }))}
-              placeholder="https://example.com/icon.png"
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
-          </div>
+          {/* Icon Upload */}
+          <ImageUploader
+            value={form.iconUrl}
+            onChange={(url) => setForm((p) => ({ ...p, iconUrl: url }))}
+            disabled={isSubmitting}
+          />
 
           {/* Chuyên mục cha */}
           <div>
@@ -166,9 +173,13 @@ const CategoryFormModal = ({
               id="field-parent"
               value={form.parentId ?? ''}
               onChange={(e) =>
-                setForm((p) => ({ ...p, parentId: e.target.value || null }))
+                setForm((p) => ({
+                  ...p,
+                  parentId: e.target.value ? Number(e.target.value) : null,
+                }))
               }
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+              disabled={isSubmitting}
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white disabled:bg-gray-50 disabled:text-gray-400"
             >
               <option value="">-- Không có (Chuyên mục gốc) --</option>
               {parentOptions.map((c) => (
@@ -185,12 +196,14 @@ const CategoryFormModal = ({
               Trạng thái
             </label>
             <div className="flex items-center gap-3">
-              {(['ACTIVE', 'INACTIVE'] as CategoryStatus[]).map((s) => (
+              {([true, false] as boolean[]).map((val) => (
                 <label
-                  key={s}
+                  key={String(val)}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 cursor-pointer transition-all text-sm font-semibold ${
-                    form.status === s
-                      ? s === 'ACTIVE'
+                    isSubmitting ? 'opacity-50 pointer-events-none' : ''
+                  } ${
+                    form.isActive === val
+                      ? val
                         ? 'border-green-500 bg-green-50 text-green-700'
                         : 'border-gray-400 bg-gray-50 text-gray-600'
                       : 'border-gray-100 text-gray-400 hover:border-gray-200'
@@ -198,18 +211,16 @@ const CategoryFormModal = ({
                 >
                   <input
                     type="radio"
-                    name="status"
-                    value={s}
-                    checked={form.status === s}
-                    onChange={() => setForm((p) => ({ ...p, status: s }))}
+                    name="isActive"
+                    value={String(val)}
+                    checked={form.isActive === val}
+                    onChange={() => setForm((p) => ({ ...p, isActive: val }))}
                     className="sr-only"
                   />
                   <span
-                    className={`w-2 h-2 rounded-full ${
-                      s === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-400'
-                    }`}
+                    className={`w-2 h-2 rounded-full ${val ? 'bg-green-500' : 'bg-gray-400'}`}
                   />
-                  {s === 'ACTIVE' ? 'Hoạt động' : 'Ẩn'}
+                  {val ? 'Hoạt động' : 'Ẩn'}
                 </label>
               ))}
             </div>
@@ -220,16 +231,23 @@ const CategoryFormModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all"
+              disabled={isSubmitting}
+              className="px-4 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all disabled:opacity-50"
             >
               Hủy
             </button>
             <button
               id="btn-submit-form"
               type="submit"
-              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-xl transition-all shadow-sm shadow-blue-200"
+              disabled={isSubmitting}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-xl transition-all shadow-sm shadow-blue-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100"
             >
-              {isEdit ? (
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Đang lưu...
+                </>
+              ) : isEdit ? (
                 <>
                   <Save className="w-4 h-4" /> Lưu thay đổi
                 </>

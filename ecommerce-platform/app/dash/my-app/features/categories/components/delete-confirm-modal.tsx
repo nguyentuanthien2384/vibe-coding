@@ -1,10 +1,11 @@
 'use client';
 
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, Loader2 } from 'lucide-react';
 
 export interface DeleteConfirmModalProps {
   isOpen: boolean;
   categoryName: string;
+  isDeleting: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -12,6 +13,7 @@ export interface DeleteConfirmModalProps {
 const DeleteConfirmModal = ({
   isOpen,
   categoryName,
+  isDeleting,
   onConfirm,
   onCancel,
 }: DeleteConfirmModalProps) => {
@@ -43,7 +45,8 @@ const DeleteConfirmModal = ({
           </div>
           <button
             onClick={onCancel}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+            disabled={isDeleting}
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-all disabled:opacity-50"
           >
             <X className="w-4 h-4" />
           </button>
@@ -53,7 +56,7 @@ const DeleteConfirmModal = ({
         <p className="text-sm text-gray-600 leading-relaxed mb-6">
           Bạn có chắc chắn muốn xóa chuyên mục{' '}
           <span className="font-bold text-gray-900">&ldquo;{categoryName}&rdquo;</span> không?
-          Tất cả dữ liệu liên quan sẽ bị xóa vĩnh viễn.
+          Hành động này sẽ bị từ chối nếu chuyên mục còn sản phẩm hoặc chuyên mục con.
         </p>
 
         {/* Actions */}
@@ -61,16 +64,25 @@ const DeleteConfirmModal = ({
           <button
             id="btn-cancel-delete"
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all"
+            disabled={isDeleting}
+            className="px-4 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all disabled:opacity-50"
           >
             Hủy
           </button>
           <button
             id="btn-confirm-delete"
             onClick={onConfirm}
-            className="px-4 py-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 active:scale-95 rounded-xl transition-all shadow-sm shadow-red-200"
+            disabled={isDeleting}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 active:scale-95 rounded-xl transition-all shadow-sm shadow-red-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100"
           >
-            Xóa chuyên mục
+            {isDeleting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Đang xóa...
+              </>
+            ) : (
+              'Xóa chuyên mục'
+            )}
           </button>
         </div>
       </div>

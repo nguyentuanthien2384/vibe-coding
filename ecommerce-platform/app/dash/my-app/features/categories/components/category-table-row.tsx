@@ -5,25 +5,29 @@ import Link from 'next/link';
 import { Pencil, Trash2, ExternalLink, Tag } from 'lucide-react';
 import { Category } from '../types/category.types';
 import StatusBadge from './status-badge';
+import { getImageUrl } from '../../../lib/image-url';
 
 export interface CategoryTableRowProps {
   category: Category;
   onEdit: (category: Category) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
 }
 
 const CategoryTableRow = ({ category, onEdit, onDelete }: CategoryTableRowProps) => {
+  const iconFullUrl = getImageUrl(category.iconUrl);
+
   return (
     <tr className="transition-colors duration-200 hover:bg-gray-50/80 border-b border-gray-100 last:border-b-0">
       {/* Icon */}
       <td className="px-6 py-4">
         <div className="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shadow-inner">
-          {category.iconUrl ? (
+          {iconFullUrl ? (
             <Image
-              src={category.iconUrl}
+              src={iconFullUrl}
               alt={category.name}
               width={40}
               height={40}
+              unoptimized
               className="object-contain hover:scale-110 transition-transform duration-500"
             />
           ) : (
@@ -56,14 +60,14 @@ const CategoryTableRow = ({ category, onEdit, onDelete }: CategoryTableRowProps)
 
       {/* Trạng thái */}
       <td className="px-6 py-4">
-        <StatusBadge status={category.status} />
+        <StatusBadge isActive={category.isActive} />
       </td>
 
       {/* Actions */}
       <td className="px-6 py-4">
         <div className="flex items-center justify-end gap-1.5">
           <Link
-            href={`http://localhost:3001/category/${category.slug}`}
+            href={`http://localhost:3001/categories/${category.slug}`}
             target="_blank"
             rel="noopener noreferrer"
             title="Xem trên frontend"

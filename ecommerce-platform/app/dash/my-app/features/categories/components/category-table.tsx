@@ -7,7 +7,7 @@ import { LayoutList } from 'lucide-react';
 export interface CategoryTableProps {
   categories: Category[];
   onEdit: (category: Category) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
 }
 
 const CategoryTable = ({ categories, onEdit, onDelete }: CategoryTableProps) => {

@@ -129,3 +129,10 @@
 - Quy hoạch kỹ thuật Frontend (`01-category-plan.md`) từ idea `01-category-idea.md`, mockup `dash-products/index.html`.
 - Xây dựng hoàn chỉnh 10 components: `CategoryPageClient` (Client Container, useState + useDebounce 300ms, CRUD mock), `CategoryPageHeader`, `CategoryFilterBar`, `CategoryTable`, `CategoryTableRow`, `StatusBadge`, `CategoryPagination`, `CategoryFormModal` (Add/Edit, auto-slug), `DeleteConfirmModal`, `page.tsx` (Server Component).
 - Thêm `'use client'` đúng chỗ để onClick handlers hoạt động; xóa double padding với `AdminMainContent`. Build thành công, 0 lỗi TypeScript.
+
+## [2026-08-12] Hoàn thành Tích hợp API Quản lý Chuyên mục & Upload Ảnh Icon (Full-stack Admin Categories)
+- **Backend Quy hoạch & API Admin Categories ([category-admin-plan.md](file:///d:/vibe_coding/ecommerce-platform/.docs/backend-plans/dashboard/category-admin-plan.md)):** Xây dựng 5 RESTful endpoints (`GET`, `GET /:id`, `POST`, `PATCH`, `DELETE`) bảo mật qua `JwtAuthGuard` & `RolesGuard(ADMIN, STAFF)`.
+- **Logic Nghiệp vụ & An toàn Dữ liệu:** Chống đệ quy circular reference khi gán parentId, tự động sinh slug từ tiếng Việt có dấu, kiểm tra an toàn dữ liệu (chặn xóa khi còn sản phẩm/chuyên mục con) và tự động xóa cache Redis (`cache:v1:categories:*`).
+- **Module Upload Ảnh Icon:** Tích hợp `multer` upload ảnh (PNG, JPG, WebP, SVG), lưu file dạng tương đối (`/uploads/images/filename.ext`), phục vụ static files qua NestJS `useStaticAssets`.
+- **Tích hợp UI Admin Dashboard (Server Component + Toast UI):** Chuyển `page.tsx` thành async Server Component pre-fetch dữ liệu trang đầu (SSR), xây dựng `ToastProvider` thay thế alert mặc định, component `ImageUploader` hỗ trợ Drag & Drop file + xem trước + URL link. Tự động ghép origin từ biến môi trường `NEXT_PUBLIC_API_URL`. 0 lỗi TypeScript trên cả 3 dự án.
+
