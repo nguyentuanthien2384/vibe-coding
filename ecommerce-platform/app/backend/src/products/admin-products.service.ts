@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { UploadService } from '../upload/upload.service';
 import { CACHE_CONFIG } from '../config/cache.constants';
 import {
   GetAdminProductsDto,
@@ -35,6 +36,7 @@ export class AdminProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly uploadService: UploadService,
   ) {}
 
   // ============================================================
@@ -309,6 +311,10 @@ export class AdminProductsService {
       throw new BadRequestException('Giá khuyến mãi phải nhỏ hơn giá gốc của sản phẩm');
     }
 
+    const oldMainImage = existing.imageUrl;
+    const oldGalleryImages = (this.parseGalleryImages(existing.images) || []).map((i) => i.url);
+    const oldAllImages = Array.from(new Set([oldMainImage, ...oldGalleryImages]));
+
     try {
       const updated = await this.prisma.product.update({
         where: { id },
@@ -338,6 +344,16 @@ export class AdminProductsService {
       });
 
       await this.invalidatePublicCache();
+
+      // Dọn dẹp các ảnh cũ không còn sử dụng trong sản phẩm này
+      const newMainImage = updated.imageUrl;
+      const newGalleryImages = (this.parseGalleryImages(updated.images) || []).map((i) => i.url);
+      const newAllImagesSet = new Set([newMainImage, ...newGalleryImages]);
+
+      const removedImages = oldAllImages.filter((img) => !newAllImagesSet.has(img));
+      if (removedImages.length > 0) {
+        await this.uploadService.deleteImageFiles(removedImages, { excludeProductId: id });
+      }
 
       const data: AdminProductItem = {
         id: updated.id,
@@ -396,9 +412,17 @@ export class AdminProductsService {
       );
     }
 
+    const mainImage = product.imageUrl;
+    const galleryImages = (this.parseGalleryImages(product.images) || []).map((i) => i.url);
+    const allProductImages = Array.from(new Set([mainImage, ...galleryImages]));
+
     try {
       await this.prisma.product.delete({ where: { id } });
       await this.invalidatePublicCache();
+
+      if (allProductImages.length > 0) {
+        await this.uploadService.deleteImageFiles(allProductImages, { excludeProductId: id });
+      }
 
       return {
         statusCode: 200,

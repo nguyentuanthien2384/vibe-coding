@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { UploadService } from '../upload/upload.service';
 import { CACHE_CONFIG } from '../config/cache.constants';
 import { GetAdminCategoriesDto } from './dto/get-admin-categories.dto';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -30,6 +31,7 @@ export class AdminCategoriesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly uploadService: UploadService,
   ) {}
 
   // ============================================================
@@ -276,6 +278,11 @@ export class AdminCategoriesService {
 
       await this.invalidatePublicCache();
 
+      // Nếu iconUrl thay đổi, xóa file ảnh cũ nếu không còn ai dùng
+      if (category.iconUrl && dto.iconUrl !== undefined && dto.iconUrl !== category.iconUrl) {
+        await this.uploadService.deleteImageFile(category.iconUrl, { excludeCategoryId: id });
+      }
+
       const data: AdminCategoryCreated = {
         id: updated.id,
         name: updated.name,
@@ -330,9 +337,15 @@ export class AdminCategoriesService {
       );
     }
 
+    const oldIconUrl = category.iconUrl;
+
     try {
       await this.prisma.category.delete({ where: { id } });
       await this.invalidatePublicCache();
+
+      if (oldIconUrl) {
+        await this.uploadService.deleteImageFile(oldIconUrl, { excludeCategoryId: id });
+      }
 
       return {
         statusCode: 200,

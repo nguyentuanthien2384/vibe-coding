@@ -6,9 +6,10 @@ import { AdminProductsService } from './admin-products.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RedisModule } from '../redis/redis.module';
 import { AuthModule } from '../auth/auth.module';
+import { UploadModule } from '../upload/upload.module';
 
 @Module({
-  imports: [PrismaModule, RedisModule, AuthModule],
+  imports: [PrismaModule, RedisModule, AuthModule, UploadModule],
   controllers: [ProductsController, AdminProductsController],
   providers: [ProductsService, AdminProductsService],
   exports: [ProductsService, AdminProductsService],
