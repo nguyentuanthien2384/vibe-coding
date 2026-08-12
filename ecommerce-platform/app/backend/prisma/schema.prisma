@@ -115,21 +115,24 @@ model Category {
   @@map("categories")
 }
 
-/// Sản phẩm / Món ăn. Hỗ trợ hiển thị danh sách nổi bật ở Trang chủ.
+/// Sản phẩm / Món ăn. Hỗ trợ hiển thị danh sách nổi bật ở Trang chủ & Quản lý Admin Dashboard.
 model Product {
-  id          Int      @id @default(autoincrement())
-  name        String   @db.VarChar(255)
-  slug        String   @unique @db.VarChar(255)
-  description String?  @db.Text
-  price       Decimal  @db.Decimal(10, 2)
-  salePrice   Decimal? @db.Decimal(10, 2)
-  stock       Int      @default(0)
-  imageUrl    String   @db.VarChar(500)
-  categoryId  Int
-  isFeatured  Boolean  @default(false)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  name             String   @db.VarChar(255)
+  slug             String   @unique @db.VarChar(255)
+  shortDescription Json?    // Dữ liệu Rich Text Editor dạng JSON
+  longDescription  Json?    // Dữ liệu Rich Text Editor dạng JSON
+  description      String?  @db.Text
+  images           Json?    // Thư viện hình ảnh phụ đính kèm dạng JSON [{ url: string, position: number }]
+  price            Decimal  @db.Decimal(10, 2)
+  salePrice        Decimal? @db.Decimal(10, 2)
+  stock            Int      @default(0)
+  imageUrl         String   @db.VarChar(500)
+  categoryId       Int
+  isFeatured       Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   category   Category    @relation(fields: [categoryId], references: [id])
   cartItems  CartItem[]
@@ -140,6 +143,8 @@ model Product {
   @@index([slug], name: "idx_product_slug")
   @@index([isActive, name], name: "idx_product_active_name")
   @@index([name], name: "idx_product_name")
+  @@index([price], name: "idx_product_price")
+  @@index([stock], name: "idx_product_stock")
   @@map("products")
 }
 
