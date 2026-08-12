@@ -15,6 +15,7 @@ import { VouchersModule } from './vouchers/vouchers.module';
 import { OrdersModule } from './orders/orders.module';
 import { AddressesModule } from './addresses/addresses.module';
 import { MailModule } from './mail/mail.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { MailModule } from './mail/mail.module';
     OrdersModule,
     AddressesModule,
     MailModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [

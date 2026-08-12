@@ -111,6 +111,7 @@ model Category {
 
   @@index([slug], name: "idx_category_slug")
   @@index([isActive, position], name: "idx_category_active_position")
+  @@index([parentId], name: "idx_category_parent")
   @@map("categories")
 }
 
