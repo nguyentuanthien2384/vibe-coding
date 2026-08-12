@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import ProductFormContainer from '../../../../../features/products/components/product-form-container';
-import { MOCK_PRODUCTS } from '../../../../../features/products/data/mock-products';
+import { productsApi } from '../../../../../lib/products-api';
+import { ProductItem } from '../../../../../features/products/types/product.types';
 
 export const metadata: Metadata = {
   title: 'Chỉnh sửa sản phẩm | Admin Dashboard',
@@ -15,7 +16,15 @@ interface EditProductPageProps {
 
 export default async function EditProductPage({ params }: EditProductPageProps) {
   const { id } = await params;
-  const initialProduct = MOCK_PRODUCTS.find((p) => p.id === id) || MOCK_PRODUCTS[0];
+  const productId = Number(id);
+  let initialProduct: ProductItem | null = null;
 
-  return <ProductFormContainer mode="edit" initialData={initialProduct} />;
+  try {
+    const res = await productsApi.getOne(productId);
+    initialProduct = res.data;
+  } catch (error) {
+    initialProduct = null;
+  }
+
+  return <ProductFormContainer mode="edit" productId={productId} initialData={initialProduct} />;
 }

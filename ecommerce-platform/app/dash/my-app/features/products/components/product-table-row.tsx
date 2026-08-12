@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Pencil, Trash2 } from 'lucide-react';
 import { ProductItem } from '../types/product.types';
 import ProductStatusBadge from './product-status-badge';
+import { getImageUrl } from '../../../lib/image-url';
 
 interface ProductTableRowProps {
   product: ProductItem;
@@ -15,18 +16,19 @@ export default function ProductTableRow({
   onDelete,
   onCategoryClick,
 }: ProductTableRowProps) {
-  // Format price
-  const formattedPrice = new Intl.NumberFormat('en-US', {
+  const formattedPrice = new Intl.NumberFormat('vi-VN', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'VND',
   }).format(product.price);
 
   const formattedSalePrice = product.salePrice
-    ? new Intl.NumberFormat('en-US', {
+    ? new Intl.NumberFormat('vi-VN', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'VND',
       }).format(product.salePrice)
     : null;
+
+  const resolvedImageUrl = getImageUrl(product.imageUrl) || '/placeholder-food.png';
 
   return (
     <tr className="table-row transition-all duration-300 border-b border-gray-100 hover:bg-gray-50/80">
@@ -34,7 +36,7 @@ export default function ProductTableRow({
       <td className="px-6 py-4">
         <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center p-1 border border-gray-100 overflow-hidden shadow-inner relative group">
           <Image
-            src={product.imageUrl}
+            src={resolvedImageUrl}
             alt={product.name}
             width={56}
             height={56}
@@ -105,7 +107,7 @@ export default function ProductTableRow({
 
       {/* 6. Status */}
       <td className="px-6 py-4">
-        <ProductStatusBadge status={product.status} />
+        <ProductStatusBadge status={product.status || (product.isActive ? 'ACTIVE' : 'INACTIVE')} />
       </td>
 
       {/* 7. Action Buttons */}
@@ -124,7 +126,7 @@ export default function ProductTableRow({
           <button
             type="button"
             onClick={() => onDelete(product)}
-            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shadow-sm border border-transparent hover:border-red-100"
+            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shadow-sm border border-transparent hover:border-red-100 cursor-pointer"
             title="Xóa sản phẩm"
           >
             <Trash2 className="w-4 h-4" />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Bold,
   Italic,
@@ -10,17 +10,17 @@ import {
   Heading2,
   Quote,
   Code,
-  FileText,
   Copy,
   Check,
   Sparkles,
   Eraser,
+  FileText,
 } from 'lucide-react';
 import { JSONEditorContent } from '../../types/product.types';
 
 interface JSONRichEditorProps {
   label: string;
-  value: JSONEditorContent | null;
+  value: JSONEditorContent | Record<string, unknown> | null;
   onChange: (value: JSONEditorContent) => void;
   placeholder?: string;
 }
@@ -156,8 +156,6 @@ function parseInlineText(text: string) {
   if (!text) return [];
 
   const parts: Array<{ type: 'text'; text: string; marks?: Array<{ type: string }> }> = [];
-
-  // Simple parser supporting **bold** and *italic*
   const regex = /(\*\*.*?\*\*|\*.*?\*|[^*]+)/g;
   let match: RegExpExecArray | null;
 
@@ -186,6 +184,41 @@ function parseInlineText(text: string) {
   return parts;
 }
 
+// Extract text from JSON document for editor
+function extractTextFromJSON(jsonDoc: any): string {
+  if (!jsonDoc || !jsonDoc.content || !Array.isArray(jsonDoc.content)) return '';
+  return jsonDoc.content
+    .map((node: any) => {
+      if (node.type === 'heading') {
+        const prefix = node.attrs?.level === 2 ? '## ' : '# ';
+        const str = node.content?.map((c: any) => c.text || '').join('') || '';
+        return `${prefix}${str}`;
+      }
+      if (node.type === 'blockquote') {
+        const str = node.content?.map((p: any) => p.content?.map((c: any) => c.text || '').join('') || '').join('') || '';
+        return `> ${str}`;
+      }
+      if (node.type === 'bulletList') {
+        return node.content?.map((li: any) => {
+          const str = li.content?.map((p: any) => p.content?.map((c: any) => c.text || '').join('') || '').join('') || '';
+          return `- ${str}`;
+        }).join('\n') || '';
+      }
+      if (node.type === 'orderedList') {
+        return node.content?.map((li: any, idx: number) => {
+          const str = li.content?.map((p: any) => p.content?.map((c: any) => c.text || '').join('') || '').join('') || '';
+          return `${idx + 1}. ${str}`;
+        }).join('\n') || '';
+      }
+      if (node.type === 'paragraph') {
+        return node.content?.map((c: any) => c.text || '').join('') || '';
+      }
+      return '';
+    })
+    .filter(Boolean)
+    .join('\n');
+}
+
 export default function JSONRichEditor({
   label,
   value,
@@ -196,38 +229,27 @@ export default function JSONRichEditor({
   const [copied, setCopied] = useState(false);
 
   // Initialize raw text from value
-  const [text, setText] = useState(() => {
-    if (!value || !value.content) return '';
-    return extractTextFromJSON(value);
-  });
+  const [text, setText] = useState(() => extractTextFromJSON(value));
 
-  // Extract human readable text from JSON doc for editing
-  function extractTextFromJSON(jsonDoc: JSONEditorContent): string {
-    if (!jsonDoc || !jsonDoc.content) return '';
-    return jsonDoc.content
-      .map((node) => {
-        if (node.type === 'heading') {
-          const prefix = node.type === 'heading' ? '# ' : '';
-          const str = node.content?.map((c) => c.text || '').join('') || '';
-          return `${prefix}${str}`;
-        }
-        if (node.type === 'paragraph') {
-          return node.content?.map((c) => c.text || '').join('') || '';
-        }
-        return '';
-      })
-      .filter(Boolean)
-      .join('\n');
-  }
+  // Sync internal text state when value prop is updated asynchronously
+  const lastSerializedValue = useRef(JSON.stringify(value));
+  useEffect(() => {
+    const currentSerialized = JSON.stringify(value);
+    if (value && currentSerialized !== lastSerializedValue.current) {
+      lastSerializedValue.current = currentSerialized;
+      const newExtracted = extractTextFromJSON(value);
+      setText(newExtracted);
+    }
+  }, [value]);
 
   // Handle Text changes and auto-convert to JSON
   const handleTextChange = (newText: string) => {
     setText(newText);
     const jsonResult = convertTextToJSON(newText);
+    lastSerializedValue.current = JSON.stringify(jsonResult);
     onChange(jsonResult);
   };
 
-  // Helper toolbar actions
   const applyToolbarFormat = (prefix: string, suffix: string = '') => {
     const textarea = document.activeElement as HTMLTextAreaElement;
     if (textarea && textarea.tagName === 'TEXTAREA') {
@@ -262,7 +284,7 @@ export default function JSONRichEditor({
           {label}
         </label>
 
-        {/* Tab switch: Visual Editor vs JSON Code Inspector */}
+        {/* Tab switch */}
         <div className="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-semibold">
           <button
             type="button"
@@ -291,7 +313,6 @@ export default function JSONRichEditor({
       </div>
 
       {activeTab === 'editor' ? (
-        /* Visual Editor Box */
         <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white focus-within:ring-2 focus-within:ring-[#4880FF] focus-within:border-transparent transition-all shadow-sm">
           {/* Formatting Toolbar */}
           <div className="bg-gray-50/90 px-3 py-2 border-b border-gray-100 flex items-center gap-1 flex-wrap">
@@ -391,7 +412,6 @@ export default function JSONRichEditor({
           />
         </div>
       ) : (
-        /* Real-time JSON Code Inspector Output */
         <div className="border border-gray-800 bg-gray-950 rounded-2xl p-4 font-mono text-xs text-green-400 overflow-x-auto max-h-64 shadow-2xl relative group">
           <div className="flex items-center justify-between pb-3 border-b border-gray-800 mb-3">
             <span className="text-xs font-bold text-gray-400 flex items-center gap-1.5">

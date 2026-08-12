@@ -1,14 +1,16 @@
 'use client';
 
 import Image from 'next/image';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, Loader2, X } from 'lucide-react';
 import { ProductItem } from '../types/product.types';
+import { getImageUrl } from '../../../lib/image-url';
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   product: ProductItem | null;
+  isDeleting?: boolean;
 }
 
 export default function DeleteConfirmModal({
@@ -16,8 +18,11 @@ export default function DeleteConfirmModal({
   onClose,
   onConfirm,
   product,
+  isDeleting = false,
 }: DeleteConfirmModalProps) {
   if (!isOpen || !product) return null;
+
+  const resolvedImageUrl = getImageUrl(product.imageUrl) || '/placeholder-food.png';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
@@ -30,7 +35,8 @@ export default function DeleteConfirmModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all"
+            disabled={isDeleting}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -42,14 +48,14 @@ export default function DeleteConfirmModal({
             Xác nhận xóa sản phẩm?
           </h3>
           <p className="text-sm text-gray-500 font-medium">
-            Hành động này sẽ gỡ bỏ sản phẩm khỏi danh sách hiển thị hệ thống.
+            Hành động này sẽ xóa sản phẩm khỏi hệ thống (nếu sản phẩm đã phát sinh đơn hàng, hệ thống sẽ yêu cầu chuyển sang Tạm ẩn).
           </p>
 
           {/* Target Product Box */}
           <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-white p-1 border border-gray-200 overflow-hidden relative flex-shrink-0">
               <Image
-                src={product.imageUrl}
+                src={resolvedImageUrl}
                 alt={product.name}
                 width={48}
                 height={48}
@@ -61,7 +67,7 @@ export default function DeleteConfirmModal({
               <h4 className="text-sm font-bold text-[#202224] truncate">
                 {product.name}
               </h4>
-              <p className="text-xs text-gray-400 font-mono">ID: {product.id}</p>
+              <p className="text-xs text-gray-400 font-mono">ID: #{product.id}</p>
             </div>
           </div>
         </div>
@@ -71,16 +77,25 @@ export default function DeleteConfirmModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-3 px-4 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all"
+            disabled={isDeleting}
+            className="flex-1 py-3 px-4 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all disabled:opacity-50"
           >
             Hủy bỏ
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all shadow-lg shadow-red-200 active:scale-95"
+            disabled={isDeleting}
+            className="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all shadow-lg shadow-red-200 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
-            Xác nhận xóa
+            {isDeleting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Đang xóa...</span>
+              </>
+            ) : (
+              <span>Xác nhận xóa</span>
+            )}
           </button>
         </div>
       </div>
