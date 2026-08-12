@@ -1,17 +1,37 @@
-export type ProductStatus = 'ACTIVE' | 'OUT_OF_STOCK' | 'DRAFT';
+export type ProductStatus = 'ACTIVE' | 'INACTIVE';
+
+export interface CategoryOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export interface JSONEditorContent {
+  type: 'doc';
+  content: Array<{
+    type: string;
+    content?: Array<{
+      type: string;
+      text?: string;
+      marks?: Array<{ type: string; attrs?: Record<string, unknown> }>;
+    }>;
+  }>;
+}
 
 export interface ProductItem {
   id: string;
   name: string;
   slug: string;
-  categoryId: string;
-  categoryName: string;
   price: number;
-  salePrice?: number;
+  salePrice?: number | null;
   stock: number;
   imageUrl: string;
-  colors: string[];
+  categoryId: string;
+  categoryName: string;
+  isFeatured: boolean;
   status: ProductStatus;
+  shortDescription: JSONEditorContent | null;
+  longDescription: JSONEditorContent | null;
   createdAt: string;
 }
 
@@ -20,9 +40,11 @@ export interface ProductFormData {
   slug: string;
   categoryId: string;
   price: number;
-  salePrice?: number;
+  salePrice?: number | null;
   stock: number;
   imageUrl: string;
-  colors: string[];
+  isFeatured: boolean;
   status: ProductStatus;
+  shortDescription: JSONEditorContent | null;
+  longDescription: JSONEditorContent | null;
 }

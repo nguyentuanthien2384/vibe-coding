@@ -1,5 +1,3 @@
-'use client';
-
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ProductPaginationProps {
@@ -23,30 +21,35 @@ export default function ProductPagination({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="px-6 py-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-      <p className="text-sm text-slate-500 font-semibold">
-        Hiển thị <span className="text-slate-900 font-extrabold">{startItem}-{endItem}</span> trên tổng số{' '}
-        <span className="text-slate-900 font-extrabold">{totalItems}</span> sản phẩm
+    <div className="px-6 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p className="text-sm text-gray-500 font-semibold tracking-wide">
+        Showing <span className="text-[#202224] font-extrabold">{startItem}-{endItem}</span> of{' '}
+        <span className="text-[#202224] font-extrabold">{totalItems}</span> products
       </p>
 
       <div className="flex items-center gap-2">
+        {/* Previous Button */}
         <button
+          type="button"
+          disabled={currentPage <= 1}
           onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-[#4880FF] hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500 rounded-xl transition-all border border-slate-200 disabled:border-slate-100 cursor-pointer disabled:cursor-not-allowed"
+          className="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-[#4880FF] hover:bg-blue-50 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-500 rounded-xl transition-all shadow-sm border border-gray-200 hover:border-blue-200 cursor-pointer disabled:cursor-not-allowed"
           title="Trang trước"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
 
-        <span className="text-sm font-bold text-slate-700 px-2">
+        {/* Current / Total info */}
+        <span className="px-3 py-1 text-sm font-bold text-[#202224]">
           {currentPage} / {totalPages || 1}
         </span>
 
+        {/* Next Button */}
         <button
+          type="button"
+          disabled={currentPage >= totalPages || totalPages === 0}
           onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage >= totalPages}
-          className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-[#4880FF] hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500 rounded-xl transition-all border border-slate-200 disabled:border-slate-100 cursor-pointer disabled:cursor-not-allowed"
+          className="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-[#4880FF] hover:bg-blue-50 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-500 rounded-xl transition-all shadow-sm border border-gray-200 hover:border-blue-200 cursor-pointer disabled:cursor-not-allowed"
           title="Trang sau"
         >
           <ChevronRight className="w-5 h-5" />
