@@ -8,8 +8,11 @@ import { RedisModule } from '../redis/redis.module';
 import { VouchersModule } from '../vouchers/vouchers.module';
 import { AuthModule } from '../auth/auth.module';
 
+import { MailModule } from '../mail/mail.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+
 @Module({
-  imports: [PrismaModule, RedisModule, VouchersModule, AuthModule],
+  imports: [PrismaModule, RedisModule, VouchersModule, AuthModule, MailModule, NotificationsModule],
   controllers: [OrdersController, AdminOrdersController],
   providers: [OrdersService, AdminOrdersService],
   exports: [OrdersService, AdminOrdersService],

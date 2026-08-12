@@ -8,6 +8,8 @@ import {
   renderOrderConfirmationEmail,
   renderPasswordChangedEmail,
   renderSecurityAlertEmail,
+  renderOrderStatusUpdatedByAdminEmail,
+  renderPaymentConfirmedByAdminEmail,
 } from './templates/email-templates';
 
 @Injectable()
@@ -141,6 +143,56 @@ export class MailService {
       subject,
       type: EmailType.ORDER_CONFIRMATION,
       metadata: { orderCode: data.orderCode, totalAmount: data.totalAmount },
+    });
+    setImmediate(() => this.dispatchMail(log.id, html));
+  }
+
+  /**
+   * Xử lý gửi email Thông báo khi Admin Cập nhật trạng thái đơn hàng (CONFIRMED, PROCESSING, SHIPPING, DELIVERED, CANCELLED, REFUNDED...)
+   */
+  async sendOrderStatusUpdatedNotification(data: {
+    userId?: number;
+    email: string;
+    customerName: string;
+    orderCode: string;
+    orderStatus: string;
+    totalAmount: number;
+    cancelReason?: string;
+  }) {
+    const { subject, html } = renderOrderStatusUpdatedByAdminEmail(data);
+    const log = await this.createLog({
+      userId: data.userId,
+      recipient: data.email,
+      subject,
+      type: EmailType.ORDER_STATUS_CHANGED,
+      metadata: {
+        orderCode: data.orderCode,
+        status: data.orderStatus,
+        totalAmount: data.totalAmount,
+        cancelReason: data.cancelReason,
+      },
+    });
+    setImmediate(() => this.dispatchMail(log.id, html));
+  }
+
+  /**
+   * Xử lý gửi email Thông báo khi Admin Xác nhận thanh toán (PAID)
+   */
+  async sendPaymentConfirmedNotification(data: {
+    userId?: number;
+    email: string;
+    customerName: string;
+    orderCode: string;
+    totalAmount: number;
+    paymentMethod: string;
+  }) {
+    const { subject, html } = renderPaymentConfirmedByAdminEmail(data);
+    const log = await this.createLog({
+      userId: data.userId,
+      recipient: data.email,
+      subject,
+      type: EmailType.PAYMENT_CONFIRMED,
+      metadata: { orderCode: data.orderCode, paymentStatus: 'PAID', totalAmount: data.totalAmount },
     });
     setImmediate(() => this.dispatchMail(log.id, html));
   }
@@ -326,6 +378,23 @@ export class MailService {
         break;
       case EmailType.SECURITY_ALERT:
         html = renderSecurityAlertEmail(metadata.fullName || 'bạn', metadata.ipAddress).html;
+        break;
+      case EmailType.ORDER_STATUS_CHANGED:
+        html = renderOrderStatusUpdatedByAdminEmail({
+          customerName: metadata.customerName || log.recipient,
+          orderCode: metadata.orderCode || 'TB-000000',
+          orderStatus: metadata.status || 'CONFIRMED',
+          totalAmount: metadata.totalAmount || 0,
+          cancelReason: metadata.cancelReason,
+        }).html;
+        break;
+      case EmailType.PAYMENT_CONFIRMED:
+        html = renderPaymentConfirmedByAdminEmail({
+          customerName: metadata.customerName || log.recipient,
+          orderCode: metadata.orderCode || 'TB-000000',
+          totalAmount: metadata.totalAmount || 0,
+          paymentMethod: metadata.paymentMethod || 'QR_CODE',
+        }).html;
         break;
     }
 

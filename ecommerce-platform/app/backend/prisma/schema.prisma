@@ -61,6 +61,8 @@ enum VoucherDiscountType {
 enum EmailType {
   REGISTER_WELCOME
   ORDER_CONFIRMATION
+  ORDER_STATUS_CHANGED
+  PAYMENT_CONFIRMED
   PASSWORD_CHANGED
   SECURITY_ALERT
 }
@@ -167,10 +169,11 @@ model User {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  cart      Cart?
-  orders    Order[]
-  addresses Address[]
-  emailLogs EmailLog[]
+  cart          Cart?
+  orders        Order[]
+  addresses     Address[]
+  emailLogs     EmailLog[]
+  notifications Notification[]
 
   @@index([email], name: "idx_user_email")
   @@index([role, isActive], name: "idx_user_role_active")
@@ -354,4 +357,31 @@ model EmailLog {
   @@index([type, status], name: "idx_email_log_type_status")
   @@index([createdAt], name: "idx_email_log_created_at")
   @@map("email_logs")
+}
+
+// =============================================================================
+// MODULE: REALTIME IN-APP NOTIFICATIONS
+// =============================================================================
+
+enum NotificationType {
+  ORDER_STATUS_CHANGED
+  PAYMENT_CONFIRMED
+  SYSTEM_ALERT
+}
+
+/// Bảng lưu thông báo đẩy In-App của người dùng
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int
+  title     String           @db.VarChar(255)
+  content   String           @db.Text
+  type      NotificationType @default(ORDER_STATUS_CHANGED)
+  orderCode String?          @db.VarChar(50)
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt(sort: Desc)], name: "idx_notification_user")
+  @@map("notifications")
 }

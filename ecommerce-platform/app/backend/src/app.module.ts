@@ -17,6 +17,8 @@ import { AddressesModule } from './addresses/addresses.module';
 import { MailModule } from './mail/mail.module';
 import { UploadModule } from './upload/upload.module';
 
+import { NotificationsModule } from './notifications/notifications.module';
+
 @Module({
   imports: [
     ThrottlerModule.forRoot([
@@ -38,6 +40,7 @@ import { UploadModule } from './upload/upload.module';
     AddressesModule,
     MailModule,
     UploadModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

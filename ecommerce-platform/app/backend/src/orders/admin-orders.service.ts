@@ -13,7 +13,10 @@ import {
   AdminOrderDetailResponse,
   AdminOrderMutateResponse,
 } from './interfaces/admin-order.interface';
-import { OrderStatus, PaymentStatus, Prisma } from '@prisma/client';
+import { OrderStatus, PaymentStatus, NotificationType, Prisma } from '@prisma/client';
+
+import { MailService } from '../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AdminOrdersService {
@@ -22,6 +25,8 @@ export class AdminOrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService,
+    private readonly mailService: MailService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -341,6 +346,99 @@ export class AdminOrdersService {
       await this.redisService.del(`cache:v1:orders:detail:${order.orderCode}`);
     } catch (error) {
       this.logger.warn(`Lỗi xóa Redis Cache khi cập nhật đơn hàng: ${error.message}`);
+    }
+
+    // Kiểm tra thực tế trạng thái đơn hàng / thanh toán có thay đổi hay không
+    const hasOrderStatusChanged =
+      dto.orderStatus !== undefined && dto.orderStatus !== order.orderStatus;
+    const hasPaymentStatusChanged =
+      updatedOrder.paymentStatus !== order.paymentStatus;
+
+    if (!hasOrderStatusChanged && !hasPaymentStatusChanged) {
+      this.logger.log(
+        `[Notification Skipped] Trạng thái đơn hàng ${order.orderCode} không thay đổi (${order.orderStatus} / ${order.paymentStatus}). Không kích hoạt thông báo.`,
+      );
+    } else {
+      // 5. Gửi Email thông báo bất đồng bộ cho Khách hàng khi trạng thái có THAY ĐỔI
+      try {
+        // 5.1. Thông báo Email khi trạng thái Đơn hàng thay đổi (Áp dụng cho mọi mốc trạng thái: CONFIRMED, PROCESSING, SHIPPING, DELIVERED, CANCELLED, REFUNDED...)
+        if (hasOrderStatusChanged) {
+          await this.mailService.sendOrderStatusUpdatedNotification({
+            userId: order.userId || undefined,
+            email: order.customerEmail,
+            customerName: order.customerName,
+            orderCode: order.orderCode,
+            orderStatus: updatedOrder.orderStatus,
+            totalAmount: Number(order.totalAmount),
+            cancelReason: updatedOrder.cancelReason || undefined,
+          });
+        }
+
+        // 5.2. Thông báo khi Admin Xác nhận thanh toán thành công (PAID)
+        if (
+          hasPaymentStatusChanged &&
+          updatedOrder.paymentStatus === PaymentStatus.PAID
+        ) {
+          await this.mailService.sendPaymentConfirmedNotification({
+            userId: order.userId || undefined,
+            email: order.customerEmail,
+            customerName: order.customerName,
+            orderCode: order.orderCode,
+            totalAmount: Number(order.totalAmount),
+            paymentMethod: order.paymentMethod,
+          });
+        }
+      } catch (mailErr: any) {
+        this.logger.error(
+          `Lỗi khi kích hoạt gửi email thông báo đơn hàng ${order.orderCode}: ${mailErr.message}`,
+        );
+      }
+
+      // 6. Gửi Real-time In-App Push Notification khi trạng thái có THAY ĐỔI
+      try {
+        if (order.userId) {
+          if (hasOrderStatusChanged) {
+            const statusLabels: Record<string, string> = {
+              PENDING: 'Chờ xác nhận ⏳',
+              CONFIRMED: 'Đã xác nhận và chuyển sang bộ phận chuẩn bị',
+              PROCESSING: 'Đang được chế biến / đóng gói 🍳',
+              SHIPPING: 'Đang trên đường giao tới bạn 🚚',
+              DELIVERED: 'Đã giao hàng hoàn tất thành công 🎉',
+              CANCELLED: 'Đã bị hủy ❌',
+              REFUNDED: 'Đã được hoàn tiền 💸',
+            };
+            const label = statusLabels[updatedOrder.orderStatus] || updatedOrder.orderStatus;
+            await this.notificationsService.createNotification({
+              userId: order.userId,
+              title: `Đơn hàng #${order.orderCode} cập nhật trạng thái`,
+              content: `Đơn hàng #${order.orderCode} của bạn hiện: ${label}.`,
+              type: NotificationType.ORDER_STATUS_CHANGED,
+              orderCode: order.orderCode,
+            });
+          }
+
+          if (
+            hasPaymentStatusChanged &&
+            updatedOrder.paymentStatus === PaymentStatus.PAID
+          ) {
+            await this.notificationsService.createNotification({
+              userId: order.userId,
+              title: `Xác nhận thanh toán đơn hàng #${order.orderCode}`,
+              content: `Đơn hàng #${order.orderCode} đã được ghi nhận thanh toán thành công. Cảm ơn bạn! 💳`,
+              type: NotificationType.PAYMENT_CONFIRMED,
+              orderCode: order.orderCode,
+            });
+          }
+        } else {
+          this.logger.log(
+            `[In-App Notification Skipped] Đơn hàng #${order.orderCode} là đơn khách vãng lai (không có userId). Đã phát Email thông báo tới ${order.customerEmail}.`,
+          );
+        }
+      } catch (notifErr: any) {
+        this.logger.error(
+          `Lỗi khi phát thông báo đẩy In-App cho đơn hàng ${order.orderCode}: ${notifErr.message}`,
+        );
+      }
     }
 
     return {

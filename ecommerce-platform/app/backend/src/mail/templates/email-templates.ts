@@ -297,3 +297,86 @@ export function renderSecurityAlertEmail(fullName: string, ipAddress?: string): 
   const template = Handlebars.compile(BASE_TEMPLATE);
   return { subject, html: template({ subject, bodyContent }) };
 }
+
+export function renderOrderStatusUpdatedByAdminEmail(data: {
+  customerName: string;
+  orderCode: string;
+  orderStatus: string;
+  totalAmount: number;
+  cancelReason?: string;
+}): { subject: string; html: string } {
+  const frontendUrl = getFrontendUrl();
+
+  const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
+    PENDING: { label: 'CHỜ XÁC NHẬN ⏳', color: '#d97706', bg: '#fef3c7' },
+    CONFIRMED: { label: 'ĐÃ XÁC NHẬN 🎉', color: '#2563eb', bg: '#dbeafe' },
+    PROCESSING: { label: 'ĐANG XỬ LÝ / CHẾ BIẾN 🍳', color: '#7c3aed', bg: '#f3e8ff' },
+    SHIPPING: { label: 'ĐANG GIAO HÀNG 🚚', color: '#0284c7', bg: '#e0f2fe' },
+    DELIVERED: { label: 'ĐÃ GIAO HÀNG HOÀN TẤT ✅', color: '#059669', bg: '#d1fae5' },
+    CANCELLED: { label: 'ĐÃ HỦY ❌', color: '#dc2626', bg: '#fee2e2' },
+    REFUNDED: { label: 'ĐÃ HOÀN TIỀN 💸', color: '#4b5563', bg: '#f3f4f6' },
+  };
+
+  const config = statusConfig[data.orderStatus] || {
+    label: data.orderStatus,
+    color: '#2563eb',
+    bg: '#dbeafe',
+  };
+
+  const subject = `📦 Đơn hàng #${data.orderCode} cập nhật trạng thái: ${config.label} - TechBite`;
+
+  const reasonHtml =
+    data.orderStatus === 'CANCELLED' && data.cancelReason
+      ? `<p style="margin: 4px 0; font-size: 14px; color: #dc2626;"><strong>Lý do hủy đơn:</strong> ${data.cancelReason}</p>`
+      : '';
+
+  const bodyContent = `
+    <div class="greeting">Xin chào ${data.customerName}!</div>
+    <div class="message">
+      Cập nhật mới nhất! Đơn hàng <strong>#${data.orderCode}</strong> của bạn vừa được cập nhật trạng thái mới.
+    </div>
+    <div class="card-box" style="border-color: ${config.color}; background-color: ${config.bg};">
+      <div style="font-size: 16px; font-weight: 700; color: ${config.color}; margin-bottom: 8px;">
+        📦 Trạng thái mới: <span>${config.label}</span>
+      </div>
+      <p style="margin: 4px 0; font-size: 14px; color: #0f172a;"><strong>Mã đơn hàng:</strong> #${data.orderCode}</p>
+      <p style="margin: 4px 0; font-size: 14px; color: #0f172a;"><strong>Tổng tiền đơn hàng:</strong> <span style="font-weight: 800; color: #ff8c42;">${data.totalAmount.toLocaleString('vi-VN')} đ</span></p>
+      ${reasonHtml}
+    </div>
+    <div class="cta-container">
+      <a href="${frontendUrl}/orders/${data.orderCode}" class="cta-btn" style="background-color: ${config.color};">Theo dõi chi tiết đơn hàng 🚚</a>
+    </div>
+  `;
+
+  const template = Handlebars.compile(BASE_TEMPLATE);
+  return { subject, html: template({ subject, bodyContent }) };
+}
+
+export function renderPaymentConfirmedByAdminEmail(data: {
+  customerName: string;
+  orderCode: string;
+  totalAmount: number;
+  paymentMethod: string;
+}): { subject: string; html: string } {
+  const frontendUrl = getFrontendUrl();
+  const subject = `💳 Xác nhận thanh toán thành công cho đơn hàng #${data.orderCode} - TechBite`;
+  const bodyContent = `
+    <div class="greeting">Xin chào ${data.customerName}!</div>
+    <div class="message">
+      Hệ thống xác nhận giao dịch thanh toán cho đơn hàng <strong>#${data.orderCode}</strong> đã được ghi nhận thành công vào lúc <strong>${new Date().toLocaleString('vi-VN')}</strong>.
+    </div>
+    <div class="card-box" style="border-color: #10b981; background-color: #f0fdf4;">
+      <div style="font-size: 16px; font-weight: 700; color: #065f46; margin-bottom: 8px;">✅ Trạng thái thanh toán: <span style="color: #059669;">ĐÃ THANH TOÁN (PAID)</span></div>
+      <p style="margin: 4px 0; font-size: 14px;"><strong>Mã đơn hàng:</strong> #${data.orderCode}</p>
+      <p style="margin: 4px 0; font-size: 14px;"><strong>Số tiền đã thanh toán:</strong> <span style="font-weight: 800; color: #059669;">${data.totalAmount.toLocaleString('vi-VN')} đ</span></p>
+      <p style="margin: 4px 0; font-size: 14px;"><strong>Phương thức thanh toán:</strong> ${data.paymentMethod === 'QR_CODE' || data.paymentMethod === 'VIETQR' ? 'Chuyển khoản VietQR Code' : 'Thanh toán khi nhận hàng (COD)'}</p>
+    </div>
+    <div class="cta-container">
+      <a href="${frontendUrl}/orders/${data.orderCode}" class="cta-btn" style="background-color: #10b981;">Xem chi tiết hóa đơn 📄</a>
+    </div>
+  `;
+
+  const template = Handlebars.compile(BASE_TEMPLATE);
+  return { subject, html: template({ subject, bodyContent }) };
+}
+

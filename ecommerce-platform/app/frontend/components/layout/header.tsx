@@ -9,6 +9,8 @@ import { useAuthInit } from "../../hooks/use-auth-init";
 import { SearchBar } from "../search/search-bar";
 import { MobileSearchModal } from "../search/mobile-search-modal";
 
+import { NotificationBell } from "../notifications/notification-bell";
+
 export const Header = () => {
   const pathname = usePathname();
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
