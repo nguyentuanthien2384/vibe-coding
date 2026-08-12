@@ -131,7 +131,7 @@ cd app/frontend
 npm install
 npm run dev
 ```
-*Customer Storefront Running at:* `http://localhost:3000`
+*Customer Storefront Running at:* `http://localhost:3002`
 
 ### Khởi chạy Admin Dashboard (`app/dash/my-app`)
 ```bash
@@ -139,7 +139,7 @@ cd app/dash/my-app
 npm install
 npm run dev
 ```
-*Admin Dashboard Running at:* `http://localhost:3001` (hoặc `http://localhost:3002` nếu chạy đồng thời)
+*Admin Dashboard Running at:* `http://localhost:3000`
 
 ---
 
@@ -160,4 +160,3 @@ npm run dev
 Dự án được phát triển cho mục đích học tập và triển khai mô hình Thương mại điện tử Enterprise. 
 
 © 2026 **Vibe Coding Team**. All rights reserved.
-

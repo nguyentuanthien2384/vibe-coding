@@ -19,7 +19,7 @@ export async function GET(
       statusCode: number;
       message: string;
       data: any;
-    }>(`/orders/${orderCode}`, {
+    }>(`/api/v1/orders/${orderCode}`, {
       method: "GET",
     });
 

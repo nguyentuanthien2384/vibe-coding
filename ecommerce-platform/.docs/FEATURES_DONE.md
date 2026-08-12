@@ -136,3 +136,11 @@
 - **Module Upload Ảnh Icon:** Tích hợp `multer` upload ảnh (PNG, JPG, WebP, SVG), lưu file dạng tương đối (`/uploads/images/filename.ext`), phục vụ static files qua NestJS `useStaticAssets`.
 - **Tích hợp UI Admin Dashboard (Server Component + Toast UI):** Chuyển `page.tsx` thành async Server Component pre-fetch dữ liệu trang đầu (SSR), xây dựng `ToastProvider` thay thế alert mặc định, component `ImageUploader` hỗ trợ Drag & Drop file + xem trước + URL link. Tự động ghép origin từ biến môi trường `NEXT_PUBLIC_API_URL`. 0 lỗi TypeScript trên cả 3 dự án.
 
+## [2026-08-12] Hoàn thành Quy hoạch, Backend API & Tích hợp UI Module Quản lý Sản phẩm (Full-stack Admin Products)
+- **Bản quy hoạch Back-end & DB Schema (`02-product-plan.md` & `schema.prisma`):** Định nghĩa chi tiết DTO, API Contract, bổ sung `shortDescription` JSON, `longDescription` JSON, trường `images` JSON (thư viện ảnh phụ đính kèm) và các index tối ưu `price`/`stock`. Đồng bộ thành công MySQL DB qua `npx prisma db push`.
+- **NestJS Admin Products Module (`admin-products.controller.ts` & `admin-products.service.ts`):** Xây dựng 5 RESTful endpoints (`GET`, `GET /:id`, `POST`, `PATCH`, `DELETE`) bảo mật qua `JwtAuthGuard` & `RolesGuard`. Xử lý tự động sinh slug, validation `salePrice < price`, xóa cache Redis public (`cache:v1:products:*`) và kiểm tra an toàn đơn hàng (chặn xóa vĩnh viễn sản phẩm đã có `OrderItem`).
+- **Tích hợp UI Admin Dashboard (`ProductPageClient` & `ProductFormContainer`):** Tải danh sách SSR pre-fetch, bộ lọc debounced search, chọn danh mục động, tích hợp JSON Rich Editor, tự động nối origin backend `getImageUrl` và xử lý đầy đủ 3 trạng thái UI (Loading, Error với Toast/Alert, Success/Empty).
+- **Thư viện ảnh sản phẩm & Chức năng sắp xếp thứ tự (Media Gallery & Reordering):** Tải lên nhiều file ảnh từ thiết bị/dán URL, chọn 1 ảnh làm đại diện chính ⭐, nút di chuyển Trái/Phải để sắp xếp thứ tự vị trí hiển thị `#1`, `#2`, `#3`... và tự động chuẩn hóa vị trí. Build thành công 100% trên cả Frontend và Backend.
+
+
+

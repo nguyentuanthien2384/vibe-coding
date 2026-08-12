@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
         };
         statusCounts?: Record<string, number>;
       };
-    }>(`/orders/my-orders?${queryString}`, {
+    }>(`/api/v1/orders/my-orders?${queryString}`, {
       method: "GET",
     });
 

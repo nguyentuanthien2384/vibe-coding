@@ -6,6 +6,17 @@ import { cookies } from 'next/headers';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
+/** Keeps the backend HTTP status available to Next.js route handlers. */
+export class ApiRequestError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+}
+
 /**
  * Helper parse giá trị Cookie từ chuỗi Header Set-Cookie
  */
@@ -115,7 +126,10 @@ export async function serverApiFetch<T>(
   if (!res.ok) {
     const errorData = await res.json().catch(() => null);
     const errorMsg = errorData?.message || `API error ${res.status}: ${url}`;
-    throw new Error(Array.isArray(errorMsg) ? errorMsg.join(', ') : errorMsg);
+    throw new ApiRequestError(
+      Array.isArray(errorMsg) ? errorMsg.join(', ') : errorMsg,
+      res.status,
+    );
   }
 
   return res.json() as Promise<T>;
