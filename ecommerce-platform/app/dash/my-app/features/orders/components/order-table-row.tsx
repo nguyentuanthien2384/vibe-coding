@@ -7,6 +7,7 @@ import { OrderStatusBadge } from './order-status-badge';
 import { PaymentStatusBadge } from './payment-status-badge';
 import { QuickStatusDropdown } from './quick-status-dropdown';
 import { QuickPaymentStatusDropdown } from './quick-payment-status-dropdown';
+import { PrintInvoiceButton } from './print-invoice-button';
 import { Eye, FileText } from 'lucide-react';
 
 export interface OrderTableRowProps {
@@ -94,6 +95,8 @@ export const OrderTableRow: React.FC<OrderTableRowProps> = ({
             currentStatus={order.orderStatus}
             onSelectStatus={(newStatus) => onUpdateStatus(String(order.id), newStatus)}
           />
+
+          <PrintInvoiceButton orderCode={order.orderCode} variant="icon" />
 
           <Link
             href={`/orders/${order.id}`}

@@ -8,6 +8,7 @@ import {
   ParseIntPipe,
   Patch,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
@@ -17,6 +18,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { AdminOrdersService } from './admin-orders.service';
 import { GetAdminOrdersDto } from './dto/get-admin-orders.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { AdminOrdersExportDto } from './dto/admin-orders-export.dto';
 import {
   AdminOrdersListResponse,
   AdminOrderDetailResponse,
@@ -38,6 +40,29 @@ export class AdminOrdersController {
   @HttpCode(HttpStatus.OK)
   findAll(@Query() dto: GetAdminOrdersDto): Promise<AdminOrdersListResponse> {
     return this.adminOrdersService.findAll(dto);
+  }
+
+  /**
+   * GET /api/v1/admin/orders/export
+   * Xuất báo cáo danh sách đơn hàng ra file Excel (.xlsx) chuẩn
+   * Quyền: ADMIN, STAFF
+   */
+  @Get('export')
+  @Roles(Role.ADMIN, Role.STAFF)
+  async exportReport(
+    @Query() dto: AdminOrdersExportDto,
+    @Res() res: any,
+  ): Promise<void> {
+    const excelBuffer = await this.adminOrdersService.exportOrdersReportExcel(dto);
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const filename = `bao-cao-don-hang-${timestamp}.xlsx`;
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.status(200).send(excelBuffer);
   }
 
   /**

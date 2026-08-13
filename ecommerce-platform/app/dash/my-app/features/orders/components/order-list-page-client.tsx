@@ -7,6 +7,7 @@ import { OrderTable } from './order-table';
 import { OrderPagination } from './order-pagination';
 import { UpdateStatusModal } from './update-status-modal';
 import { UpdatePaymentStatusModal } from './update-payment-status-modal';
+import { ExportReportModal } from './export-report-modal';
 import { OrderListItem, OrderStatus, PaymentStatus } from '../types/order.types';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useToast } from '@/components/ui/toast';
@@ -56,6 +57,9 @@ export const OrderListPageClient: React.FC = () => {
     targetStatus: PaymentStatus;
   } | null>(null);
   const [isUpdatingPaymentStatus, setIsUpdatingPaymentStatus] = useState(false);
+
+  // Export Report Modal State
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
 
   // Fetch API List Data
   const fetchOrders = useCallback(async () => {
@@ -208,7 +212,10 @@ export const OrderListPageClient: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <OrderListPageHeader totalOrders={summaryStats?.totalOrders || totalItems} />
+      <OrderListPageHeader
+        totalOrders={summaryStats?.totalOrders || totalItems}
+        onExportReport={() => setIsExportModalOpen(true)}
+      />
 
       {/* Error Alert State */}
       {error && (
@@ -301,6 +308,19 @@ export const OrderListPageClient: React.FC = () => {
           onConfirm={handleConfirmUpdatePaymentStatus}
         />
       )}
+
+      {/* Export Report Modal */}
+      <ExportReportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        currentFilters={{
+          search: debouncedSearch,
+          orderStatus: activeOrderStatus,
+          paymentStatus: activePaymentStatus,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+        }}
+      />
     </div>
   );
 };

@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { GetAdminOrdersDto } from './dto/get-admin-orders.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { AdminOrdersExportDto } from './dto/admin-orders-export.dto';
 import {
   AdminOrdersListResponse,
   AdminOrderDetailResponse,
@@ -17,6 +18,7 @@ import { OrderStatus, PaymentStatus, NotificationType, Prisma } from '@prisma/cl
 
 import { MailService } from '../mail/mail.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class AdminOrdersService {
@@ -455,5 +457,325 @@ export class AdminOrdersService {
         updatedAt: updatedOrder.updatedAt,
       },
     };
+  }
+
+  /**
+   * GET /api/v1/admin/orders/export
+   * Xuất báo cáo danh sách đơn hàng theo điều kiện lọc ra chuỗi CSV (UTF-8 BOM)
+   */
+  async exportOrdersReport(dto: AdminOrdersExportDto): Promise<string> {
+    const {
+      search,
+      orderStatus,
+      paymentStatus,
+      paymentMethod,
+      startDate,
+      endDate,
+    } = dto;
+
+    const where: Prisma.OrderWhereInput = {};
+
+    if (search && search.trim() !== '') {
+      const keyword = search.trim();
+      where.OR = [
+        { orderCode: { contains: keyword } },
+        { customerName: { contains: keyword } },
+        { customerEmail: { contains: keyword } },
+        { customerPhone: { contains: keyword } },
+      ];
+    }
+
+    if (orderStatus && orderStatus !== 'ALL') {
+      where.orderStatus = orderStatus as OrderStatus;
+    }
+
+    if (paymentStatus && paymentStatus !== 'ALL') {
+      where.paymentStatus = paymentStatus as PaymentStatus;
+    }
+
+    if (paymentMethod && paymentMethod !== 'ALL') {
+      where.paymentMethod = paymentMethod as any;
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(`${startDate}T00:00:00.000Z`);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(`${endDate}T23:59:59.999Z`);
+      }
+    }
+
+    const orders = await this.prisma.order.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: {
+          select: { orderItems: true },
+        },
+      },
+    });
+
+    const statusMap: Record<string, string> = {
+      PENDING: 'Chờ xác nhận',
+      CONFIRMED: 'Đã xác nhận',
+      PROCESSING: 'Đang xử lý',
+      SHIPPING: 'Đang giao hàng',
+      DELIVERED: 'Đã giao thành công',
+      CANCELLED: 'Đã hủy',
+      REFUNDED: 'Đã hoàn tiền',
+    };
+
+    const paymentStatusMap: Record<string, string> = {
+      PENDING: 'Chưa thanh toán',
+      PAID: 'Đã thanh toán',
+      FAILED: 'Thanh toán thất bại',
+      REFUNDED: 'Đã hoàn tiền',
+    };
+
+    const escapeCsvField = (field: any) => {
+      if (field === null || field === undefined) return '""';
+      const str = String(field).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const headers = [
+      'STT',
+      'Mã đơn hàng',
+      'Tên khách hàng',
+      'Số điện thoại',
+      'Email',
+      'Tỉnh/Thành',
+      'Quận/Huyện',
+      'Phường/Xã',
+      'Địa chỉ chi tiết',
+      'Số lượng món',
+      'Tạm tính (VND)',
+      'Giảm giá (VND)',
+      'Mã Voucher',
+      'Phí ship (VND)',
+      'Tổng tiền (VND)',
+      'PT Thanh toán',
+      'TT Thanh toán',
+      'TT Đơn hàng',
+      'Ghi chú đơn hàng',
+      'Lý do hủy (nếu có)',
+      'Ngày khởi tạo',
+    ];
+
+    const csvRows: string[] = [];
+    csvRows.push(headers.map(escapeCsvField).join(','));
+
+    orders.forEach((order, index) => {
+      const row = [
+        index + 1,
+        order.orderCode,
+        order.customerName,
+        order.customerPhone,
+        order.customerEmail || '',
+        order.provinceName || '',
+        order.districtName || '',
+        order.wardName || '',
+        order.detailAddress || '',
+        order._count.orderItems,
+        Number(order.subtotal),
+        Number(order.discountAmount),
+        order.voucherCode || '',
+        Number(order.shippingFee),
+        Number(order.totalAmount),
+        order.paymentMethod,
+        paymentStatusMap[order.paymentStatus] || order.paymentStatus,
+        statusMap[order.orderStatus] || order.orderStatus,
+        order.orderNote || '',
+        order.cancelReason || '',
+        new Date(order.createdAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+      ];
+      csvRows.push(row.map(escapeCsvField).join(','));
+    });
+
+    return '\uFEFF' + csvRows.join('\n');
+  }
+
+  /**
+   * GET /api/v1/admin/orders/export (định dạng Excel .xlsx)
+   * Xuất báo cáo danh sách đơn hàng ra file Excel thực sự (.xlsx) bằng ExcelJS
+   */
+  async exportOrdersReportExcel(dto: AdminOrdersExportDto): Promise<Buffer> {
+    const {
+      search,
+      orderStatus,
+      paymentStatus,
+      paymentMethod,
+      startDate,
+      endDate,
+    } = dto;
+
+    const where: Prisma.OrderWhereInput = {};
+
+    if (search && search.trim() !== '') {
+      const keyword = search.trim();
+      where.OR = [
+        { orderCode: { contains: keyword } },
+        { customerName: { contains: keyword } },
+        { customerEmail: { contains: keyword } },
+        { customerPhone: { contains: keyword } },
+      ];
+    }
+
+    if (orderStatus && orderStatus !== 'ALL') {
+      where.orderStatus = orderStatus as OrderStatus;
+    }
+
+    if (paymentStatus && paymentStatus !== 'ALL') {
+      where.paymentStatus = paymentStatus as PaymentStatus;
+    }
+
+    if (paymentMethod && paymentMethod !== 'ALL') {
+      where.paymentMethod = paymentMethod as any;
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(`${startDate}T00:00:00.000Z`);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(`${endDate}T23:59:59.999Z`);
+      }
+    }
+
+    const orders = await this.prisma.order.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: {
+          select: { orderItems: true },
+        },
+      },
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'TechBite E-Commerce System';
+    workbook.created = new Date();
+
+    const worksheet = workbook.addWorksheet('Báo Cáo Đơn Hàng', {
+      views: [{ showGridLines: true }],
+    });
+
+    // Cấu hình các cột Excel
+    worksheet.columns = [
+      { header: 'STT', key: 'stt', width: 6 },
+      { header: 'Mã Đơn Hàng', key: 'orderCode', width: 22 },
+      { header: 'Tên Khách Hàng', key: 'customerName', width: 24 },
+      { header: 'Số Điện Thoại', key: 'customerPhone', width: 16 },
+      { header: 'Email', key: 'customerEmail', width: 25 },
+      { header: 'Tỉnh / Thành', key: 'provinceName', width: 18 },
+      { header: 'Quận / Huyện', key: 'districtName', width: 18 },
+      { header: 'Phường / Xã', key: 'wardName', width: 18 },
+      { header: 'Địa Chỉ Chi Tiết', key: 'detailAddress', width: 32 },
+      { header: 'Số Món', key: 'itemCount', width: 10 },
+      { header: 'Tạm Tính (VNĐ)', key: 'subtotal', width: 18 },
+      { header: 'Giảm Giá (VNĐ)', key: 'discountAmount', width: 18 },
+      { header: 'Mã Voucher', key: 'voucherCode', width: 15 },
+      { header: 'Phí Ship (VNĐ)', key: 'shippingFee', width: 16 },
+      { header: 'Tổng Tiền (VNĐ)', key: 'totalAmount', width: 20 },
+      { header: 'PT Thanh Toán', key: 'paymentMethod', width: 16 },
+      { header: 'TT Thanh Toán', key: 'paymentStatus', width: 18 },
+      { header: 'TT Đơn Hàng', key: 'orderStatus', width: 20 },
+      { header: 'Ghi Chú Đơn Hàng', key: 'orderNote', width: 25 },
+      { header: 'Lý Do Hủy', key: 'cancelReason', width: 25 },
+      { header: 'Ngày Khởi Tạo', key: 'createdAt', width: 20 },
+    ];
+
+    // Định dạng Hàng Tiêu Đề (Header Row)
+    const headerRow = worksheet.getRow(1);
+    headerRow.height = 28;
+    headerRow.eachCell((cell) => {
+      cell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4880FF' },
+      };
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+        left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+        bottom: { style: 'medium', color: { argb: 'FF334155' } },
+        right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+      };
+    });
+
+    const statusMap: Record<string, string> = {
+      PENDING: 'Chờ xác nhận',
+      CONFIRMED: 'Đã xác nhận',
+      PROCESSING: 'Đang xử lý',
+      SHIPPING: 'Đang giao hàng',
+      DELIVERED: 'Đã hoàn thành',
+      CANCELLED: 'Đã hủy',
+      REFUNDED: 'Đã hoàn tiền',
+    };
+
+    const paymentStatusMap: Record<string, string> = {
+      PENDING: 'Chưa thanh toán',
+      UNPAID: 'Chưa thanh toán',
+      PAID: 'Đã thanh toán',
+      FAILED: 'Thất bại',
+      EXPIRED: 'Hết hạn',
+      REFUNDED: 'Đã hoàn tiền',
+    };
+
+    // Đưa dữ liệu từng đơn hàng vào bảng
+    orders.forEach((order, index) => {
+      const row = worksheet.addRow({
+        stt: index + 1,
+        orderCode: order.orderCode,
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        customerEmail: order.customerEmail || '',
+        provinceName: order.provinceName || '',
+        districtName: order.districtName || '',
+        wardName: order.wardName || '',
+        detailAddress: order.detailAddress || '',
+        itemCount: order._count.orderItems,
+        subtotal: Number(order.subtotal),
+        discountAmount: Number(order.discountAmount),
+        voucherCode: order.voucherCode || '',
+        shippingFee: Number(order.shippingFee),
+        totalAmount: Number(order.totalAmount),
+        paymentMethod: order.paymentMethod,
+        paymentStatus: paymentStatusMap[order.paymentStatus] || order.paymentStatus,
+        orderStatus: statusMap[order.orderStatus] || order.orderStatus,
+        orderNote: order.orderNote || '',
+        cancelReason: order.cancelReason || '',
+        createdAt: new Date(order.createdAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+      });
+
+      row.height = 22;
+      row.eachCell((cell, colNumber) => {
+        cell.font = { name: 'Segoe UI', size: 10 };
+        cell.alignment = { vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        };
+
+        // Căn giữa cho STT, số món
+        if ([1, 10].includes(colNumber)) {
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        }
+        // Định dạng tiền tệ cho các cột Tạm tính, Giảm giá, Phí ship, Tổng tiền
+        if ([11, 12, 14, 15].includes(colNumber)) {
+          cell.alignment = { vertical: 'middle', horizontal: 'right' };
+          cell.numFmt = '#,##0 "đ"';
+        }
+      });
+    });
+
+    const arrayBuffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(arrayBuffer);
   }
 }

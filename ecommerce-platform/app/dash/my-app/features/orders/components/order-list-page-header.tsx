@@ -1,12 +1,18 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
-import { Plus, ShoppingCart } from 'lucide-react';
+import { Plus, ShoppingCart, FileSpreadsheet } from 'lucide-react';
 
 export interface OrderListPageHeaderProps {
   totalOrders?: number;
+  onExportReport?: () => void;
 }
 
-export const OrderListPageHeader: React.FC<OrderListPageHeaderProps> = ({ totalOrders }) => {
+export const OrderListPageHeader: React.FC<OrderListPageHeaderProps> = ({
+  totalOrders,
+  onExportReport,
+}) => {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div>
@@ -26,6 +32,17 @@ export const OrderListPageHeader: React.FC<OrderListPageHeaderProps> = ({ totalO
       </div>
 
       <div className="flex items-center gap-3">
+        {onExportReport && (
+          <button
+            type="button"
+            onClick={onExportReport}
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-extrabold text-sm rounded-xl border border-emerald-200/80 transition-all shadow-xs"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>Xuất Báo Cáo</span>
+          </button>
+        )}
+
         <Link
           href="/orders/create"
           className="flex items-center gap-2 px-4 py-2.5 bg-[#4880FF] hover:bg-[#366be0] text-white font-bold text-sm rounded-xl transition-all shadow-sm"
