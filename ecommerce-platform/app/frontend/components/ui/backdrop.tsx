@@ -11,7 +11,7 @@ export const Backdrop: React.FC<BackdropProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm transform-gpu will-change-[opacity] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+      className={`fixed inset-0 z-40 bg-slate-900/60 transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
         isOpen
           ? "opacity-100 pointer-events-auto"
           : "opacity-0 pointer-events-none"

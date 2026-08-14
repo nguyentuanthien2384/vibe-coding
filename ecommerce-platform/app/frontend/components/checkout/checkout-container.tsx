@@ -74,7 +74,10 @@ export const CheckoutContainer: React.FC = () => {
   // Auto-fill form khi user thay đổi & Fetch sổ địa chỉ nếu đã đăng nhập
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (!cartStore.isFetched && !cartStore.isLoading) {
+      cartStore.fetchCart();
+    }
+  }, [cartStore]);
 
   useEffect(() => {
     async function loadUserAddresses() {
@@ -223,7 +226,13 @@ export const CheckoutContainer: React.FC = () => {
   };
 
   const handleSubmitOrder = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      showToast({
+        message: "Vui lòng kiểm tra và điền đầy đủ thông tin giao hàng!",
+        type: "error",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { CreateAddressInput, UserAddress } from "../../types/address.types";
 import { showToast } from "../ui/toast";
+import { Backdrop } from "../ui/backdrop";
 
 // Locations map matching checkout location dataset
 const PROVINCES = [
@@ -211,8 +212,9 @@ export const AddressEditModal: React.FC<AddressEditModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full p-6 md:p-8 space-y-6 border border-gray-100 relative overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <Backdrop isOpen={isOpen} onClick={onClose} />
+      <div className="relative bg-white rounded-3xl shadow-2xl max-w-xl w-full p-6 md:p-8 space-y-6 border border-gray-100 overflow-hidden z-10">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-gray-100">
           <div className="flex items-center gap-3">

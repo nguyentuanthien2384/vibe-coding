@@ -9,6 +9,7 @@ import { CartItemList } from "./cart-item-list";
 import { CartSummary } from "./cart-summary";
 
 export const CartDrawer: React.FC = () => {
+  const router = useRouter();
   const {
     isOpen,
     isLoading,
@@ -66,8 +67,6 @@ export const CartDrawer: React.FC = () => {
   if (!mounted) return null;
 
   const totalItems = getTotalItemsCount();
-
-  const router = useRouter();
 
   const handleCheckout = () => {
     closeCart();

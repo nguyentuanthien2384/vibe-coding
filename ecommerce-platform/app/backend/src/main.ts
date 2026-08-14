@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { Request, Response } from 'express';
 import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import cookieParser from 'cookie-parser';
@@ -47,6 +48,16 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'x-session-id', 'X-Session-ID'],
     credentials: true,
+  });
+
+  // Keep the API URL useful when opened directly in a browser. Application
+  // endpoints remain namespaced under /api/v1.
+  app.getHttpAdapter().get('/', (_request: Request, response: Response) => {
+    response.status(200).json({
+      name: 'TechBite API',
+      status: 'ok',
+      apiBaseUrl: '/api/v1',
+    });
   });
 
   await app.listen(process.env.PORT ?? 3001);
