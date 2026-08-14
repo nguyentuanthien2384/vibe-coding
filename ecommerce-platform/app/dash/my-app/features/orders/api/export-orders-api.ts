@@ -1,4 +1,4 @@
-import { getAccessToken } from '@/lib/admin-api';
+import { adminFetchResponse } from '@/lib/admin-api';
 
 export interface ExportReportParams {
   search?: string;
@@ -8,8 +8,6 @@ export interface ExportReportParams {
   startDate?: string;
   endDate?: string;
 }
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 /**
  * Tải báo cáo đơn hàng dạng file Excel (.xlsx) từ backend
@@ -24,17 +22,7 @@ export async function downloadOrdersReportExcel(params: ExportReportParams = {})
   if (params.startDate) queryParams.set('startDate', params.startDate);
   if (params.endDate) queryParams.set('endDate', params.endDate);
 
-  const token = getAccessToken();
-  const headers: Record<string, string> = {};
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${BASE_URL}/api/v1/admin/orders/export?${queryParams.toString()}`, {
-    method: 'GET',
-    headers,
-    credentials: 'include',
-  });
+  const response = await adminFetchResponse(`/admin/orders/export?${queryParams.toString()}`);
 
   if (!response.ok) {
     throw new Error('Không thể tải xuống báo cáo đơn hàng dạng Excel. Vui lòng thử lại sau.');

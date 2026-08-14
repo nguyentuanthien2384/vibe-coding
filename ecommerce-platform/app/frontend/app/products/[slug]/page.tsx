@@ -4,6 +4,7 @@ import { ProductGallery } from "@/components/product-detail/product-gallery";
 import { ProductInfo } from "@/components/product-detail/product-info";
 import { ProductTabs } from "@/components/product-detail/product-tabs";
 import { RelatedProducts } from "@/components/product-detail/related-products";
+import { StorefrontShell } from "@/components/layout/storefront-shell";
 
 interface ProductDetailPageProps {
   params: Promise<{
@@ -17,6 +18,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
   if (notFound || !product || isError) {
     return (
+      <StorefrontShell>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
         <div className="bg-white rounded-2xl p-10 max-w-md mx-auto border border-slate-100 shadow-sm space-y-4">
           <div className="w-16 h-16 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center mx-auto">
@@ -51,6 +53,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
           </div>
         </div>
       </main>
+      </StorefrontShell>
     );
   }
 
@@ -58,6 +61,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   const relatedProducts = await getRelatedProducts(product.category.id, product.id);
 
   return (
+    <StorefrontShell>
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Breadcrumb Navigation */}
       <nav aria-label="Breadcrumb" className="flex text-xs sm:text-sm text-slate-500 mb-6 font-medium overflow-x-auto pb-1">
@@ -149,5 +153,6 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
       {/* Related Products Section */}
       <RelatedProducts products={relatedProducts} />
     </main>
+    </StorefrontShell>
   );
 }

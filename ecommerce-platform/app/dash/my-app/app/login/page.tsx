@@ -2,11 +2,8 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { setAccessToken } from '../../lib/admin-api';
-
 interface LoginResponse {
   message?: string;
-  data?: { accessToken?: string };
 }
 
 export default function AdminLoginPage() {
@@ -29,11 +26,10 @@ export default function AdminLoginPage() {
       });
       const result = (await response.json()) as LoginResponse;
 
-      if (!response.ok || !result.data?.accessToken) {
+      if (!response.ok) {
         throw new Error(result.message || 'Đăng nhập không thành công.');
       }
 
-      setAccessToken(result.data.accessToken);
       const redirectTo = new URLSearchParams(window.location.search).get('redirect');
       router.replace(redirectTo?.startsWith('/') ? redirectTo : '/dashboard');
     } catch (err) {

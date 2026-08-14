@@ -8,6 +8,7 @@ import {
 } from '@/lib/product-list';
 import ProductListHeroBanner from '@/components/product-list/product-list-hero-banner';
 import ProductListSection from '@/components/product-list/product-list-section';
+import { StorefrontShell } from '@/components/layout/storefront-shell';
 import { ProductsPageSearchParams, ProductSortOption } from '@/types/product-list';
 
 interface PageProps {
@@ -83,7 +84,7 @@ export default async function CategoryProductsPage({ params, searchParams }: Pag
   ]);
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans antialiased">
+    <StorefrontShell>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 space-y-8">
         {/* Hero Banner */}
         <div className="w-full rounded-2xl overflow-hidden shadow-md">
@@ -103,6 +104,6 @@ export default async function CategoryProductsPage({ params, searchParams }: Pag
           sortOption={sortOption}
         />
       </main>
-    </div>
+    </StorefrontShell>
   );
 }

@@ -31,7 +31,7 @@ export const PrintInvoiceModal: React.FC<PrintInvoiceModalProps> = ({
       } else if (orderCode) {
         setIsLoading(true);
         setErrorMsg(null);
-        adminFetch<{ data?: OrderDetail; message?: string }>(`/api/v1/admin/orders/${orderCode}`)
+        adminFetch<{ data?: OrderDetail; message?: string }>(`/admin/orders/${orderCode}`)
           .then((resData) => {
             if (resData.data) {
               setFetchedOrder(resData.data);

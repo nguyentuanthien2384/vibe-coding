@@ -42,7 +42,7 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/deals" className="hover:text-orange-400 transition-colors">
+                <Link href="/products" className="hover:text-orange-400 transition-colors">
                   🔥 Ưu đãi Hot hôm nay
                 </Link>
               </li>

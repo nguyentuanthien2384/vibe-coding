@@ -56,7 +56,7 @@ export async function POST() {
     const response = NextResponse.json({
       statusCode: 200,
       message: 'Làm mới phiên đăng nhập thành công',
-      data: { accessToken },
+      data: {},
     });
 
     response.cookies.set('accessToken', accessToken, {

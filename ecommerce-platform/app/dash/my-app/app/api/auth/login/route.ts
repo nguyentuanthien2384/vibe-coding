@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     const response = NextResponse.json({
       statusCode: 200,
       message: 'Đăng nhập thành công.',
-      data: { accessToken },
+      data: { user },
     });
 
     const cookieOptions = {

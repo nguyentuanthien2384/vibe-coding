@@ -88,10 +88,10 @@ export const Header = () => {
             <Link href="/products" className="hover:text-orange-600 transition-colors">
               Thực đơn
             </Link>
-            <Link href="/combos" className="hover:text-orange-600 transition-colors">
+            <Link href="/categories/combo-deadline" className="hover:text-orange-600 transition-colors">
               Combo Deadline 💻
             </Link>
-            <Link href="/deals" className="hover:text-orange-600 transition-colors">
+            <Link href="/products" className="hover:text-orange-600 transition-colors">
               Khuyến mãi 🔥
             </Link>
             {mounted && user?.role === 'ADMIN' && (
@@ -248,14 +248,14 @@ export const Header = () => {
                   <span>🍱</span> Tất cả thực đơn
                 </Link>
                 <Link
-                  href="/combos"
+                  href="/categories/combo-deadline"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm transition-colors"
                 >
                   <span>💻</span> Combo Deadline
                 </Link>
                 <Link
-                  href="/deals"
+                  href="/products"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm transition-colors"
                 >

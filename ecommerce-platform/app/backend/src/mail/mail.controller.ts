@@ -15,17 +15,17 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { JwtPayload } from '../auth/interfaces/auth-response.interface';
+import type { JwtPayload } from '../auth/interfaces/auth-response.interface';
 import { Role } from '@prisma/client';
 
-@Controller('api/v1/mail')
+@Controller('mail')
 @UseGuards(JwtAuthGuard)
 export class UserMailController {
   constructor(private readonly mailService: MailService) {}
 
   @Get('my-notifications')
   async getMyNotifications(
-    @CurrentUser() user: any,
+    @CurrentUser() user: JwtPayload,
     @Query() queryDto: EmailLogQueryDto,
   ) {
     const result = await this.mailService.getMyNotifications(user.sub, user.email, queryDto);
@@ -37,7 +37,7 @@ export class UserMailController {
   }
 }
 
-@Controller('api/v1/admin/email-logs')
+@Controller('admin/email-logs')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 export class MailController {
