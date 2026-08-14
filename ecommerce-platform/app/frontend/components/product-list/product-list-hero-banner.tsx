@@ -60,7 +60,7 @@ const ProductListHeroBanner = ({ banners }: ProductListHeroBannerProps) => {
           {currentBanner.title}
         </h1>
         {currentBanner.subtitle && (
-          <p className="text-xs sm:text-base text-slate-200 max-w-md hidden sm:block mb-4 line-clamp-2">
+          <p className="text-xs sm:text-base text-slate-200 max-w-md mb-3 sm:mb-4 line-clamp-2">
             {currentBanner.subtitle}
           </p>
         )}

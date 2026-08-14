@@ -4,7 +4,13 @@ import { useState } from 'react';
 import { BannerSettingItem, BannerPosition, BannerCategory } from '../../types/settings.types';
 import BannerItemCard from './banner-item-card';
 import BannerModalForm from '../modals/banner-modal-form';
-import { Image as ImageIcon, Plus, Filter, Home, Box } from 'lucide-react';
+import { Image as ImageIcon, Plus, Filter, Home, Box, Move } from 'lucide-react';
+import {
+  createAdminBanner,
+  updateAdminBanner,
+  deleteAdminBanner,
+  reorderAdminBanners,
+} from '../../api/settings-api';
 
 interface BannerRepeaterManagerProps {
   banners: BannerSettingItem[];
@@ -17,24 +23,96 @@ const BannerRepeaterManager = ({ banners, onChange }: BannerRepeaterManagerProps
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<BannerSettingItem | null>(null);
 
+  // Drag and Drop States
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
   const filteredBanners = banners
     .filter((b) => filterCategory === 'ALL' || b.category === filterCategory)
     .filter((b) => filterPosition === 'ALL' || b.position === filterPosition)
     .sort((a, b) => a.order - b.order);
 
-  const handleToggleActive = (id: string) => {
-    const updated = banners.map((b) => (b.id === id ? { ...b, isActive: !b.isActive } : b));
-    onChange(updated);
+  // Drag and Drop Handlers
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
   };
 
-  const handleMoveUp = (id: string) => {
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const reorderedFiltered = [...filteredBanners];
+    const [movedItem] = reorderedFiltered.splice(draggedIndex, 1);
+    reorderedFiltered.splice(dropIndex, 0, movedItem);
+
+    // Re-assign order numbers 1, 2, 3...
+    const updatedFiltered = reorderedFiltered.map((item, idx) => ({
+      ...item,
+      order: idx + 1,
+    }));
+
+    // Update full banners list
+    const updatedMap = new Map(updatedFiltered.map((b) => [b.id, b]));
+    const updatedAllBanners = banners.map((b) => updatedMap.get(b.id) || b);
+
+    onChange(updatedAllBanners);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+
+    // Call API to persist new order to backend MySQL
+    try {
+      await reorderAdminBanners(
+        updatedAllBanners.map((b) => ({ id: b.id, order: b.order })),
+      );
+    } catch (error) {
+      console.error('Lỗi khi lưu vị trí kéo thả banner:', error);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleToggleActive = async (id: string) => {
+    const target = banners.find((b) => b.id === id);
+    if (!target) return;
+    const newStatus = !target.isActive;
+    const updated = banners.map((b) => (b.id === id ? { ...b, isActive: newStatus } : b));
+    onChange(updated);
+
+    try {
+      await updateAdminBanner(id, { isActive: newStatus });
+    } catch (error) {
+      console.error('Lỗi khi cập nhật trạng thái banner:', error);
+    }
+  };
+
+  const handleMoveUp = async (id: string) => {
     const index = filteredBanners.findIndex((b) => b.id === id);
     if (index <= 0) return;
 
     const current = filteredBanners[index];
     const prev = filteredBanners[index - 1];
 
-    // Swap order
     const updated = banners.map((b) => {
       if (b.id === current.id) return { ...b, order: prev.order };
       if (b.id === prev.id) return { ...b, order: current.order };
@@ -42,16 +120,23 @@ const BannerRepeaterManager = ({ banners, onChange }: BannerRepeaterManagerProps
     });
 
     onChange(updated);
+
+    try {
+      await reorderAdminBanners(
+        updated.map((b) => ({ id: b.id, order: b.order })),
+      );
+    } catch (error) {
+      console.error('Lỗi khi sắp xếp thứ tự banner:', error);
+    }
   };
 
-  const handleMoveDown = (id: string) => {
+  const handleMoveDown = async (id: string) => {
     const index = filteredBanners.findIndex((b) => b.id === id);
     if (index < 0 || index >= filteredBanners.length - 1) return;
 
     const current = filteredBanners[index];
     const next = filteredBanners[index + 1];
 
-    // Swap order
     const updated = banners.map((b) => {
       if (b.id === current.id) return { ...b, order: next.order };
       if (b.id === next.id) return { ...b, order: current.order };
@@ -59,12 +144,26 @@ const BannerRepeaterManager = ({ banners, onChange }: BannerRepeaterManagerProps
     });
 
     onChange(updated);
+
+    try {
+      await reorderAdminBanners(
+        updated.map((b) => ({ id: b.id, order: b.order })),
+      );
+    } catch (error) {
+      console.error('Lỗi khi sắp xếp thứ tự banner:', error);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa Banner này không?')) {
+  const handleDelete = async (id: string) => {
+    if (confirm('Bạn có chắc chắn muốn xóa Banner này không? File ảnh vật lý cũng sẽ bị xóa vĩnh viễn.')) {
       const updated = banners.filter((b) => b.id !== id);
       onChange(updated);
+
+      try {
+        await deleteAdminBanner(id);
+      } catch (error) {
+        console.error('Lỗi khi xóa banner:', error);
+      }
     }
   };
 
@@ -78,17 +177,26 @@ const BannerRepeaterManager = ({ banners, onChange }: BannerRepeaterManagerProps
     setIsModalOpen(true);
   };
 
-  const handleSaveBanner = (savedBanner: BannerSettingItem) => {
-    const exists = banners.some((b) => b.id === savedBanner.id);
-    let updated: BannerSettingItem[];
+  const handleSaveBanner = async (savedBanner: BannerSettingItem) => {
+    const isEditing = banners.some((b) => b.id === savedBanner.id);
 
-    if (exists) {
-      updated = banners.map((b) => (b.id === savedBanner.id ? savedBanner : b));
-    } else {
-      updated = [...banners, { ...savedBanner, order: banners.length + 1 }];
+    try {
+      if (isEditing) {
+        const updatedItem = await updateAdminBanner(savedBanner.id, savedBanner);
+        const updated = banners.map((b) => (b.id === savedBanner.id ? updatedItem : b));
+        onChange(updated);
+      } else {
+        const newItem = await createAdminBanner(savedBanner);
+        onChange([...banners, newItem]);
+      }
+    } catch (error) {
+      console.error('Lỗi khi lưu banner:', error);
+      if (isEditing) {
+        onChange(banners.map((b) => (b.id === savedBanner.id ? savedBanner : b)));
+      } else {
+        onChange([...banners, { ...savedBanner, order: banners.length + 1 }]);
+      }
     }
-
-    onChange(updated);
   };
 
   return (
@@ -100,8 +208,9 @@ const BannerRepeaterManager = ({ banners, onChange }: BannerRepeaterManagerProps
             <ImageIcon className="w-5 h-5 text-[#4880FF]" />
             Quản lý Banner Quảng Cáo (Trang Chủ & Trang Sản Phẩm)
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Phân loại banner theo trang (Home vs Product), sắp xếp thứ tự hiển thị và bật/tắt kích hoạt.
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+            <Move className="w-3.5 h-3.5 text-[#4880FF]" />
+            <span>Kéo thả thẻ banner để thay đổi thứ tự trực quan hoặc dùng nút mũi tên.</span>
           </p>
         </div>
 
@@ -181,20 +290,28 @@ const BannerRepeaterManager = ({ banners, onChange }: BannerRepeaterManagerProps
         ))}
       </div>
 
-      {/* Banner List */}
+      {/* Banner List (Drag and Drop Enabled) */}
       {filteredBanners.length > 0 ? (
         <div className="space-y-3">
           {filteredBanners.map((banner, index) => (
             <BannerItemCard
               key={banner.id}
               banner={banner}
+              index={index}
               isFirst={index === 0}
               isLast={index === filteredBanners.length - 1}
+              isDragging={draggedIndex === index}
+              isDragOver={dragOverIndex === index}
               onToggleActive={handleToggleActive}
               onMoveUp={handleMoveUp}
               onMoveDown={handleMoveDown}
               onEdit={handleOpenEditModal}
               onDelete={handleDelete}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onDragEnd={handleDragEnd}
             />
           ))}
         </div>

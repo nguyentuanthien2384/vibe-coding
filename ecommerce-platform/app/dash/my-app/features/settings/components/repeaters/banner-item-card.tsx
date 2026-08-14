@@ -1,28 +1,53 @@
 'use client';
 
 import { BannerSettingItem } from '../../types/settings.types';
-import { ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, Image as ImageIcon, Home, Box } from 'lucide-react';
+import { getImageUrl } from '../../../../lib/image-url';
+import {
+  ArrowUp,
+  ArrowDown,
+  Edit2,
+  Trash2,
+  ExternalLink,
+  Image as ImageIcon,
+  GripVertical,
+} from 'lucide-react';
 
 interface BannerItemCardProps {
   banner: BannerSettingItem;
+  index: number;
   isFirst: boolean;
   isLast: boolean;
+  isDragging?: boolean;
+  isDragOver?: boolean;
   onToggleActive: (id: string) => void;
   onMoveUp: (id: string) => void;
   onMoveDown: (id: string) => void;
   onEdit: (banner: BannerSettingItem) => void;
   onDelete: (id: string) => void;
+  onDragStart: (e: React.DragEvent, index: number) => void;
+  onDragOver: (e: React.DragEvent, index: number) => void;
+  onDragLeave: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, index: number) => void;
+  onDragEnd: (e: React.DragEvent) => void;
 }
 
 const BannerItemCard = ({
   banner,
+  index,
   isFirst,
   isLast,
+  isDragging = false,
+  isDragOver = false,
   onToggleActive,
   onMoveUp,
   onMoveDown,
   onEdit,
   onDelete,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
 }: BannerItemCardProps) => {
   const getCategoryBadge = (category: 'HOME' | 'PRODUCT') => {
     if (category === 'HOME') {
@@ -53,14 +78,34 @@ const BannerItemCard = ({
   const categoryBadge = getCategoryBadge(banner.category);
 
   return (
-    <div className="bg-gray-50/60 dark:bg-slate-800/40 rounded-xl border border-gray-200 dark:border-slate-800 p-4 transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-700 space-y-4">
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, index)}
+      onDragOver={(e) => onDragOver(e, index)}
+      onDragLeave={onDragLeave}
+      onDrop={(e) => onDrop(e, index)}
+      onDragEnd={onDragEnd}
+      className={`rounded-xl border p-4 transition-all duration-200 space-y-4 cursor-grab active:cursor-grabbing ${
+        isDragging
+          ? 'opacity-40 border-dashed border-[#4880FF] bg-blue-50/20 dark:bg-blue-950/20 scale-[0.99]'
+          : isDragOver
+          ? 'border-2 border-[#4880FF] bg-blue-50/50 dark:bg-slate-800/80 shadow-md scale-[1.01]'
+          : 'bg-gray-50/60 dark:bg-slate-800/40 border-gray-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700'
+      }`}
+    >
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        {/* Left Image & Info */}
-        <div className="flex items-center gap-4">
+        {/* Left Drag Handle, Image & Info */}
+        <div className="flex items-center gap-3">
+          {/* Grip Vertical Handle */}
+          <div className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex-shrink-0">
+            <GripVertical className="w-5 h-5" />
+          </div>
+
+          {/* Image */}
           <div className="relative w-28 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700 bg-slate-200 dark:bg-slate-800 flex-shrink-0">
             {banner.imageUrl ? (
               <img
-                src={banner.imageUrl}
+                src={getImageUrl(banner.imageUrl)}
                 alt={banner.title}
                 className="w-full h-full object-cover"
               />
@@ -74,6 +119,7 @@ const BannerItemCard = ({
             </span>
           </div>
 
+          {/* Banner Meta Info */}
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${categoryBadge.style}`}>
@@ -111,7 +157,7 @@ const BannerItemCard = ({
 
         {/* Right Actions */}
         <div className="flex items-center gap-2 self-end sm:self-auto">
-          {/* Order Move Up/Down */}
+          {/* Order Move Up/Down Buttons */}
           <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-1">
             <button
               type="button"

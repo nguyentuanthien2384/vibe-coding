@@ -19,6 +19,7 @@ import { UploadModule } from './upload/upload.module';
 
 import { NotificationsModule } from './notifications/notifications.module';
 import { CustomersModule } from './customers/customers.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { CustomersModule } from './customers/customers.module';
     UploadModule,
     NotificationsModule,
     CustomersModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [

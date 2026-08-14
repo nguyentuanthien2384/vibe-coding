@@ -43,7 +43,8 @@ export interface FeaturedProduct {
 export async function getHeroBanners(): Promise<{ banners: BannerItem[]; isError: boolean }> {
   try {
     const res = await apiFetch<ApiResponse<BannerItem[]>>(
-      '/api/v1/banners?type=HERO_BANNER',
+      '/api/v1/banners?category=HOME',
+      { cache: 'no-store' },
     );
     return { banners: res.data ?? [], isError: false };
   } catch (error) {

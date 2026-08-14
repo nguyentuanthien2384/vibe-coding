@@ -29,6 +29,8 @@ async function main() {
   console.log('🌱 Bắt đầu seeding...');
 
   // ─── CLEAN UP (idempotent) ─────────────────────────────────────────────────
+  await prisma.cartItem.deleteMany();
+  await prisma.orderItem.deleteMany();
   await prisma.product.deleteMany();
   await prisma.category.deleteMany();
   await prisma.banner.deleteMany();
@@ -382,6 +384,92 @@ async function main() {
   });
   console.log('✅ Đã tạo 2 vouchers mẫu');
 
+  // ─── SYSTEM SETTINGS (Settings Module) ──────────────────────────────────
+  await prisma.systemSetting.deleteMany();
+  await prisma.systemSetting.createMany({
+    data: [
+      {
+        key: 'general',
+        value: {
+          storeName: 'TechBite - Chuỗi Cửa Hàng Công Nghệ & Đồ Ăn Đỉnh Cao',
+          storeEmail: 'contact@techbite.vn',
+          storePhone: '1900 6868',
+          storeAddress: 'Tầng 12, Tòa nhà Innovation Tower, Đường Cầu Giấy, Hà Nội',
+          copyrightText: '© 2026 TechBite E-Commerce Platform. Tất cả quyền được bảo lưu.',
+          logoUrl: '/images/logo-techbite.png',
+          faviconUrl: '/images/favicon.ico',
+        },
+      },
+      {
+        key: 'payment',
+        value: {
+          bankName: 'MB Bank (Ngân hàng TMCP Quân Đội)',
+          bankAccountNo: '9999888899',
+          bankAccountHolder: 'CTY TNHH TECHBITE VIETNAM',
+          vietQrTemplate: 'compact',
+          enableCod: true,
+          paymentNote: 'Vui lòng kiểm tra lại đúng Mã Đơn Hàng trong nội dung chuyển khoản để hệ thống xác nhận tự động trong 30 giây.',
+        },
+      },
+      {
+        key: 'shipping',
+        value: {
+          defaultShippingFee: 30000,
+          freeShippingThreshold: 500000,
+          estimatedDeliveryTime: '24 - 48 giờ đối với nội thành, 2 - 4 ngày đối với toàn quốc',
+        },
+      },
+      {
+        key: 'menus',
+        value: [
+          {
+            id: 'm-1',
+            title: 'Trang chủ',
+            targetUrl: '/',
+            location: 'HEADER',
+            icon: 'Home',
+            order: 1,
+            openInNewTab: false,
+            isActive: true,
+          },
+          {
+            id: 'm-2',
+            title: 'Sản phẩm',
+            targetUrl: '/products',
+            location: 'HEADER',
+            icon: 'ShoppingBag',
+            order: 2,
+            openInNewTab: false,
+            isActive: true,
+          },
+          {
+            id: 'm-3',
+            title: 'Khuyến mãi hot 🔥',
+            targetUrl: '/products?onSale=true',
+            location: 'HEADER',
+            icon: 'Flame',
+            order: 3,
+            openInNewTab: false,
+            isActive: true,
+          },
+        ],
+      },
+      {
+        key: 'seo',
+        value: {
+          metaTitle: 'TechBite - Sàn Thương Mại Điện Tử Công Nghệ & Đồ Ăn Hàng Đầu',
+          metaDescription: 'Mua sắm các thiết bị công nghệ chính hãng, đồ gia dụng thông minh và dịch vụ cao cấp với giá ưu đãi tốt nhất tại TechBite Vietnam.',
+          metaKeywords: 'TechBite, E-commerce, Công nghệ, Đồ ăn, Điện thoại, Tai nghe, Khuyến mãi',
+          facebookUrl: 'https://facebook.com/techbite.vietnam',
+          zaloUrl: 'https://zalo.me/techbite',
+          instagramUrl: 'https://instagram.com/techbite_official',
+          tiktokUrl: 'https://tiktok.com/@techbite.store',
+        },
+      },
+    ],
+  });
+  console.log('✅ Đã tạo 5 system settings mẫu (general, payment, shipping, menus, seo)');
+
   console.log(`✅ Đã tạo ${products.count} products`);
   console.log('');
   console.log('🎉 Seeding hoàn tất!');
@@ -390,6 +478,7 @@ async function main() {
   console.log(`   Categories            : 5`);
   console.log(`   Products              : ${products.count}`);
   console.log(`   Vouchers              : 2`);
+  console.log(`   System Settings       : 5`);
 }
 
 main()

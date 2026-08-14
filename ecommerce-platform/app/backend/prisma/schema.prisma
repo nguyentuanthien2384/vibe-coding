@@ -21,6 +21,17 @@ enum BannerType {
   SOCIAL_PROOF
 }
 
+enum BannerCategory {
+  HOME
+  PRODUCT
+}
+
+enum BannerPosition {
+  HERO_BANNER
+  PROMOTION_BANNER
+  POPUP_BANNER
+}
+
 enum Role {
   ADMIN
   STAFF
@@ -78,20 +89,25 @@ enum EmailStatus {
 // Source: .docs/backend-plans/home-plan.md
 // =============================================================================
 
-/// Lưu thông tin các Banner quảng cáo (Hero Banner, Social Proof, Promotion) trên Trang chủ.
+/// Lưu thông tin các Banner quảng cáo trên Trang chủ & Trang sản phẩm.
 model Banner {
-  id        Int        @id @default(autoincrement())
-  title     String     @db.VarChar(255)
-  subtitle  String?    @db.VarChar(255)
-  imageUrl  String     @db.VarChar(500)
-  linkUrl   String?    @db.VarChar(500)
-  type      BannerType @default(HERO_BANNER)
-  position  Int        @default(0)
-  isActive  Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id             Int            @id @default(autoincrement())
+  title          String         @db.VarChar(255)
+  subtitle       String?        @db.VarChar(255)
+  imageUrl       String         @db.VarChar(500)
+  linkUrl        String?        @db.VarChar(500)
+  category       BannerCategory @default(HOME)
+  bannerPosition BannerPosition @default(HERO_BANNER)
+  type           BannerType     @default(HERO_BANNER)
+  position       Int            @default(0)
+  order          Int            @default(0)
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
+  @@index([category, bannerPosition, isActive, order], name: "idx_banner_filter")
   @@index([type, isActive, position], name: "idx_banner_type_active")
+  @@index([isActive, order], name: "idx_banner_active_order")
   @@map("banners")
 }
 
@@ -388,4 +404,20 @@ model Notification {
 
   @@index([userId, isRead, createdAt(sort: Desc)], name: "idx_notification_user")
   @@map("notifications")
+}
+
+// =============================================================================
+// MODULE: SYSTEM SETTINGS
+// Source: .docs/backend-plans/dashboard/05-settings-plan.md
+// =============================================================================
+
+/// Lưu trữ các thông số cấu hình hệ thống dạng Key-Value JSON
+model SystemSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique @db.VarChar(100) // 'general', 'payment', 'shipping', 'menus', 'seo'
+  value     Json     // Dữ liệu cấu hình dạng JSON
+  updatedAt DateTime @updatedAt
+
+  @@index([key], name: "idx_setting_key")
+  @@map("system_settings")
 }

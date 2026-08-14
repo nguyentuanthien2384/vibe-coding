@@ -256,7 +256,10 @@ export async function getPromotionBanners(): Promise<FetchPromotionBannersResult
   ];
 
   try {
-    const res = await apiFetch<ApiResponse<RawBannerItem[]>>('/api/v1/banners?type=PROMOTION_BANNER');
+    const res = await apiFetch<ApiResponse<RawBannerItem[]>>(
+      '/api/v1/banners?category=PRODUCT',
+      { cache: 'no-store' },
+    );
     const rawBanners = res.data ?? [];
 
     if (rawBanners.length > 0) {

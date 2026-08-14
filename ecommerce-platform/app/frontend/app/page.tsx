@@ -46,7 +46,7 @@ export default async function HomePage({
   const firstBanner = banners[0];
   const heroProps = firstBanner && !bannersIsError
     ? {
-        badgeLabel: firstBanner.subtitle ?? "🔥 HOT DEAL",
+        badgeLabel: "🔥 HOT DEAL",
         title: firstBanner.title,
         subtitle: firstBanner.subtitle ?? "",
         ctaLabel: "Xem Ngay",
