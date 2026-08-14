@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, UserPlus, Building, MapPin } from 'lucide-react';
+import { X, UserPlus, MapPin } from 'lucide-react';
 import { CreateCustomerInput } from '../types/customer.types';
 
 interface CreateCustomerModalProps {
@@ -30,6 +30,16 @@ const CreateCustomerModal = ({ isOpen, onClose, onSubmit }: CreateCustomerModalP
     if (!fullName.trim() || !email.trim() || !phone.trim()) {
       setErrorMsg('Vui lòng điền đầy đủ Họ tên, Email và Số điện thoại.');
       return;
+    }
+
+    // Kiểm tra quy tắc mật khẩu nếu người dùng tự điền
+    if (password.trim()) {
+      const pass = password.trim();
+      const hasLetterAndDigit = /^(?=.*[a-zA-Z])(?=.*\d)/.test(pass);
+      if (pass.length < 6 || pass.length > 50 || !hasLetterAndDigit) {
+        setErrorMsg('Mật khẩu phải từ 6 đến 50 ký tự và chứa ít nhất một chữ cái và một chữ số (Ví dụ: Password123).');
+        return;
+      }
     }
 
     try {
@@ -136,15 +146,18 @@ const CreateCustomerModal = ({ isOpen, onClose, onSubmit }: CreateCustomerModalP
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Mật khẩu mặc định (Không bắt buộc)
+              Mật khẩu khởi tạo
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Để trống nếu hệ thống tự sinh"
+              placeholder="Để trống nếu lấy mật khẩu mặc định (Password123)"
               className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4880FF]/30"
             />
+            <p className="mt-1 text-[11px] text-slate-400">
+              Cần tối thiểu 6 ký tự, gồm ít nhất một chữ cái và một chữ số.
+            </p>
           </div>
 
           {/* Địa chỉ giao hàng ban đầu */}

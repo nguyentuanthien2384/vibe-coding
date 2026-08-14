@@ -7,6 +7,7 @@ import UpdateCustomerStatusModal from './update-customer-status-modal';
 import EditCustomerModal from './edit-customer-modal';
 import CreateCustomerModal from './create-customer-modal';
 import AddAddressModal from './modals/add-address-modal';
+import { useToast } from '../../../components/ui/toast';
 import { CustomerDetail, CustomerAddress, UpdateCustomerStatusInput, UpdateCustomerInfoInput, CreateCustomerInput } from '../types/customer.types';
 import { getCustomerById, updateCustomerStatus, updateCustomerInfo, createCustomer, addCustomerAddress } from '../api/customers-api';
 import { Users } from 'lucide-react';
@@ -16,6 +17,7 @@ interface CustomerDetailContainerProps {
 }
 
 const CustomerDetailContainer = ({ customerId }: CustomerDetailContainerProps) => {
+  const { showToast } = useToast();
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
@@ -26,10 +28,11 @@ const CustomerDetailContainer = ({ customerId }: CustomerDetailContainerProps) =
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const data = await getCustomerById(customerId);
+      const decodedId = decodeURIComponent(customerId);
+      const data = await getCustomerById(decodedId);
       setCustomer(data);
-    } catch (err) {
-      console.error('Lỗi tải thông tin khách hàng:', err);
+    } catch (err: any) {
+      showToast('error', err?.message || 'Lỗi khi tải thông tin khách hàng');
     } finally {
       setIsLoading(false);
     }
@@ -40,30 +43,54 @@ const CustomerDetailContainer = ({ customerId }: CustomerDetailContainerProps) =
   }, [customerId]);
 
   const handleStatusSubmit = async (input: UpdateCustomerStatusInput) => {
-    await updateCustomerStatus(input);
-    await loadData();
+    try {
+      await updateCustomerStatus(input);
+      showToast('success', `Đã cập nhật trạng thái khách hàng sang [${input.status}] thành công!`);
+      setIsStatusModalOpen(false);
+      await loadData();
+    } catch (err: any) {
+      showToast('error', err?.message || 'Lỗi khi cập nhật trạng thái');
+    }
   };
 
   const handleEditSubmit = async (input: UpdateCustomerInfoInput) => {
-    await updateCustomerInfo(input);
-    await loadData();
+    try {
+      await updateCustomerInfo(input);
+      showToast('success', 'Cập nhật thông tin khách hàng thành công!');
+      setIsEditModalOpen(false);
+      await loadData();
+    } catch (err: any) {
+      showToast('error', err?.message || 'Lỗi khi cập nhật thông tin');
+    }
   };
 
   const handleCreateSubmit = async (input: CreateCustomerInput) => {
-    await createCustomer(input);
-    await loadData();
+    try {
+      await createCustomer(input);
+      showToast('success', 'Tạo mới tài khoản khách hàng thành công!');
+      setIsCreateModalOpen(false);
+      await loadData();
+    } catch (err: any) {
+      showToast('error', err?.message || 'Lỗi khi tạo tài khoản');
+    }
   };
 
   const handleAddAddressSubmit = async (address: Omit<CustomerAddress, 'id'>) => {
-    await addCustomerAddress(customerId, address);
-    await loadData();
+    try {
+      await addCustomerAddress(customerId, address);
+      showToast('success', 'Thêm địa chỉ nhận hàng mới thành công!');
+      setIsAddressModalOpen(false);
+      await loadData();
+    } catch (err: any) {
+      showToast('error', err?.message || 'Lỗi khi thêm địa chỉ');
+    }
   };
 
   if (isLoading) {
     return (
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-12 text-center border border-slate-100 dark:border-slate-800">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#4880FF] border-t-transparent" />
-        <p className="text-sm text-slate-500 mt-3 font-medium">Đang tải thông tin khách hàng...</p>
+        <p className="text-sm text-slate-500 mt-3 font-medium">Đang tải thông tin khách hàng từ máy chủ...</p>
       </div>
     );
   }

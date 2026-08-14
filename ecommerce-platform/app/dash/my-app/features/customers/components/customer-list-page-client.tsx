@@ -9,6 +9,7 @@ import CreateCustomerModal from './create-customer-modal';
 import UpdateCustomerStatusModal from './update-customer-status-modal';
 import EditCustomerModal from './edit-customer-modal';
 import { useDebounce } from '../../../hooks/use-debounce';
+import { useToast } from '../../../components/ui/toast';
 import {
   CustomerListItem,
   CustomerType,
@@ -21,6 +22,7 @@ import {
 import { getCustomers, createCustomer, updateCustomerStatus, updateCustomerInfo } from '../api/customers-api';
 
 const CustomerListPageClient = () => {
+  const { showToast } = useToast();
   const [searchRaw, setSearchRaw] = useState('');
   const debouncedSearch = useDebounce(searchRaw, 400);
 
@@ -34,6 +36,7 @@ const CustomerListPageClient = () => {
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [stats, setStats] = useState({
     totalCustomers: 0,
@@ -49,6 +52,7 @@ const CustomerListPageClient = () => {
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
+    setErrorMsg(null);
     try {
       const res = await getCustomers({
         page: currentPage,
@@ -63,12 +67,14 @@ const CustomerListPageClient = () => {
       setTotalRecords(res.total);
       setTotalPages(res.totalPages);
       setStats(res.stats);
-    } catch (err) {
-      console.error('Lỗi tải danh sách khách hàng:', err);
+    } catch (err: any) {
+      const message = err?.message || 'Không thể kết nối đến máy chủ API';
+      setErrorMsg(message);
+      showToast('error', message);
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, debouncedSearch, selectedType, selectedStatus, sortBy]);
+  }, [currentPage, debouncedSearch, selectedType, selectedStatus, sortBy, showToast]);
 
   useEffect(() => {
     loadData();
@@ -104,18 +110,36 @@ const CustomerListPageClient = () => {
   };
 
   const handleCreateSubmit = async (input: CreateCustomerInput) => {
-    await createCustomer(input);
-    await loadData();
+    try {
+      await createCustomer(input);
+      showToast('success', 'Tạo mới tài khoản khách hàng thành công!');
+      setIsCreateModalOpen(false);
+      await loadData();
+    } catch (err: any) {
+      showToast('error', err?.message || 'Lỗi khi tạo tài khoản khách hàng');
+    }
   };
 
   const handleStatusSubmit = async (input: UpdateCustomerStatusInput) => {
-    await updateCustomerStatus(input);
-    await loadData();
+    try {
+      await updateCustomerStatus(input);
+      showToast('success', `Đã cập nhật trạng thái khách hàng sang [${input.status}] thành công!`);
+      setSelectedCustomerForStatus(null);
+      await loadData();
+    } catch (err: any) {
+      showToast('error', err?.message || 'Lỗi khi cập nhật trạng thái');
+    }
   };
 
   const handleEditSubmit = async (input: UpdateCustomerInfoInput) => {
-    await updateCustomerInfo(input);
-    await loadData();
+    try {
+      await updateCustomerInfo(input);
+      showToast('success', 'Cập nhật thông tin khách hàng thành công!');
+      setSelectedCustomerForEdit(null);
+      await loadData();
+    } catch (err: any) {
+      showToast('error', err?.message || 'Lỗi khi cập nhật thông tin');
+    }
   };
 
   return (
@@ -136,6 +160,12 @@ const CustomerListPageClient = () => {
         onSortChange={handleSortChange}
         onResetFilters={handleResetFilters}
       />
+
+      {errorMsg && (
+        <div className="mb-4 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium">
+          ⚠️ {errorMsg}
+        </div>
+      )}
 
       <CustomerTable
         customers={customers}

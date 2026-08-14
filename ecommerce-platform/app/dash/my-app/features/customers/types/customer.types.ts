@@ -10,7 +10,7 @@ export type CustomerSortOption =
   | 'name_asc';
 
 export interface CustomerAddress {
-  id: string;
+  id: string | number;
   recipientName: string;
   phone: string;
   provinceCode?: string;
@@ -28,29 +28,30 @@ export interface CustomerListItem {
   fullName: string;
   email: string;
   phone: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   type: CustomerType;
   status: CustomerStatus;
   totalOrders: number;
   totalSpent: number;
   createdAt: string;
-  lastOrderAt?: string;
+  lastOrderAt?: string | null;
 }
 
 export interface CustomerDetail extends CustomerListItem {
   addresses: CustomerAddress[];
-  notes?: string;
-  registeredAt?: string;
+  notes?: string | null;
+  registeredAt?: string | null;
+  averageOrderValue?: number;
 }
 
 export interface CustomerOrderSummary {
-  id: string;
+  id: string | number;
   orderCode: string;
   createdAt: string;
   totalAmount: number;
   itemsCount: number;
-  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
-  orderStatus: 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED';
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | string;
+  orderStatus: 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED' | string;
 }
 
 export interface CreateCustomerInput {
@@ -59,8 +60,13 @@ export interface CreateCustomerInput {
   phone: string;
   password?: string;
   address?: {
+    recipientName?: string;
+    phone?: string;
+    provinceCode?: string;
     provinceName: string;
+    districtCode?: string;
     districtName: string;
+    wardCode?: string;
     wardName: string;
     detailAddress: string;
   };
@@ -77,7 +83,7 @@ export interface UpdateCustomerInfoInput {
   fullName: string;
   email: string;
   phone: string;
-  type: CustomerType;
+  type?: CustomerType;
   notes?: string;
 }
 

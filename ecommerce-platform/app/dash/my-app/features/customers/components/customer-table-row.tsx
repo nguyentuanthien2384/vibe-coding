@@ -25,6 +25,8 @@ const CustomerTableRow = ({ customer, onStatusClick, onEditClick }: CustomerTabl
     year: 'numeric',
   });
 
+  const detailUrl = `/customers/${encodeURIComponent(customer.id)}`;
+
   return (
     <tr className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800/80 text-sm">
       {/* Tên & Avatar & Type Badge */}
@@ -34,7 +36,7 @@ const CustomerTableRow = ({ customer, onStatusClick, onEditClick }: CustomerTabl
           <div>
             <div className="font-semibold text-slate-800 dark:text-white flex items-center gap-2">
               <Link
-                href={`/customers/${customer.id}`}
+                href={detailUrl}
                 className="hover:text-[#4880FF] transition-colors"
               >
                 {customer.fullName}
@@ -84,7 +86,7 @@ const CustomerTableRow = ({ customer, onStatusClick, onEditClick }: CustomerTabl
         <div className="flex items-center justify-center space-x-2">
           {/* Xem Chi Tiết */}
           <Link
-            href={`/customers/${customer.id}`}
+            href={detailUrl}
             className="p-1.5 text-slate-600 hover:text-[#4880FF] hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition-colors"
             title="Xem chi tiết khách hàng"
           >

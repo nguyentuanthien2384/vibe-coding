@@ -163,6 +163,7 @@ model User {
   fullName    String    @db.VarChar(100)
   phone       String?   @db.VarChar(20)
   avatarUrl   String?   @db.VarChar(500)
+  notes       String?   @db.Text
   role        Role      @default(CUSTOMER)
   isActive    Boolean   @default(true)
   lastLoginAt DateTime?
@@ -177,6 +178,8 @@ model User {
 
   @@index([email], name: "idx_user_email")
   @@index([role, isActive], name: "idx_user_role_active")
+  @@index([role, isActive, createdAt(sort: Desc)], name: "idx_user_admin_customer_filter")
+  @@index([fullName, email, phone], name: "idx_user_search")
   @@map("users")
 }
 
@@ -286,6 +289,7 @@ model Order {
   @@index([orderStatus, paymentStatus, createdAt(sort: Desc)], name: "idx_order_admin_filter")
   @@index([customerPhone], name: "idx_order_customer_phone")
   @@index([customerEmail], name: "idx_order_customer_email")
+  @@index([customerEmail, customerPhone], name: "idx_order_guest_contact")
   @@map("orders")
 }
 

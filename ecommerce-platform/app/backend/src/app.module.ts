@@ -18,6 +18,7 @@ import { MailModule } from './mail/mail.module';
 import { UploadModule } from './upload/upload.module';
 
 import { NotificationsModule } from './notifications/notifications.module';
+import { CustomersModule } from './customers/customers.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     MailModule,
     UploadModule,
     NotificationsModule,
+    CustomersModule,
   ],
   controllers: [AppController],
   providers: [
