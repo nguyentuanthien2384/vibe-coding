@@ -203,3 +203,9 @@
 - **Tính năng Ghi chú Nội bộ ([schema.prisma](file:///d:/vibe_coding/ecommerce-platform/app/backend/prisma/schema.prisma) & [admin-customers.service.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/src/customers/admin-customers.service.ts)):** Bổ sung trường `notes` trong `User` model DB MySQL cho Khách hàng thành viên và lưu trữ ghi chú trong Redis (`customer:notes:guest:${identifier}`) cho Khách vãng lai.
 - **Hỗ trợ Sổ địa chỉ & Thêm địa chỉ mới cho Khách vãng lai:** Cho phép Admin thêm địa chỉ giao hàng mới, đổi địa chỉ mặc định và xóa địa chỉ cho cả Khách hàng vãng lai (`GUEST`) thông qua lưu trữ Redis `customer:addresses:guest:${identifier}` kết hợp lịch sử đơn hàng.
 - **Khắc phục hoàn toàn lỗi 404 & Khớp dữ liệu JS Memory:** Đảm bảo 100% khách hàng trong bảng danh sách khi bấm xem chi tiết đều render dữ liệu thành công với HTTP Status 200 OK. Build thành công 100%, 0 lỗi TypeScript trên cả 3 dự án (`npx tsc --noEmit`).
+
+## [2026-08-14] Hoàn thành Quy hoạch & UI Trang Thiết lập Hệ thống (Admin Dashboard — Settings)
+- **Quy hoạch kỹ thuật (`05-settings-plan.md`):** Phân rã cây component, state management, types, style specifications từ idea `05-settings-idea.md`.
+- **UI Trang Thiết lập Hệ thống (`app/dash/my-app/app/(dashboard)/settings`):** Dựng 6 tab cấu hình (Cấu hình chung, VietQR & COD, Phí giao hàng & Freeship, Banner Repeater, Navigation Menu Repeater, SEO & Social Links).
+- **Phân loại Banner & Repeater Manager:** Hỗ trợ phân loại Banner Trang chủ (`HOME`) vs Trang sản phẩm (`PRODUCT`), lọc nhanh, sắp xếp thứ tự (Up/Down) và bật/tắt kích hoạt. Floating Save Bar báo thay đổi chưa lưu. Build thành công 100%, 0 lỗi TypeScript (`npx tsc --noEmit`).
+

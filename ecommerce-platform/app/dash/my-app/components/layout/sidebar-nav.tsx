@@ -17,6 +17,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'orders', label: 'Order Lists', href: '/orders', iconName: 'ListOrdered', badgeCount: 5 },
       { id: 'customers', label: 'Customers', href: '/customers', iconName: 'Users' },
       { id: 'stock', label: 'Product Stock', href: '/stock', iconName: 'Package' },
+      { id: 'settings', label: 'Settings', href: '/settings', iconName: 'Settings' },
     ],
   },
   {
