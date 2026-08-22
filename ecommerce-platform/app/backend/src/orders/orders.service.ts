@@ -292,6 +292,59 @@ export class OrdersService {
     };
   }
 
+  async confirmDemoPayment(orderCode: string) {
+    const demoConfirmationEnabled =
+      process.env.NODE_ENV !== 'production' ||
+      process.env.DEMO_PAYMENT_CONFIRMATION_ENABLED === 'true';
+
+    if (!demoConfirmationEnabled) {
+      throw new ForbiddenException(
+        'Xác nhận thanh toán từ giao diện chỉ khả dụng trong môi trường demo',
+      );
+    }
+
+    const order = await this.prisma.order.findUnique({
+      where: { orderCode },
+      select: {
+        orderCode: true,
+        paymentMethod: true,
+        paymentStatus: true,
+        orderStatus: true,
+        paidAt: true,
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Không tìm thấy thông tin đơn hàng');
+    }
+
+    if (order.paymentMethod !== PaymentMethod.QR_CODE) {
+      throw new BadRequestException('Chỉ đơn VietQR mới cần xác nhận thanh toán');
+    }
+
+    if (order.paymentStatus === PaymentStatus.PAID) {
+      return order;
+    }
+
+    const updatedOrder = await this.prisma.order.update({
+      where: { orderCode },
+      data: {
+        paymentStatus: PaymentStatus.PAID,
+        orderStatus: OrderStatus.CONFIRMED,
+        paidAt: new Date(),
+      },
+      select: {
+        orderCode: true,
+        paymentStatus: true,
+        orderStatus: true,
+        paidAt: true,
+      },
+    });
+
+    await this.redis.del(`order:qr_expire:${orderCode}`);
+    return updatedOrder;
+  }
+
   /**
    * Xử lý Webhook thanh toán từ ngân hàng (Idempotency với Redis)
    */

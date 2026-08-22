@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Backdrop } from "../../ui/backdrop";
 import { QRPaymentModalProps } from "../../../types/checkout";
 import { getOrderStatusApi } from "../../../lib/checkout";
+import { showToast } from "../../ui/toast";
 
 export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
   isOpen,
@@ -12,6 +13,7 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
   qrInfo,
   onClose,
   onPaymentSuccess,
+  onConfirmDemoPayment,
 }) => {
   const [timeLeft, setTimeLeft] = useState(900); // 15 phút đếm ngược
   const [copiedContent, setCopiedContent] = useState(false);
@@ -24,17 +26,20 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
 
-    // Polling trạng thái thanh toán từ backend mỗi 3 giây
-    const pollInterval = setInterval(async () => {
+    const checkPaymentStatus = async () => {
       try {
         const res = await getOrderStatusApi(orderCode);
         if (res.paymentStatus === 'PAID') {
-          clearInterval(pollInterval);
           onPaymentSuccess();
         }
-      } catch (err) {
+      } catch {
         // Silently ignore polling errors
       }
+    };
+
+    void checkPaymentStatus();
+    const pollInterval = setInterval(() => {
+      void checkPaymentStatus();
     }, 3000);
 
     return () => {
@@ -75,12 +80,22 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
     document.body.removeChild(a);
   };
 
-  const handleSimulatePaymentSuccess = () => {
+  const handleConfirmPayment = async () => {
     setIsVerifying(true);
-    setTimeout(() => {
-      setIsVerifying(false);
+    try {
+      await onConfirmDemoPayment();
       onPaymentSuccess();
-    }, 1200);
+    } catch (error) {
+      showToast({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Không thể xác nhận thanh toán. Vui lòng thử lại.",
+      });
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   return (
@@ -204,7 +219,7 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
         <div className="space-y-2.5">
           <button
             type="button"
-            onClick={handleSimulatePaymentSuccess}
+            onClick={() => void handleConfirmPayment()}
             disabled={isVerifying}
             className="w-full bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-extrabold py-3.5 px-4 rounded-xl shadow-md shadow-orange-600/20 transition-all text-base cursor-pointer flex items-center justify-center gap-2"
           >

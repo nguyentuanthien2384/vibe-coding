@@ -108,6 +108,18 @@ export class OrdersController {
     };
   }
 
+  @Post(':orderCode/demo-confirm-payment')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async confirmDemoPayment(@Param('orderCode') orderCode: string) {
+    const data = await this.ordersService.confirmDemoPayment(orderCode);
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Xác nhận thanh toán demo thành công',
+      data,
+    };
+  }
+
   /**
    * POST /api/v1/orders/webhook/payment
    * Cổng tiếp nhận Webhook chuyển khoản tự động từ ngân hàng

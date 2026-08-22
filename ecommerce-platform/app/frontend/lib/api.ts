@@ -18,15 +18,27 @@ interface ApiResponseWithPagination<T> extends ApiResponse<T> {
   };
 }
 
+interface NextFetchOptions {
+  revalidate?: number;
+}
+
+type NextRequestInit = RequestInit & {
+  next?: NextFetchOptions;
+};
+
 async function apiFetch<T>(
   path: string,
-  options?: RequestInit,
+  options?: NextRequestInit,
 ): Promise<T> {
   const url = `${API_BASE}${path}`;
+  const { next, ...requestOptions } = options ?? {};
+  const fetchOptions: NextRequestInit = {
+    ...requestOptions,
+    ...(requestOptions.cache === 'no-store' ? {} : { next: next ?? { revalidate: 60 } }),
+  };
   const res = await fetch(url, {
-    ...options,
+    ...fetchOptions,
     // Next.js: revalidate mỗi 60 giây (ISR)
-    next: { revalidate: 60 },
   });
 
   if (!res.ok) {
@@ -41,4 +53,3 @@ import { serverApiFetch } from './server-api';
 
 export { apiFetch, clientApiFetch, serverApiFetch };
 export type { ApiResponse, ApiResponseWithPagination };
-
