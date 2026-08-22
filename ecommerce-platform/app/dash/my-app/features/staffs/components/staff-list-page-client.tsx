@@ -6,6 +6,8 @@ import StaffTable from './staff-table';
 import CreateStaffModal from './modals/create-staff-modal';
 import UpdateStaffStatusModal from './modals/update-staff-status-modal';
 import CustomPermissionsModal from './modals/custom-permissions-modal';
+import AssignStaffRoleModal from './modals/assign-staff-role-modal';
+
 import {
   StaffRole,
   StaffStatus,
@@ -13,12 +15,14 @@ import {
   CreateStaffInput,
   UpdateStaffStatusInput,
   UpdateStaffCustomPermissionsInput,
+  UpdateStaffRoleInput,
 } from '../types/staff.types';
 import {
   getStaffs,
   createStaff,
   updateStaffStatus,
   updateStaffCustomPermissions,
+  updateStaffRoleGroup,
 } from '../api/staffs-api';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useToast } from '@/components/ui/toast';
@@ -43,6 +47,7 @@ export default function StaffListPageClient() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedForStatus, setSelectedForStatus] = useState<StaffListItem | null>(null);
   const [selectedForCustomPerms, setSelectedForCustomPerms] = useState<StaffListItem | null>(null);
+  const [selectedForAssignRole, setSelectedForAssignRole] = useState<StaffListItem | null>(null);
 
   // Fetch Data từ Backend API
   const fetchStaffs = useCallback(async () => {
@@ -122,6 +127,16 @@ export default function StaffListPageClient() {
     }
   };
 
+  const handleUpdateRoleGroup = async (data: UpdateStaffRoleInput) => {
+    try {
+      await updateStaffRoleGroup(data);
+      showToast('success', 'Cập nhật phân quyền và nhóm vai trò thành công!');
+      fetchStaffs();
+    } catch (err: any) {
+      showToast('error', err.message || 'Cập nhật phân quyền thất bại');
+    }
+  };
+
   return (
     <div className="w-full">
       <StaffListPageHeader onCreateClick={() => setIsCreateModalOpen(true)} />
@@ -145,6 +160,7 @@ export default function StaffListPageClient() {
         onPageChange={setCurrentPage}
         isLoading={isLoading}
         onOpenCustomPermissions={setSelectedForCustomPerms}
+        onOpenAssignRole={setSelectedForAssignRole}
         onToggleStatus={setSelectedForStatus}
       />
 
@@ -168,6 +184,14 @@ export default function StaffListPageClient() {
         onClose={() => setSelectedForCustomPerms(null)}
         onSubmit={handleUpdateCustomPermissions}
       />
+
+      <AssignStaffRoleModal
+        isOpen={!!selectedForAssignRole}
+        staff={selectedForAssignRole}
+        onClose={() => setSelectedForAssignRole(null)}
+        onSubmit={handleUpdateRoleGroup}
+      />
     </div>
   );
 }
+

@@ -13,7 +13,9 @@ import {
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { SettingsService } from './settings.service';
 import { UpdateSystemSettingsDto } from './dto/update-system-settings.dto';
 import { GeneralSettingsDto } from './dto/general-settings.dto';
@@ -23,17 +25,18 @@ import { EmailSettingsDto, TestEmailConnectionDto } from './dto/email-settings.d
 import { SettingsResponse } from './interfaces/system-settings.interface';
 
 @Controller('admin/settings')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 export class AdminSettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
   /**
    * GET /api/v1/admin/settings
    * Lấy toàn bộ cấu hình hệ thống (General, Payment, Shipping, Banners, Menus, SEO, Email)
-   * Quyền: ADMIN, STAFF
+   * Quyền: ADMIN, STAFF (Yêu cầu setting.manage hoặc banner.manage)
    */
   @Get()
   @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('setting.manage', 'banner.manage')
   @HttpCode(HttpStatus.OK)
   async getAllSettings(): Promise<SettingsResponse> {
     return this.settingsService.getAllSettings();
@@ -46,6 +49,7 @@ export class AdminSettingsController {
    */
   @Get(':group')
   @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('setting.manage', 'banner.manage')
   @HttpCode(HttpStatus.OK)
   async getGroupSettings(
     @Param('group') group: string,
@@ -56,10 +60,11 @@ export class AdminSettingsController {
   /**
    * PUT /api/v1/admin/settings
    * Cập nhật đồng loạt thông số cấu hình hệ thống
-   * Quyền: ADMIN
+   * Quyền: ADMIN, STAFF (Yêu cầu setting.manage hoặc banner.manage)
    */
   @Put()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('setting.manage', 'banner.manage')
   @HttpCode(HttpStatus.OK)
   async updateSettings(
     @Body() dto: UpdateSystemSettingsDto,
@@ -70,10 +75,11 @@ export class AdminSettingsController {
   /**
    * PATCH /api/v1/admin/settings/general
    * Cập nhật nhanh Cấu hình chung
-   * Quyền: ADMIN
+   * Quyền: ADMIN, STAFF (Yêu cầu setting.manage)
    */
   @Patch('general')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('setting.manage')
   @HttpCode(HttpStatus.OK)
   async patchGeneral(
     @Body() dto: GeneralSettingsDto,
@@ -84,10 +90,11 @@ export class AdminSettingsController {
   /**
    * PATCH /api/v1/admin/settings/menus
    * Cập nhật nhanh Menu Navigation
-   * Quyền: ADMIN
+   * Quyền: ADMIN, STAFF (Yêu cầu setting.manage)
    */
   @Patch('menus')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('setting.manage')
   @HttpCode(HttpStatus.OK)
   async patchMenus(
     @Body() dto: MenuItemSettingDto[],
@@ -98,16 +105,18 @@ export class AdminSettingsController {
   /**
    * PATCH /api/v1/admin/settings/seo
    * Cập nhật nhanh cấu hình SEO & Social
-   * Quyền: ADMIN
+   * Quyền: ADMIN, STAFF (Yêu cầu setting.manage)
    */
   @Patch('seo')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('setting.manage')
   @HttpCode(HttpStatus.OK)
   async patchSeo(
     @Body() dto: SeoSocialSettingsDto,
   ): Promise<{ statusCode: number; message: string }> {
     return this.settingsService.patchGroupSettings('seo', dto);
   }
+
 
   /**
    * PATCH /api/v1/admin/settings/email

@@ -26,8 +26,14 @@ export class CartService {
     }
 
     if (userId) {
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (!user || !user.isActive) {
+        throw new ForbiddenException('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.');
+      }
+
       let userCart = await this.prisma.cart.findUnique({
         where: { userId },
+
         include: {
           items: {
             include: { product: true },

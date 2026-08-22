@@ -13,6 +13,7 @@ interface StaffTableProps {
   onPageChange: (page: number) => void;
   isLoading?: boolean;
   onOpenCustomPermissions: (staff: StaffListItem) => void;
+  onOpenAssignRole: (staff: StaffListItem) => void;
   onToggleStatus: (staff: StaffListItem) => void;
 }
 
@@ -25,6 +26,7 @@ export default function StaffTable({
   onPageChange,
   isLoading = false,
   onOpenCustomPermissions,
+  onOpenAssignRole,
   onToggleStatus,
 }: StaffTableProps) {
   if (isLoading) {
@@ -55,12 +57,14 @@ export default function StaffTable({
                 key={staff.id}
                 staff={staff}
                 onOpenCustomPermissions={onOpenCustomPermissions}
+                onOpenAssignRole={onOpenAssignRole}
                 onToggleStatus={onToggleStatus}
               />
             ))}
           </tbody>
         </table>
       </div>
+
 
       <StaffPagination
         currentPage={currentPage}

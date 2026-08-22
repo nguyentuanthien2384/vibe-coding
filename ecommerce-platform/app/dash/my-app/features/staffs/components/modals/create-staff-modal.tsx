@@ -1,7 +1,8 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { CreateStaffInput, StaffRole } from '@/features/staffs/types/staff.types';
+import { CreateStaffInput, StaffRole, StaffRoleGroup } from '@/features/staffs/types/staff.types';
+import { getRoleGroups } from '@/features/staffs/api/staffs-api';
 
 interface CreateStaffModalProps {
   isOpen: boolean;
@@ -16,13 +17,30 @@ export default function CreateStaffModal({ isOpen, onClose, onSubmit }: CreateSt
     phone: '',
     password: '',
     role: 'STAFF',
+    roleGroupId: null,
+    notes: '',
   });
+
+  const [roleGroups, setRoleGroups] = useState<StaffRoleGroup[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      getRoleGroups()
+        .then((res) => {
+          setRoleGroups(res.roleGroups.filter((g) => !g.isSystem));
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      roleGroupId: formData.role === 'STAFF' ? (formData.roleGroupId ? Number(formData.roleGroupId) : null) : null,
+    });
     onClose();
   };
 
@@ -39,7 +57,7 @@ export default function CreateStaffModal({ isOpen, onClose, onSubmit }: CreateSt
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
           <div>
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Họ và tên <span className="text-red-500">*</span>
@@ -49,7 +67,7 @@ export default function CreateStaffModal({ isOpen, onClose, onSubmit }: CreateSt
               required
               value={formData.fullName}
               onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              className="w-full h-11 px-4 bg-[#F8FAFC] dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              className="w-full h-11 px-4 bg-[#F8FAFC] dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-white"
               placeholder="VD: Nguyễn Văn A"
             />
           </div>
@@ -63,8 +81,8 @@ export default function CreateStaffModal({ isOpen, onClose, onSubmit }: CreateSt
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full h-11 px-4 bg-[#F8FAFC] dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              placeholder="admin@techbite.com"
+              className="w-full h-11 px-4 bg-[#F8FAFC] dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-white"
+              placeholder="staff@techbite.com"
             />
           </div>
 
@@ -76,7 +94,7 @@ export default function CreateStaffModal({ isOpen, onClose, onSubmit }: CreateSt
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full h-11 px-4 bg-[#F8FAFC] dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              className="w-full h-11 px-4 bg-[#F8FAFC] dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-white"
               placeholder="0901234567"
             />
           </div>
@@ -89,7 +107,7 @@ export default function CreateStaffModal({ isOpen, onClose, onSubmit }: CreateSt
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full h-11 px-4 bg-[#F8FAFC] dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              className="w-full h-11 px-4 bg-[#F8FAFC] dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-white"
               placeholder="Để trống để dùng mật khẩu mặc định"
             />
           </div>
@@ -102,11 +120,49 @@ export default function CreateStaffModal({ isOpen, onClose, onSubmit }: CreateSt
               required
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value as StaffRole })}
-              className="w-full h-11 px-4 bg-[#F8FAFC] dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              className="w-full h-11 px-4 bg-[#F8FAFC] dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-white"
             >
               <option value="STAFF">Nhân viên (STAFF)</option>
               <option value="ADMIN">Quản trị viên (ADMIN)</option>
             </select>
+          </div>
+
+          {formData.role === 'STAFF' && (
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Nhóm quyền chức danh
+              </label>
+              <select
+                value={formData.roleGroupId ? String(formData.roleGroupId) : ''}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    roleGroupId: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+                className="w-full h-11 px-4 bg-[#F8FAFC] dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-white"
+              >
+                <option value="">-- Chưa gán nhóm --</option>
+                {roleGroups.map((g) => (
+                  <option key={g.id} value={String(g.id)}>
+                    {g.name} ({g.permissions.length} quyền)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              Ghi chú nội bộ
+            </label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              rows={2}
+              className="w-full p-3.5 bg-[#F8FAFC] dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none text-slate-900 dark:text-white"
+              placeholder="Ghi chú thêm về nhân sự..."
+            />
           </div>
 
           <div className="pt-4 flex justify-end gap-3 border-t border-gray-100 dark:border-slate-800">

@@ -7,11 +7,13 @@ import { ALL_PERMISSIONS } from '@/features/staffs/data/mock-staffs';
 interface StaffRolePermissionsCardProps {
   staff: StaffDetail;
   onEditRoleClick: () => void;
+  onAssignRoleClick: () => void;
 }
 
 export default function StaffRolePermissionsCard({
   staff,
   onEditRoleClick,
+  onAssignRoleClick,
 }: StaffRolePermissionsCardProps) {
   const isAdmin = staff.role === 'ADMIN';
   const inheritedSet = new Set(staff.inheritedPermissions || []);
@@ -19,20 +21,31 @@ export default function StaffRolePermissionsCard({
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm p-6 flex flex-col h-full">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-2">
           <Shield className="w-5 h-5 text-blue-600" />
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">
             Nhóm quyền & Đặc quyền bổ sung
           </h3>
         </div>
-        <button
-          onClick={onEditRoleClick}
-          className="text-xs font-bold text-[#2563EB] hover:text-[#1D4ED8] bg-blue-50 dark:bg-blue-950/40 px-3.5 py-1.5 rounded-xl transition-colors"
-        >
-          Thiết lập đặc quyền
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onAssignRoleClick}
+            className="text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-blue-600 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3.5 py-1.5 rounded-xl transition-colors"
+          >
+            Đổi nhóm quyền
+          </button>
+          {!isAdmin && (
+            <button
+              onClick={onEditRoleClick}
+              className="text-xs font-bold text-[#2563EB] hover:text-[#1D4ED8] bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 px-3.5 py-1.5 rounded-xl transition-colors"
+            >
+              Thiết lập đặc quyền
+            </button>
+          )}
+        </div>
       </div>
+
 
       {/* Role Banner */}
       <div

@@ -11,9 +11,10 @@ export interface PermissionDefinition {
 }
 
 export interface StaffRoleGroup {
-  id: string;
+  id: number | string;
   name: string;
-  description: string;
+  slug?: string;
+  description: string | null;
   memberCount: number;
   isSystem: boolean;
   permissions: string[];
@@ -28,26 +29,29 @@ export interface StaffListItem {
   avatarUrl?: string;
   role: StaffRole;
   roleLabel: string;
-  roleGroupId?: string;
+  roleGroupId?: number | string | null;
   roleGroupName?: string;
   status: StaffStatus;
   createdAt: string;
   lastLoginAt?: string;
   inheritedPermissions: string[];
   customPermissions: string[];
+  notes?: string;
 }
 
 export interface StaffDetail extends StaffListItem {
   notes?: string;
+  effectivePermissions?: string[];
 }
 
 export interface CreateStaffInput {
   fullName: string;
   email: string;
-  phone: string;
+  phone?: string;
   password?: string;
-  roleGroupId?: string;
+  roleGroupId?: number | string | null;
   role: StaffRole;
+  notes?: string;
 }
 
 export interface UpdateStaffStatusInput {
@@ -64,19 +68,26 @@ export interface UpdateStaffCustomPermissionsInput {
 export interface UpdateStaffRoleInput {
   staffId: string;
   role: StaffRole;
-  roleGroupId?: number | null;
-  permissions?: string[];
+  roleGroupId?: number | string | null;
+}
+
+
+export interface UpdateStaffBasicInfoInput {
+  fullName?: string;
+  phone?: string;
+  notes?: string;
 }
 
 export interface CreateRoleGroupInput {
   name: string;
-  description: string;
+  description?: string;
   permissions: string[];
 }
 
 export interface UpdateRoleGroupInput {
-  id: string;
+  id: number | string;
   name: string;
-  description: string;
+  description?: string;
   permissions: string[];
 }
+

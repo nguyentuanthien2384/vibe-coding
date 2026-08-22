@@ -15,7 +15,9 @@ import {
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { AdminProductsService } from './admin-products.service';
 import { GetAdminProductsDto } from './dto/get-admin-products.dto';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -28,17 +30,18 @@ import {
 } from './interfaces/admin-product.interface';
 
 @Controller('admin/products')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 export class AdminProductsController {
   constructor(private readonly adminProductsService: AdminProductsService) {}
 
   /**
    * GET /api/v1/admin/products
    * Lấy danh sách sản phẩm phân trang cho Admin Dashboard.
-   * Quyền: ADMIN, STAFF
+   * Quyền: ADMIN, STAFF (Yêu cầu product.view hoặc product.manage)
    */
   @Get()
   @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('product.view', 'product.manage')
   @HttpCode(HttpStatus.OK)
   findAll(@Query() dto: GetAdminProductsDto): Promise<AdminProductListResponse> {
     return this.adminProductsService.findAll(dto);
@@ -47,10 +50,11 @@ export class AdminProductsController {
   /**
    * GET /api/v1/admin/products/:id
    * Lấy thông tin chi tiết một sản phẩm theo ID.
-   * Quyền: ADMIN, STAFF
+   * Quyền: ADMIN, STAFF (Yêu cầu product.view hoặc product.manage)
    */
   @Get(':id')
   @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('product.view', 'product.manage')
   @HttpCode(HttpStatus.OK)
   findOne(@Param('id', ParseIntPipe) id: number): Promise<AdminProductDetailResponse> {
     return this.adminProductsService.findOne(id);
@@ -59,10 +63,11 @@ export class AdminProductsController {
   /**
    * POST /api/v1/admin/products
    * Tạo mới sản phẩm.
-   * Quyền: ADMIN only
+   * Quyền: ADMIN, STAFF (Yêu cầu product.manage)
    */
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('product.manage')
   @HttpCode(HttpStatus.CREATED)
   create(@Body() dto: CreateProductDto): Promise<AdminProductMutateResponse> {
     return this.adminProductsService.create(dto);
@@ -71,10 +76,11 @@ export class AdminProductsController {
   /**
    * PATCH /api/v1/admin/products/:id
    * Cập nhật thông tin sản phẩm.
-   * Quyền: ADMIN only
+   * Quyền: ADMIN, STAFF (Yêu cầu product.manage)
    */
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('product.manage')
   @HttpCode(HttpStatus.OK)
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -86,12 +92,14 @@ export class AdminProductsController {
   /**
    * DELETE /api/v1/admin/products/:id
    * Xóa vĩnh viễn sản phẩm (Kiểm tra an toàn đơn hàng).
-   * Quyền: ADMIN only
+   * Quyền: ADMIN, STAFF (Yêu cầu product.manage)
    */
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('product.manage')
   @HttpCode(HttpStatus.OK)
   remove(@Param('id', ParseIntPipe) id: number): Promise<AdminProductDeleteResponse> {
     return this.adminProductsService.remove(id);
   }
 }
+

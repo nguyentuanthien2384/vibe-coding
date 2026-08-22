@@ -24,9 +24,10 @@ export default function RoleGroupModal({
   useEffect(() => {
     if (roleGroup) {
       setName(roleGroup.name);
-      setDescription(roleGroup.description);
+      setDescription(roleGroup.description || '');
       setPermissions(roleGroup.permissions || []);
     } else {
+
       setName('');
       setDescription('');
       setPermissions([]);

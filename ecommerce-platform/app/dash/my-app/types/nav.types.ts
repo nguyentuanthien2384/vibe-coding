@@ -8,8 +8,10 @@ export interface NavItem {
   badgeCount?: number;
   rolesAllowed?: AdminRole[];
   permissionRequired?: string;
+  permissionsRequired?: string[];
   children?: NavItem[];
 }
+
 
 export interface NavGroup {
   id: string;

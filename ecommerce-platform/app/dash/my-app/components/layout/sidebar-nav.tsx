@@ -19,7 +19,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'customers', label: 'Customers', href: '/customers', iconName: 'Users', permissionRequired: 'customer.view' },
       { id: 'staffs', label: 'Staffs', href: '/staffs', iconName: 'ShieldCheck', rolesAllowed: ['ADMIN'] },
       { id: 'stock', label: 'Product Stock', href: '/stock', iconName: 'Package', permissionRequired: 'product.view' },
-      { id: 'settings', label: 'Settings', href: '/settings', iconName: 'Settings', rolesAllowed: ['ADMIN'], permissionRequired: 'banner.manage' },
+      { id: 'settings', label: 'Settings', href: '/settings', iconName: 'Settings', permissionsRequired: ['setting.manage', 'banner.manage'] },
     ],
   },
   {
@@ -56,12 +56,20 @@ const SidebarNav = ({ isCollapsed }: SidebarNavProps) => {
     }
 
     // 3. Kiểm tra Phân quyền chi tiết (Fine-grained Permissions) đối với STAFF
+    if (item.permissionsRequired && item.permissionsRequired.length > 0) {
+      const hasAny = item.permissionsRequired.some(
+        (p) => userPermissions.includes(p) || userPermissions.includes('*'),
+      );
+      if (!hasAny) return false;
+    }
+
     if (item.permissionRequired) {
       return userPermissions.includes(item.permissionRequired) || userPermissions.includes('*');
     }
 
     return true;
   };
+
 
   const filteredGroups = NAV_GROUPS.map((group) => ({
     ...group,

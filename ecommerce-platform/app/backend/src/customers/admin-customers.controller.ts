@@ -15,7 +15,9 @@ import {
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { AdminCustomersService } from './admin-customers.service';
 import { CustomerQueryDto } from './dto/customer-query.dto';
 import { CreateCustomerDto } from './dto/create-customer.dto';
@@ -31,17 +33,18 @@ import {
 } from './interfaces/customer.interface';
 
 @Controller('admin/customers')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 export class AdminCustomersController {
   constructor(private readonly adminCustomersService: AdminCustomersService) {}
 
   /**
    * GET /api/v1/admin/customers
    * Lấy danh sách khách hàng (Thành viên + Vãng lai) cho Admin Dashboard
-   * Quyền: ADMIN, STAFF
+   * Quyền: ADMIN, STAFF (Yêu cầu customer.view hoặc customer.manage)
    */
   @Get()
   @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('customer.view', 'customer.manage')
   @HttpCode(HttpStatus.OK)
   findAll(@Query() dto: CustomerQueryDto): Promise<CustomerListResponse> {
     return this.adminCustomersService.findAll(dto);
@@ -50,10 +53,11 @@ export class AdminCustomersController {
   /**
    * GET /api/v1/admin/customers/:id
    * Xem thông tin chi tiết khách hàng (Profile, chỉ số tài chính, danh sách địa chỉ)
-   * Quyền: ADMIN, STAFF
+   * Quyền: ADMIN, STAFF (Yêu cầu customer.view hoặc customer.manage)
    */
   @Get(':id')
   @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('customer.view', 'customer.manage')
   @HttpCode(HttpStatus.OK)
   findOne(@Param('id') id: string): Promise<CustomerDetailResponse> {
     return this.adminCustomersService.findOne(id);
@@ -62,10 +66,11 @@ export class AdminCustomersController {
   /**
    * POST /api/v1/admin/customers
    * Tạo mới tài khoản khách hàng thủ công
-   * Quyền: ADMIN, STAFF
+   * Quyền: ADMIN, STAFF (Yêu cầu customer.manage)
    */
   @Post()
   @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('customer.manage')
   @HttpCode(HttpStatus.CREATED)
   create(@Body() dto: CreateCustomerDto): Promise<CustomerMutateResponse> {
     return this.adminCustomersService.create(dto);
@@ -74,10 +79,11 @@ export class AdminCustomersController {
   /**
    * PATCH /api/v1/admin/customers/:id/status
    * Cập nhật trạng thái tài khoản khách hàng (ACTIVE / BLOCKED / INACTIVE)
-   * Quyền: ADMIN, STAFF
+   * Quyền: ADMIN, STAFF (Yêu cầu customer.manage)
    */
   @Patch(':id/status')
   @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('customer.manage')
   @HttpCode(HttpStatus.OK)
   updateStatus(
     @Param('id') id: string,
@@ -89,10 +95,11 @@ export class AdminCustomersController {
   /**
    * PATCH /api/v1/admin/customers/:id
    * Cập nhật thông tin cá nhân cơ bản của khách hàng
-   * Quyền: ADMIN, STAFF
+   * Quyền: ADMIN, STAFF (Yêu cầu customer.manage)
    */
   @Patch(':id')
   @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('customer.manage')
   @HttpCode(HttpStatus.OK)
   update(
     @Param('id') id: string,
@@ -104,10 +111,11 @@ export class AdminCustomersController {
   /**
    * GET /api/v1/admin/customers/:id/orders
    * Lấy danh sách lịch sử đơn hàng của khách hàng có phân trang & tìm kiếm
-   * Quyền: ADMIN, STAFF
+   * Quyền: ADMIN, STAFF (Yêu cầu customer.view hoặc order.view)
    */
   @Get(':id/orders')
   @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('customer.view', 'order.view')
   @HttpCode(HttpStatus.OK)
   getCustomerOrders(
     @Param('id') id: string,
@@ -119,10 +127,11 @@ export class AdminCustomersController {
   /**
    * POST /api/v1/admin/customers/:id/addresses
    * Thêm địa chỉ giao hàng mới cho khách hàng
-   * Quyền: ADMIN, STAFF
+   * Quyền: ADMIN, STAFF (Yêu cầu customer.manage)
    */
   @Post(':id/addresses')
   @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('customer.manage')
   @HttpCode(HttpStatus.CREATED)
   addAddress(
     @Param('id') id: string,
@@ -134,10 +143,11 @@ export class AdminCustomersController {
   /**
    * PATCH /api/v1/admin/customers/:id/addresses/:addressId/default
    * Đặt địa chỉ mặc định cho khách hàng
-   * Quyền: ADMIN, STAFF
+   * Quyền: ADMIN, STAFF (Yêu cầu customer.manage)
    */
   @Patch(':id/addresses/:addressId/default')
   @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('customer.manage')
   @HttpCode(HttpStatus.OK)
   setDefaultAddress(
     @Param('id') id: string,
@@ -149,10 +159,11 @@ export class AdminCustomersController {
   /**
    * DELETE /api/v1/admin/customers/:id/addresses/:addressId
    * Xóa địa chỉ của khách hàng
-   * Quyền: ADMIN, STAFF
+   * Quyền: ADMIN, STAFF (Yêu cầu customer.manage)
    */
   @Delete(':id/addresses/:addressId')
   @Roles(Role.ADMIN, Role.STAFF)
+  @RequirePermissions('customer.manage')
   @HttpCode(HttpStatus.OK)
   deleteAddress(
     @Param('id') id: string,
@@ -161,3 +172,4 @@ export class AdminCustomersController {
     return this.adminCustomersService.deleteAddress(id, addressId);
   }
 }
+

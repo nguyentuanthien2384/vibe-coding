@@ -9,6 +9,7 @@ import StaffRoleBadge from './staff-role-badge';
 interface StaffTableRowProps {
   staff: StaffListItem;
   onOpenCustomPermissions: (staff: StaffListItem) => void;
+  onOpenAssignRole: (staff: StaffListItem) => void;
   onToggleStatus: (staff: StaffListItem) => void;
 }
 
@@ -22,6 +23,7 @@ const AVATAR_COLORS: Record<number, string> = {
 export default function StaffTableRow({
   staff,
   onOpenCustomPermissions,
+  onOpenAssignRole,
   onToggleStatus,
 }: StaffTableRowProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -121,7 +123,17 @@ export default function StaffTableRow({
             {isMenuOpen && (
               <>
                 <div className="fixed inset-0 z-20" onClick={() => setIsMenuOpen(false)} />
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 py-1.5 z-30 text-left animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 py-1.5 z-30 text-left animate-in fade-in zoom-in-95 duration-150">
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onOpenAssignRole(staff);
+                    }}
+                    className="w-full px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
+                  >
+                    <UserCog className="w-4 h-4 text-blue-600" />
+                    <span>Đổi vai trò & nhóm quyền</span>
+                  </button>
                   <button
                     onClick={() => {
                       setIsMenuOpen(false);
@@ -129,8 +141,8 @@ export default function StaffTableRow({
                     }}
                     className="w-full px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
                   >
-                    <UserCog className="w-4 h-4 text-blue-600" />
-                    <span>Phân quyền chi tiết</span>
+                    <Shield className="w-4 h-4 text-indigo-600" />
+                    <span>Thiết lập đặc quyền</span>
                   </button>
                   <button
                     onClick={() => {
@@ -151,3 +163,4 @@ export default function StaffTableRow({
     </tr>
   );
 }
+

@@ -7,15 +7,18 @@ export const metadata = {
 };
 
 interface StaffDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function StaffDetailPage({ params }: StaffDetailPageProps) {
+export default async function StaffDetailPage({ params }: StaffDetailPageProps) {
+  const { id } = await params;
+
   return (
     <div className="w-full">
-      <StaffDetailContainer staffId={params.id} />
+      <StaffDetailContainer staffId={id} />
     </div>
   );
 }
+

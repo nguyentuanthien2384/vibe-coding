@@ -1,48 +1,75 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'next/navigation';
 import StaffDetailHeader from './staff-detail-header';
 import StaffDetailGrid from './staff-detail-grid';
 import StaffProfileCard from './cards/staff-profile-card';
 import StaffRolePermissionsCard from './cards/staff-role-permissions-card';
 import UpdateStaffStatusModal from './modals/update-staff-status-modal';
 import CustomPermissionsModal from './modals/custom-permissions-modal';
-import { StaffDetail, UpdateStaffStatusInput, UpdateStaffCustomPermissionsInput } from '../types/staff.types';
+import AssignStaffRoleModal from './modals/assign-staff-role-modal';
+import EditStaffProfileModal from './modals/edit-staff-profile-modal';
+import {
+  StaffDetail,
+  UpdateStaffStatusInput,
+  UpdateStaffCustomPermissionsInput,
+  UpdateStaffRoleInput,
+  UpdateStaffBasicInfoInput,
+} from '../types/staff.types';
 import {
   getStaffById,
   updateStaffStatus,
   updateStaffCustomPermissions,
+  updateStaffRoleGroup,
+  updateStaffBasicInfo,
 } from '../api/staffs-api';
 import { useToast } from '@/components/ui/toast';
 
 interface StaffDetailContainerProps {
-  staffId: string;
+  staffId?: string;
 }
 
 export default function StaffDetailContainer({ staffId }: StaffDetailContainerProps) {
+  const routeParams = useParams();
+  const idFromUrl = routeParams?.id as string | undefined;
+  const activeId =
+    staffId && staffId !== 'undefined'
+      ? staffId
+      : idFromUrl && idFromUrl !== 'undefined'
+      ? idFromUrl
+      : '';
+
   const [staff, setStaff] = useState<StaffDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modals state
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isCustomPermsModalOpen, setIsCustomPermsModalOpen] = useState(false);
+  const [isAssignRoleModalOpen, setIsAssignRoleModalOpen] = useState(false);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
 
   const { showToast } = useToast();
 
   const fetchStaffDetail = useCallback(async () => {
+    if (!activeId || activeId === 'undefined') {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
-      const data = await getStaffById(staffId);
+      const data = await getStaffById(activeId);
       setStaff(data);
     } catch (err: any) {
       showToast('error', err.message || 'Không thể tải thông tin nhân viên');
     } finally {
       setIsLoading(false);
     }
-  }, [staffId, showToast]);
+  }, [activeId, showToast]);
 
   useEffect(() => {
     fetchStaffDetail();
   }, [fetchStaffDetail]);
+
 
   const handleUpdateStatus = async (data: UpdateStaffStatusInput) => {
     try {
@@ -69,9 +96,28 @@ export default function StaffDetailContainer({ staffId }: StaffDetailContainerPr
     }
   };
 
-  const handleEditProfile = () => {
-    alert('Tính năng cập nhật thông tin đang được hoàn thiện');
+  const handleUpdateRoleGroup = async (data: UpdateStaffRoleInput) => {
+    try {
+      const updated = await updateStaffRoleGroup(data);
+      setStaff(updated);
+      showToast('success', 'Cập nhật phân quyền và nhóm vai trò thành công!');
+    } catch (err: any) {
+      showToast('error', err.message || 'Cập nhật phân quyền thất bại');
+    }
   };
+
+  const handleUpdateBasicInfo = async (data: UpdateStaffBasicInfoInput) => {
+    const targetId = staff?.id || activeId;
+    if (!targetId) return;
+    try {
+      const updated = await updateStaffBasicInfo(targetId, data);
+      setStaff(updated);
+      showToast('success', 'Cập nhật thông tin nhân viên thành công!');
+    } catch (err: any) {
+      showToast('error', err.message || 'Cập nhật thông tin thất bại');
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -94,7 +140,7 @@ export default function StaffDetailContainer({ staffId }: StaffDetailContainerPr
     <div className="w-full">
       <StaffDetailHeader
         staff={staff}
-        onEditClick={handleEditProfile}
+        onEditClick={() => setIsEditProfileModalOpen(true)}
         onToggleStatusClick={() => setIsStatusModalOpen(true)}
       />
 
@@ -103,6 +149,7 @@ export default function StaffDetailContainer({ staffId }: StaffDetailContainerPr
         <StaffRolePermissionsCard
           staff={staff}
           onEditRoleClick={() => setIsCustomPermsModalOpen(true)}
+          onAssignRoleClick={() => setIsAssignRoleModalOpen(true)}
         />
       </StaffDetailGrid>
 
@@ -118,6 +165,20 @@ export default function StaffDetailContainer({ staffId }: StaffDetailContainerPr
         staff={staff}
         onClose={() => setIsCustomPermsModalOpen(false)}
         onSubmit={handleUpdateCustomPermissions}
+      />
+
+      <AssignStaffRoleModal
+        isOpen={isAssignRoleModalOpen}
+        staff={staff}
+        onClose={() => setIsAssignRoleModalOpen(false)}
+        onSubmit={handleUpdateRoleGroup}
+      />
+
+      <EditStaffProfileModal
+        isOpen={isEditProfileModalOpen}
+        staff={staff}
+        onClose={() => setIsEditProfileModalOpen(false)}
+        onSubmit={handleUpdateBasicInfo}
       />
     </div>
   );

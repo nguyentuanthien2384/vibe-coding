@@ -6,8 +6,9 @@ import { StaffRoleGroup } from '../../types/staff.types';
 interface RoleTableProps {
   roleGroups: StaffRoleGroup[];
   onEdit: (group: StaffRoleGroup) => void;
-  onDelete: (groupId: string) => void;
+  onDelete: (groupId: string | number) => void;
 }
+
 
 export default function RoleTable({ roleGroups, onEdit, onDelete }: RoleTableProps) {
   return (

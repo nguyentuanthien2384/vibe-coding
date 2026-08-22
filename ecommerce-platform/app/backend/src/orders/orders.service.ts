@@ -39,7 +39,24 @@ export class OrdersService {
       throw new BadRequestException('Thiếu thông tin người dùng hoặc phiên giỏ hàng');
     }
 
+    // 0. Chặn hoàn toàn nếu tài khoản bị khóa
+    if (userId) {
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (!user || !user.isActive) {
+        throw new ForbiddenException('Tài khoản của bạn đã bị khóa. Không thể thực hiện đặt hàng');
+      }
+    } else if (dto.customerInfo?.email) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: dto.customerInfo.email.toLowerCase().trim() },
+      });
+      if (existingUser && !existingUser.isActive) {
+        throw new ForbiddenException('Tài khoản với email này đã bị khóa. Vui lòng liên hệ quản trị viên');
+      }
+    }
+
+
     // 1. Lấy thông tin Giỏ hàng trong DB
+
     const cart = await this.prisma.cart.findFirst({
       where: userId
         ? {

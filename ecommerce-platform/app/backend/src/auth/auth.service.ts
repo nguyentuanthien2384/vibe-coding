@@ -196,16 +196,15 @@ export class AuthService {
     const redisKey = `auth:refresh:${user.id}:${refreshJti}`;
     await this.redisService.setEx(redisKey, refreshTtlSeconds, 'active');
 
-    // 6. Cập nhật lastLoginAt ngầm
+    // 6. Cập nhật lastLoginAt đồng bộ vào Database
     const lastLoginAt = new Date();
-    this.prisma.user
-      .update({
-        where: { id: user.id },
-        data: { lastLoginAt },
-      })
-      .catch((err) => this.logger.error(`Cập nhật lastLoginAt thất bại: ${err.message}`));
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt },
+    });
 
     this.logger.log(`✅ Người dùng đăng nhập thành công: User ID ${user.id} (${user.email})`);
+
 
     const permissions = this.calculateUserPermissions(user);
 

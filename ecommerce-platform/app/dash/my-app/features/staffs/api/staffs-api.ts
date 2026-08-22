@@ -83,26 +83,41 @@ export async function getStaffs(params: GetStaffsParams = {}): Promise<GetStaffs
 /**
  * Lấy thông tin chi tiết một nhân viên
  */
-export async function getStaffById(id: string): Promise<StaffDetail> {
+export async function getStaffById(id: string | number): Promise<StaffDetail> {
+  if (!id || id === 'undefined' || id === 'null') {
+    throw new Error('Mã nhân viên không hợp lệ');
+  }
+  const cleanId = encodeURIComponent(String(id));
   const res = await adminFetch<{
     success: boolean;
     data: StaffDetail;
-  }>(`/admin/staffs/${id}`);
+  }>(`/admin/staffs/${cleanId}`);
 
   return res.data;
 }
+
 
 /**
  * Tạo tài khoản nhân viên mới
  */
 export async function createStaff(input: CreateStaffInput): Promise<StaffDetail> {
+  const roleGroupId =
+    input.roleGroupId === null || input.roleGroupId === undefined
+      ? undefined
+      : typeof input.roleGroupId === 'number'
+      ? input.roleGroupId
+      : parseInt(String(input.roleGroupId), 10);
+
   const res = await adminFetch<{
     success: boolean;
     message: string;
     data: StaffDetail;
   }>('/admin/staffs', {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      ...input,
+      roleGroupId: isNaN(roleGroupId as number) ? undefined : roleGroupId,
+    }),
   });
 
   return res.data;
@@ -131,6 +146,13 @@ export async function updateStaffStatus(input: UpdateStaffStatusInput): Promise<
  * Gán / Đổi nhóm quyền cho nhân viên
  */
 export async function updateStaffRoleGroup(input: UpdateStaffRoleInput): Promise<StaffDetail> {
+  const roleGroupId =
+    input.roleGroupId === null || input.roleGroupId === undefined
+      ? null
+      : typeof input.roleGroupId === 'number'
+      ? input.roleGroupId
+      : parseInt(String(input.roleGroupId), 10);
+
   const res = await adminFetch<{
     success: boolean;
     message: string;
@@ -139,12 +161,13 @@ export async function updateStaffRoleGroup(input: UpdateStaffRoleInput): Promise
     method: 'PATCH',
     body: JSON.stringify({
       role: input.role,
-      roleGroupId: input.roleGroupId,
+      roleGroupId: isNaN(roleGroupId as number) ? null : roleGroupId,
     }),
   });
 
   return res.data;
 }
+
 
 /**
  * Cập nhật đặc quyền bổ sung cấp riêng
@@ -170,20 +193,25 @@ export async function updateStaffCustomPermissions(
  * Chỉnh sửa thông tin cơ bản nhân viên (Tên, SĐT, Ghi chú)
  */
 export async function updateStaffBasicInfo(
-  id: string,
+  id: string | number,
   data: { fullName?: string; phone?: string; notes?: string },
 ): Promise<StaffDetail> {
+  if (!id || id === 'undefined' || id === 'null') {
+    throw new Error('Mã nhân viên không hợp lệ');
+  }
+  const cleanId = encodeURIComponent(String(id));
   const res = await adminFetch<{
     success: boolean;
     message: string;
     data: StaffDetail;
-  }>(`/admin/staffs/${id}`, {
+  }>(`/admin/staffs/${cleanId}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
 
   return res.data;
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ROLE GROUPS API

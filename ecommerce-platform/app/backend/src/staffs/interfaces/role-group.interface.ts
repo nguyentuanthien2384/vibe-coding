@@ -13,8 +13,11 @@ export const SYSTEM_PERMISSIONS: PermissionItem[] = [
   { id: 'payment.confirm', label: 'Xác nhận thanh toán', category: 'ORDER' },
   { id: 'report.export', label: 'Xuất báo cáo & Hóa đơn', category: 'ORDER' },
   { id: 'customer.view', label: 'Xem thông tin khách hàng', category: 'CUSTOMER' },
+  { id: 'customer.manage', label: 'Quản lý thông tin khách hàng', category: 'CUSTOMER' },
   { id: 'banner.manage', label: 'Quản lý Banner/Quảng cáo', category: 'SYSTEM' },
+  { id: 'setting.manage', label: 'Cấu hình hệ thống', category: 'SYSTEM' },
 ];
+
 
 export interface RoleGroupItem {
   id: number;
