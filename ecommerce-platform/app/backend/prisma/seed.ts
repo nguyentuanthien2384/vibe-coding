@@ -394,10 +394,113 @@ async function main() {
           storeName: 'TechBite - Chuỗi Cửa Hàng Công Nghệ & Đồ Ăn Đỉnh Cao',
           storeEmail: 'contact@techbite.vn',
           storePhone: '1900 6868',
+          hotline: '0988 123 456',
           storeAddress: 'Tầng 12, Tòa nhà Innovation Tower, Đường Cầu Giấy, Hà Nội',
           copyrightText: '© 2026 TechBite E-Commerce Platform. Tất cả quyền được bảo lưu.',
           logoUrl: '/images/logo-techbite.png',
           faviconUrl: '/images/favicon.ico',
+          workingHours: '08:00 - 22:00 (Thứ 2 - Chủ Nhật)',
+          taxCode: '0109988776',
+          maintenanceMode: false,
+          maintenanceMessage: 'Hệ thống đang bảo trì nâng cấp định kỳ. Vui lòng quay lại sau ít phút!',
+        },
+      },
+      {
+        key: 'menus',
+        value: [
+          {
+            id: 'm-1',
+            title: 'Trang chủ',
+            targetUrl: '/',
+            location: 'HEADER',
+            icon: 'Home',
+            order: 1,
+            openInNewTab: false,
+            isActive: true,
+            children: [],
+          },
+          {
+            id: 'm-2',
+            title: 'Sản phẩm & Thực đơn',
+            targetUrl: '/products',
+            location: 'HEADER',
+            icon: 'ShoppingBag',
+            order: 2,
+            openInNewTab: false,
+            isActive: true,
+            children: [],
+          },
+          {
+            id: 'm-3',
+            title: 'Khuyến mãi hot 🔥',
+            targetUrl: '/products?onSale=true',
+            location: 'HEADER',
+            icon: 'Flame',
+            order: 3,
+            openInNewTab: false,
+            isActive: true,
+            children: [],
+          },
+          {
+            id: 'm-4',
+            title: 'Về TechBite',
+            targetUrl: '/about',
+            location: 'FOOTER_COL1',
+            order: 1,
+            openInNewTab: false,
+            isActive: true,
+          },
+          {
+            id: 'm-5',
+            title: 'Chính sách bảo mật',
+            targetUrl: '/policy/privacy',
+            location: 'FOOTER_COL2',
+            order: 1,
+            openInNewTab: false,
+            isActive: true,
+          },
+        ],
+      },
+      {
+        key: 'seo',
+        value: {
+          metaTitle: 'TechBite - Sàn Thương Mại Điện Tử Công Nghệ & Đồ Ăn Hàng Đầu',
+          metaDescription: 'Mua sắm các thiết bị công nghệ chính hãng, ẩm thực nhanh cao cấp với giá ưu đãi tốt nhất và giao hàng hỏa tốc trong 30 phút tại TechBite Vietnam.',
+          metaKeywords: 'TechBite, E-commerce, Công nghệ, Đồ ăn, FastFood, Điện thoại, Khuyến mãi',
+          canonicalUrl: 'https://techbite.vn',
+          metaRobots: 'index, follow',
+          ogTitle: 'TechBite - Trải Nghiệm Mua Sắm Đỉnh Cao',
+          ogDescription: 'Khám phá hàng ngàn ưu đãi công nghệ và đồ ăn hấp dẫn mỗi ngày.',
+          ogImageUrl: '/images/techbite-og-banner.jpg',
+          ogType: 'website',
+          twitterCard: 'summary_large_image',
+          twitterSite: '@techbite_vn',
+          facebookUrl: 'https://facebook.com/techbite.vietnam',
+          zaloUrl: 'https://zalo.me/techbite',
+          instagramUrl: 'https://instagram.com/techbite_official',
+          tiktokUrl: 'https://tiktok.com/@techbite.store',
+          youtubeUrl: 'https://youtube.com/@techbite_vietnam',
+          googleSiteVerification: 'google-site-verification-token-sample',
+          googleAnalyticsId: 'G-TECHBITE999',
+          customHeadScript: '',
+          customBodyScript: '',
+        },
+      },
+      {
+        key: 'email',
+        value: {
+          mailDriver: 'smtp',
+          smtpHost: 'smtp.ethereal.email',
+          smtpPort: 587,
+          smtpEncryption: 'tls',
+          smtpUser: 'techbite.mailer@ethereal.email',
+          smtpPassword: '',
+          fromName: 'TechBite Platform',
+          fromEmail: 'noreply@techbite.vn',
+          replyToEmail: 'support@techbite.vn',
+          adminAlertEmail: 'admin@techbite.vn',
+          enableOrderAlertAdmin: true,
+          enableWelcomeMail: true,
         },
       },
       {
@@ -419,56 +522,9 @@ async function main() {
           estimatedDeliveryTime: '24 - 48 giờ đối với nội thành, 2 - 4 ngày đối với toàn quốc',
         },
       },
-      {
-        key: 'menus',
-        value: [
-          {
-            id: 'm-1',
-            title: 'Trang chủ',
-            targetUrl: '/',
-            location: 'HEADER',
-            icon: 'Home',
-            order: 1,
-            openInNewTab: false,
-            isActive: true,
-          },
-          {
-            id: 'm-2',
-            title: 'Sản phẩm',
-            targetUrl: '/products',
-            location: 'HEADER',
-            icon: 'ShoppingBag',
-            order: 2,
-            openInNewTab: false,
-            isActive: true,
-          },
-          {
-            id: 'm-3',
-            title: 'Khuyến mãi hot 🔥',
-            targetUrl: '/products?onSale=true',
-            location: 'HEADER',
-            icon: 'Flame',
-            order: 3,
-            openInNewTab: false,
-            isActive: true,
-          },
-        ],
-      },
-      {
-        key: 'seo',
-        value: {
-          metaTitle: 'TechBite - Sàn Thương Mại Điện Tử Công Nghệ & Đồ Ăn Hàng Đầu',
-          metaDescription: 'Mua sắm các thiết bị công nghệ chính hãng, đồ gia dụng thông minh và dịch vụ cao cấp với giá ưu đãi tốt nhất tại TechBite Vietnam.',
-          metaKeywords: 'TechBite, E-commerce, Công nghệ, Đồ ăn, Điện thoại, Tai nghe, Khuyến mãi',
-          facebookUrl: 'https://facebook.com/techbite.vietnam',
-          zaloUrl: 'https://zalo.me/techbite',
-          instagramUrl: 'https://instagram.com/techbite_official',
-          tiktokUrl: 'https://tiktok.com/@techbite.store',
-        },
-      },
     ],
   });
-  console.log('✅ Đã tạo 5 system settings mẫu (general, payment, shipping, menus, seo)');
+  console.log('✅ Đã tạo 6 system settings mẫu (general, menus, seo, email, payment, shipping)');
 
   console.log(`✅ Đã tạo ${products.count} products`);
   console.log('');
@@ -478,7 +534,7 @@ async function main() {
   console.log(`   Categories            : 5`);
   console.log(`   Products              : ${products.count}`);
   console.log(`   Vouchers              : 2`);
-  console.log(`   System Settings       : 5`);
+  console.log(`   System Settings       : 6`);
 }
 
 main()

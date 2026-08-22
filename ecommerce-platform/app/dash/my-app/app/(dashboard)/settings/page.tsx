@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import SettingsPageClient from '../../../features/settings/components/settings-page-client';
 
 export const metadata = {
@@ -6,7 +7,11 @@ export const metadata = {
 };
 
 const SettingsPage = () => {
-  return <SettingsPageClient />;
+  return (
+    <Suspense fallback={null}>
+      <SettingsPageClient />
+    </Suspense>
+  );
 };
 
 export default SettingsPage;

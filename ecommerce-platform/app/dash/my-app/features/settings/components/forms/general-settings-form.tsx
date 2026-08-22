@@ -2,30 +2,42 @@
 
 import { GeneralSettings } from '../../types/settings.types';
 import { ImageUploader } from '../../../../components/ui/image-uploader';
-import { Store, Mail, Phone, MapPin, FileText } from 'lucide-react';
+import {
+  Store,
+  Mail,
+  Phone,
+  PhoneCall,
+  MapPin,
+  FileText,
+  Clock,
+  Hash,
+  TriangleAlert,
+} from 'lucide-react';
 
 interface GeneralSettingsFormProps {
   data: GeneralSettings;
   onChange: (updated: GeneralSettings) => void;
 }
 
+const inputClass =
+  'w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:border-[#4880FF] focus:ring-1 focus:ring-[#4880FF] text-slate-900 dark:text-white';
+
 const GeneralSettingsForm = ({ data, onChange }: GeneralSettingsFormProps) => {
-  const handleChange = (field: keyof GeneralSettings, value: string) => {
-    onChange({
-      ...data,
-      [field]: value,
-    });
+  const handle = (field: keyof GeneralSettings, value: string | boolean) => {
+    onChange({ ...data, [field]: value });
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm space-y-6">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm space-y-8">
+      {/* ─── Section: Thông tin cơ bản ─── */}
       <div>
         <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Store className="w-5 h-5 text-[#4880FF]" />
           Thông tin cơ bản về cửa hàng
         </h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Cấu hình tên thương hiệu, logo, thông tin liên hệ hiển thị ở Header & Footer ngoài khách hàng.
+          Cấu hình tên thương hiệu, logo, thông tin liên hệ hiển thị ở Header & Footer ngoài khách
+          hàng.
         </p>
       </div>
 
@@ -39,9 +51,9 @@ const GeneralSettingsForm = ({ data, onChange }: GeneralSettingsFormProps) => {
             <input
               type="text"
               value={data.storeName}
-              onChange={(e) => handleChange('storeName', e.target.value)}
+              onChange={(e) => handle('storeName', e.target.value)}
               placeholder="Nhập tên thương hiệu..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:border-[#4880FF] focus:ring-1 focus:ring-[#4880FF] text-slate-900 dark:text-white"
+              className={inputClass}
             />
             <Store className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           </div>
@@ -56,9 +68,9 @@ const GeneralSettingsForm = ({ data, onChange }: GeneralSettingsFormProps) => {
             <input
               type="email"
               value={data.storeEmail}
-              onChange={(e) => handleChange('storeEmail', e.target.value)}
+              onChange={(e) => handle('storeEmail', e.target.value)}
               placeholder="contact@domain.com"
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:border-[#4880FF] focus:ring-1 focus:ring-[#4880FF] text-slate-900 dark:text-white"
+              className={inputClass}
             />
             <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           </div>
@@ -67,17 +79,51 @@ const GeneralSettingsForm = ({ data, onChange }: GeneralSettingsFormProps) => {
         {/* Store Phone */}
         <div className="space-y-1.5">
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Hotline Tư Vấn / Điện Thoại <span className="text-rose-500">*</span>
+            Số Điện Thoại Chính <span className="text-rose-500">*</span>
           </label>
           <div className="relative">
             <input
               type="text"
               value={data.storePhone}
-              onChange={(e) => handleChange('storePhone', e.target.value)}
+              onChange={(e) => handle('storePhone', e.target.value)}
               placeholder="1900 xxxx"
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:border-[#4880FF] focus:ring-1 focus:ring-[#4880FF] text-slate-900 dark:text-white"
+              className={inputClass}
             />
             <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          </div>
+        </div>
+
+        {/* Hotline */}
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+            Hotline Khẩn Cấp (Tuỳ chọn)
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={data.hotline ?? ''}
+              onChange={(e) => handle('hotline', e.target.value)}
+              placeholder="0988 xxx xxx"
+              className={inputClass}
+            />
+            <PhoneCall className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          </div>
+        </div>
+
+        {/* Working Hours */}
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+            Giờ Làm Việc
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={data.workingHours ?? ''}
+              onChange={(e) => handle('workingHours', e.target.value)}
+              placeholder="08:00 - 22:00 (Thứ 2 - Chủ Nhật)"
+              className={inputClass}
+            />
+            <Clock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           </div>
         </div>
 
@@ -90,16 +136,33 @@ const GeneralSettingsForm = ({ data, onChange }: GeneralSettingsFormProps) => {
             <input
               type="text"
               value={data.storeAddress}
-              onChange={(e) => handleChange('storeAddress', e.target.value)}
+              onChange={(e) => handle('storeAddress', e.target.value)}
               placeholder="Nhập địa chỉ trụ sở..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:border-[#4880FF] focus:ring-1 focus:ring-[#4880FF] text-slate-900 dark:text-white"
+              className={inputClass}
             />
             <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           </div>
         </div>
 
+        {/* Tax Code */}
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+            Mã Số Thuế (MST)
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={data.taxCode ?? ''}
+              onChange={(e) => handle('taxCode', e.target.value)}
+              placeholder="010998xxxx"
+              className={inputClass}
+            />
+            <Hash className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          </div>
+        </div>
+
         {/* Copyright Text */}
-        <div className="md:col-span-2 space-y-1.5">
+        <div className="space-y-1.5">
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
             Thông Tin Bản Quyền Footer (Copyright)
           </label>
@@ -107,9 +170,9 @@ const GeneralSettingsForm = ({ data, onChange }: GeneralSettingsFormProps) => {
             <input
               type="text"
               value={data.copyrightText}
-              onChange={(e) => handleChange('copyrightText', e.target.value)}
+              onChange={(e) => handle('copyrightText', e.target.value)}
               placeholder="© 2026 TechBite..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:border-[#4880FF] focus:ring-1 focus:ring-[#4880FF] text-slate-900 dark:text-white"
+              className={inputClass}
             />
             <FileText className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           </div>
@@ -122,7 +185,7 @@ const GeneralSettingsForm = ({ data, onChange }: GeneralSettingsFormProps) => {
           </label>
           <ImageUploader
             value={data.logoUrl || ''}
-            onChange={(url: string) => handleChange('logoUrl', url)}
+            onChange={(url: string) => handle('logoUrl', url)}
           />
         </div>
 
@@ -133,9 +196,56 @@ const GeneralSettingsForm = ({ data, onChange }: GeneralSettingsFormProps) => {
           </label>
           <ImageUploader
             value={data.faviconUrl || ''}
-            onChange={(url: string) => handleChange('faviconUrl', url)}
+            onChange={(url: string) => handle('faviconUrl', url)}
           />
         </div>
+      </div>
+
+      {/* ─── Section: Chế độ bảo trì ─── */}
+      <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-4">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <TriangleAlert className="w-4 h-4 text-amber-500" />
+          Chế Độ Bảo Trì Hệ Thống (Maintenance Mode)
+        </h3>
+
+        <div className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl">
+          <div>
+            <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+              Kích hoạt Chế Độ Bảo Trì
+            </p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+              Khi bật, khách truy cập Storefront sẽ thấy thông báo bảo trì thay vì nội dung website.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => handle('maintenanceMode', !data.maintenanceMode)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+              data.maintenanceMode ? 'bg-amber-500' : 'bg-gray-300 dark:bg-slate-600'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                data.maintenanceMode ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        {data.maintenanceMode && (
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Thông báo bảo trì (Hiển thị cho khách truy cập)
+            </label>
+            <textarea
+              rows={2}
+              value={data.maintenanceMessage ?? ''}
+              onChange={(e) => handle('maintenanceMessage', e.target.value)}
+              placeholder="Hệ thống đang bảo trì nâng cấp định kỳ. Vui lòng quay lại sau ít phút!"
+              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:border-[#4880FF] focus:ring-1 focus:ring-[#4880FF] text-slate-900 dark:text-white"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

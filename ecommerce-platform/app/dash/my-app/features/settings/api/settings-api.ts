@@ -1,8 +1,8 @@
 import { adminFetch } from '../../../lib/admin-api';
-import { BannerSettingItem, SystemSettingsPayload } from '../types/settings.types';
+import { BannerSettingItem, EmailSettings, SystemSettingsPayload } from '../types/settings.types';
 
 /**
- * Lấy toàn bộ cấu hình hệ thống (General, Payment, Shipping, Banners, Menus, SEO) từ NestJS Backend API
+ * Lấy toàn bộ cấu hình hệ thống từ NestJS Backend API
  */
 export async function getAdminSettings(): Promise<SystemSettingsPayload> {
   const res = await adminFetch<{ data: SystemSettingsPayload }>('/admin/settings');
@@ -10,15 +10,63 @@ export async function getAdminSettings(): Promise<SystemSettingsPayload> {
 }
 
 /**
- * Cập nhật toàn bộ các nhóm cấu hình hệ thống
+ * Cập nhật toàn bộ các nhóm cấu hình hệ thống (PUT)
  */
 export async function updateAdminSettings(payload: Partial<SystemSettingsPayload>): Promise<boolean> {
+  // Loại bỏ field banners (quản lý riêng) và hasPasswordConfigured trước khi gửi lên
+  const { banners: _banners, email, ...rest } = payload;
+
+  const body: Record<string, unknown> = { ...rest };
+
+  if (email) {
+    // Không gửi hasPasswordConfigured lên server
+    const { hasPasswordConfigured: _hp, ...emailPayload } = email;
+    body.email = emailPayload;
+  }
+
   await adminFetch('/admin/settings', {
     method: 'PUT',
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
   return true;
 }
+
+/**
+ * Cập nhật nhanh một nhóm cấu hình đơn lẻ (PATCH /:group)
+ */
+export async function patchGroupSettings(
+  group: 'general' | 'menus' | 'seo' | 'email' | 'payment' | 'shipping',
+  value: unknown,
+): Promise<boolean> {
+  // Với group email: loại bỏ hasPasswordConfigured trước khi gửi
+  let body = value;
+  if (group === 'email' && value && typeof value === 'object') {
+    const { hasPasswordConfigured: _hp, ...emailPayload } = value as EmailSettings;
+    body = emailPayload;
+  }
+
+  await adminFetch(`/admin/settings/${group}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+  return true;
+}
+
+/**
+ * Gửi email thử nghiệm để kiểm tra kết nối SMTP
+ */
+export async function testEmailConnection(
+  targetEmail: string,
+  customSettings?: Omit<EmailSettings, 'hasPasswordConfigured'>,
+): Promise<{ success: boolean; message: string }> {
+  const res = await adminFetch<{ success: boolean; message: string }>('/admin/settings/email/test', {
+    method: 'POST',
+    body: JSON.stringify({ targetEmail, customSettings }),
+  });
+  return res;
+}
+
+// ─── BANNERS APIs ────────────────────────────────────────────────────────────
 
 /**
  * Lấy danh sách Banners từ NestJS Backend API
@@ -34,19 +82,23 @@ export async function getAdminBanners(params?: {
   if (params?.search) queryParts.push(`search=${encodeURIComponent(params.search.trim())}`);
 
   const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
-  const res = await adminFetch<{ data: any[] }>(`/admin/banners${queryString}`);
+  const res = await adminFetch<{ data: unknown[] }>(`/admin/banners${queryString}`);
 
-  return (res.data || []).map((b: any) => ({
-    id: b.id.toString(),
-    title: b.title,
-    subtitle: b.subtitle ?? '',
-    imageUrl: b.imageUrl,
-    targetUrl: b.linkUrl ?? '',
-    category: b.category ?? 'HOME',
-    position: b.bannerPosition ?? b.position ?? 'HERO_BANNER',
-    order: b.order ?? b.position ?? 0,
-    isActive: b.isActive ?? true,
-  }));
+  return (res.data || []).map((b: unknown) => {
+    const bObj = b as Record<string, unknown>;
+    return {
+      id: String(bObj.id),
+      title: String(bObj.title),
+      subtitle: (bObj.subtitle as string) ?? '',
+      imageUrl: String(bObj.imageUrl),
+      targetUrl: (bObj.linkUrl as string) ?? '',
+      category: (bObj.category as BannerSettingItem['category']) ?? 'HOME',
+      position:
+        ((bObj.bannerPosition ?? bObj.position) as BannerSettingItem['position']) ?? 'HERO_BANNER',
+      order: (bObj.order as number) ?? (bObj.position as number) ?? 0,
+      isActive: (bObj.isActive as boolean) ?? true,
+    };
+  });
 }
 
 /**
@@ -55,7 +107,7 @@ export async function getAdminBanners(params?: {
 export async function createAdminBanner(
   banner: Omit<BannerSettingItem, 'id'>,
 ): Promise<BannerSettingItem> {
-  const res = await adminFetch<{ data: any }>('/admin/banners', {
+  const res = await adminFetch<{ data: Record<string, unknown> }>('/admin/banners', {
     method: 'POST',
     body: JSON.stringify({
       title: banner.title,
@@ -71,15 +123,15 @@ export async function createAdminBanner(
 
   const b = res.data;
   return {
-    id: b.id.toString(),
-    title: b.title,
-    subtitle: b.subtitle ?? '',
-    imageUrl: b.imageUrl,
-    targetUrl: b.linkUrl ?? '',
-    category: b.category,
-    position: b.bannerPosition,
-    order: b.order,
-    isActive: b.isActive,
+    id: String(b.id),
+    title: String(b.title),
+    subtitle: (b.subtitle as string) ?? '',
+    imageUrl: String(b.imageUrl),
+    targetUrl: (b.linkUrl as string) ?? '',
+    category: b.category as BannerSettingItem['category'],
+    position: b.bannerPosition as BannerSettingItem['position'],
+    order: b.order as number,
+    isActive: b.isActive as boolean,
   };
 }
 
@@ -90,31 +142,34 @@ export async function updateAdminBanner(
   id: string,
   banner: Partial<BannerSettingItem>,
 ): Promise<BannerSettingItem> {
-  const res = await adminFetch<{ data: any }>(`/admin/banners/${encodeURIComponent(id)}`, {
-    method: 'PATCH',
-    body: JSON.stringify({
-      ...(banner.title !== undefined && { title: banner.title }),
-      ...(banner.subtitle !== undefined && { subtitle: banner.subtitle }),
-      ...(banner.imageUrl !== undefined && { imageUrl: banner.imageUrl }),
-      ...(banner.targetUrl !== undefined && { targetUrl: banner.targetUrl }),
-      ...(banner.category !== undefined && { category: banner.category }),
-      ...(banner.position !== undefined && { position: banner.position }),
-      ...(banner.order !== undefined && { order: banner.order }),
-      ...(banner.isActive !== undefined && { isActive: banner.isActive }),
-    }),
-  });
+  const res = await adminFetch<{ data: Record<string, unknown> }>(
+    `/admin/banners/${encodeURIComponent(id)}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({
+        ...(banner.title !== undefined && { title: banner.title }),
+        ...(banner.subtitle !== undefined && { subtitle: banner.subtitle }),
+        ...(banner.imageUrl !== undefined && { imageUrl: banner.imageUrl }),
+        ...(banner.targetUrl !== undefined && { targetUrl: banner.targetUrl }),
+        ...(banner.category !== undefined && { category: banner.category }),
+        ...(banner.position !== undefined && { position: banner.position }),
+        ...(banner.order !== undefined && { order: banner.order }),
+        ...(banner.isActive !== undefined && { isActive: banner.isActive }),
+      }),
+    },
+  );
 
   const b = res.data;
   return {
-    id: b.id.toString(),
-    title: b.title,
-    subtitle: b.subtitle ?? '',
-    imageUrl: b.imageUrl,
-    targetUrl: b.linkUrl ?? '',
-    category: b.category,
-    position: b.bannerPosition,
-    order: b.order,
-    isActive: b.isActive,
+    id: String(b.id),
+    title: String(b.title),
+    subtitle: (b.subtitle as string) ?? '',
+    imageUrl: String(b.imageUrl),
+    targetUrl: (b.linkUrl as string) ?? '',
+    category: b.category as BannerSettingItem['category'],
+    position: b.bannerPosition as BannerSettingItem['position'],
+    order: b.order as number,
+    isActive: b.isActive as boolean,
   };
 }
 

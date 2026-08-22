@@ -1,127 +1,45 @@
-import {
-  IsArray,
-  IsBoolean,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  ValidateNested,
-} from 'class-validator';
+import { IsArray, IsOptional, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { GeneralSettingsDto } from './general-settings.dto';
+import { MenuItemSettingDto } from './menu-settings.dto';
+import { SeoSocialSettingsDto } from './seo-settings.dto';
+import { EmailSettingsDto } from './email-settings.dto';
 
-export class GeneralSettingsDto {
-  @IsString()
-  @IsNotEmpty({ message: 'Tên cửa hàng không được để trống' })
-  storeName: string;
-
-  @IsString()
-  @IsNotEmpty({ message: 'Email liên hệ không được để trống' })
-  storeEmail: string;
-
-  @IsString()
-  @IsNotEmpty({ message: 'Số điện thoại không được để trống' })
-  storePhone: string;
-
-  @IsString()
-  @IsNotEmpty({ message: 'Địa chỉ không được để trống' })
-  storeAddress: string;
-
-  @IsString()
-  copyrightText: string;
-
-  @IsOptional()
-  @IsString()
-  logoUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  faviconUrl?: string;
-}
+// Re-export for backward compatibility
+export { GeneralSettingsDto } from './general-settings.dto';
+export { MenuItemSettingDto } from './menu-settings.dto';
+export { SeoSocialSettingsDto } from './seo-settings.dto';
+export { EmailSettingsDto } from './email-settings.dto';
 
 export class PaymentSettingsDto {
-  @IsString()
-  bankName: string;
-
-  @IsString()
-  bankAccountNo: string;
-
-  @IsString()
-  bankAccountHolder: string;
-
-  @IsString()
-  vietQrTemplate: string;
-
-  @IsBoolean()
-  enableCod: boolean;
+  @IsOptional()
+  bankName?: string;
 
   @IsOptional()
-  @IsString()
+  bankAccountNo?: string;
+
+  @IsOptional()
+  bankAccountHolder?: string;
+
+  @IsOptional()
+  vietQrTemplate?: string;
+
+  @IsOptional()
+  enableCod?: boolean;
+
+  @IsOptional()
   paymentNote?: string;
 }
 
 export class ShippingSettingsDto {
-  @IsNumber()
-  defaultShippingFee: number;
-
-  @IsNumber()
-  freeShippingThreshold: number;
-
-  @IsString()
-  estimatedDeliveryTime: string;
-}
-
-export class MenuItemSettingDto {
-  @IsString()
-  id: string;
-
-  @IsString()
-  title: string;
-
-  @IsString()
-  targetUrl: string;
-
-  @IsString()
-  location: string;
+  @IsOptional()
+  defaultShippingFee?: number;
 
   @IsOptional()
-  @IsString()
-  icon?: string;
-
-  @IsNumber()
-  order: number;
-
-  @IsBoolean()
-  openInNewTab: boolean;
-
-  @IsBoolean()
-  isActive: boolean;
-}
-
-export class SeoSocialSettingsDto {
-  @IsString()
-  metaTitle: string;
-
-  @IsString()
-  metaDescription: string;
-
-  @IsString()
-  metaKeywords: string;
+  freeShippingThreshold?: number;
 
   @IsOptional()
-  @IsString()
-  facebookUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  zaloUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  instagramUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  tiktokUrl?: string;
+  estimatedDeliveryTime?: string;
 }
 
 export class UpdateSystemSettingsDto {
@@ -150,4 +68,9 @@ export class UpdateSystemSettingsDto {
   @ValidateNested()
   @Type(() => SeoSocialSettingsDto)
   seo?: SeoSocialSettingsDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EmailSettingsDto)
+  email?: EmailSettingsDto;
 }

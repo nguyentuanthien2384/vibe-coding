@@ -407,15 +407,16 @@ model Notification {
 }
 
 // =============================================================================
-// MODULE: SYSTEM SETTINGS
+// MODULE: SYSTEM SETTINGS (CẤU HÌNH HỆ THỐNG TỔNG THỂ)
 // Source: .docs/backend-plans/dashboard/05-settings-plan.md
 // =============================================================================
 
 /// Lưu trữ các thông số cấu hình hệ thống dạng Key-Value JSON
+/// Các key chính: 'general', 'menus', 'seo', 'email', 'payment', 'shipping'
 model SystemSetting {
   id        Int      @id @default(autoincrement())
-  key       String   @unique @db.VarChar(100) // 'general', 'payment', 'shipping', 'menus', 'seo'
-  value     Json     // Dữ liệu cấu hình dạng JSON
+  key       String   @unique @db.VarChar(100)
+  value     Json     // Dữ liệu cấu hình dạng JSON cấu trúc chặt chẽ
   updatedAt DateTime @updatedAt
 
   @@index([key], name: "idx_setting_key")

@@ -1,71 +1,39 @@
-# QUY HOẠCH KỸ THUẬT BACK-END: MODULE QUẢN LÝ THIẾT LẬP HỆ THỐNG & BANNER (ADMIN SETTINGS & BANNERS)
+# QUY HOẠCH KỸ THUẬT BACK-END: MODULE THIẾT LẬP HỆ THỐNG (SYSTEM SETTINGS MANAGEMENT)
 
 > **Nguồn ý tưởng:** `.docs/ideas/dashboard/05-settings-idea.md`  
 > **Kế hoạch Frontend:** `.docs/frontend-plans/dashboard/05-settings-plan.md`  
 > **Ứng dụng mục tiêu:** NestJS Backend API (`apps/backend` / `app/backend`)  
-> **Phiên bản:** 1.0.0  
-> **Ngày tạo:** 2026-08-14  
+> **Phiên bản:** 2.0.0 (Bổ sung Cấu hình chung nâng cao, Menu Navigation, Thông tin & SEO, Cấu hình Email SMTP & Test Connection)  
+> **Ngày cập nhật:** 2026-08-22  
 
 ---
 
 ## 1. TỔNG QUAN HỆ THỐNG & MỤC TIÊU (OVERVIEW & ARCHITECTURE)
 
-Module **System Settings & Banner Management** chịu trách nhiệm lưu trữ, quản lý và phân phối toàn bộ thông số cấu hình của hệ thống E-commerce TechBite (Thông tin cửa hàng, tài khoản VietQR, chính sách giao hàng, danh mục Menu Navigation, thẻ SEO/Social) và hệ thống Banner quảng cáo động (Hero Banner, Promotion Banner, Popup Banner).
-
-### Các yêu cầu kỹ thuật cốt lõi:
-1. **Lưu trữ Cấu hình Linh hoạt (Dynamic Key-Value JSON):** Sử dụng bảng `system_settings` lưu trữ các nhóm cấu hình (`general`, `payment`, `shipping`, `menus`, `seo`) dưới dạng JSON chuẩn hóa, dễ dàng mở rộng thêm các field mới mà không cần migration lại DB.
-2. **Quản lý Banner Chuẩn Enterprise:** Mở rộng bảng `banners` hỗ trợ phân loại `category` (`HOME`, `PRODUCT`), vị trí `position` (`HERO_BANNER`, `PROMOTION_BANNER`, `POPUP_BANNER`), thứ tự hiển thị `order` và bật/tắt `isActive`.
-3. **Caching Redis Siêu Tốc & Tự Động Invalidate:** Cache public settings và banners trên Redis với TTL 1 giờ. Khi Admin bấm lưu cấu hình hoặc cập nhật banner, hệ thống tự động xóa rác cache trên Redis (`cache:v1:settings:*`, `cache:v1:banners:*`) để Frontend cập nhật ngay tức thì.
-4. **Tự động Dọn dẹp File Ảnh Cũ:** Kết nối `UploadService` để tự động xóa file vật lý trên ổ đĩa khi Admin xóa Banner hoặc thay thế logo/favicon/banner image mới.
-5. **Bảo mật & Phân quyền Strict:** Tất cả API Admin bắt buộc đi qua `JwtAuthGuard` và `RolesGuard` (yêu cầu vai trò `ADMIN` hoặc `STAFF`).
+Module **System Settings** chịu trách nhiệm lưu trữ, quản lý, bảo mật và phân phối toàn bộ thông số cấu hình của hệ thống E-commerce TechBite. Hệ thống tập trung quy hoạch 4 phân hệ chính:
+1. **Cấu hình chung (General Settings):** Thông tin định danh thương hiệu, logo, favicon, thông tin liên hệ, giờ làm việc, bản quyền và cờ bảo trì hệ thống.
+2. **Menu Navigation (Repeater & Hierarchy):** Quản lý động các cây menu Header, Footer đa cột (Col 1, Col 2, Col 3) và Mobile Navigation.
+3. **Thông tin & Cấu hình SEO (SEO & Social Metadata):** Cung cấp đầy đủ trường dữ liệu thẻ Meta (Title, Description, Keywords, Canonical, Robots), Open Graph, Twitter Cards, Social Links, cùng mã xác thực Google Search Console / GA4 Scripts (khắc phục điểm thiếu hụt trên UI hiện tại).
+4. **Cấu hình Email (SMTP Configuration & Test Mail):** Quản lý cấu hình máy chủ gửi thư (Host, Port, TLS/SSL, Username, Password mã hóa), thông tin người gửi, và API kiểm tra kết nối (Test Mail Connection) theo thời gian thực mà không cần khởi động lại Server.
 
 ---
 
-## 2. THIẾT KẾ DỮ LIỆU (DATABASE SCHEMA)
+## 2. THIẾT KẾ DỮ LIỆU (DATABASE SCHEMA & ENTITIES)
 
-### 2.1 Mở rộng Bảng `banners` và Bổ sung Enums trong Prisma Schema
+### 2.1 Prisma Schema (`prisma/schema.prisma`)
 
 ```prisma
 // =============================================================================
-// MODULE: SYSTEM SETTINGS & BANNERS
+// MODULE: SYSTEM SETTINGS (CẤU HÌNH HỆ THỐNG TỔNG THỂ)
 // Source: .docs/backend-plans/dashboard/05-settings-plan.md
 // =============================================================================
 
-enum BannerCategory {
-  HOME
-  PRODUCT
-}
-
-enum BannerPosition {
-  HERO_BANNER
-  PROMOTION_BANNER
-  POPUP_BANNER
-}
-
-/// Lưu trữ danh sách Banner quảng cáo trên Trang chủ và Trang sản phẩm
-model Banner {
-  id          Int            @id @default(autoincrement())
-  title       String         @db.VarChar(255)
-  subtitle    String?        @db.VarChar(255)
-  imageUrl    String         @db.VarChar(500)
-  linkUrl     String?        @db.VarChar(500)
-  category    BannerCategory @default(HOME)
-  position    BannerPosition @default(HERO_BANNER)
-  order       Int            @default(0)
-  isActive    Boolean        @default(true)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-
-  @@index([category, position, isActive, order], name: "idx_banner_filter")
-  @@index([isActive, order], name: "idx_banner_active_order")
-  @@map("banners")
-}
-
 /// Lưu trữ các thông số cấu hình hệ thống dạng Key-Value JSON
+/// Các key chính: 'general', 'menus', 'seo', 'email', 'payment', 'shipping'
 model SystemSetting {
   id        Int      @id @default(autoincrement())
-  key       String   @unique @db.VarChar(100) // 'general', 'payment', 'shipping', 'menus', 'seo'
-  value     Json     // Dữ liệu cấu hình dạng JSON
+  key       String   @unique @db.VarChar(100)
+  value     Json     // Dữ liệu cấu hình dạng JSON cấu trúc chặt chẽ
   updatedAt DateTime @updatedAt
 
   @@index([key], name: "idx_setting_key")
@@ -73,299 +41,561 @@ model SystemSetting {
 }
 ```
 
+### 2.2 Cấu trúc Chi tiết 4 Nhóm Dữ liệu JSON trong `SystemSetting`
+
+#### Nhóm 1: `general` (Cấu hình chung)
+```json
+{
+  "storeName": "TechBite - Chuỗi Cửa Hàng Công Nghệ & Đồ Ăn Đỉnh Cao",
+  "storeEmail": "contact@techbite.vn",
+  "storePhone": "1900 6868",
+  "hotline": "0988 123 456",
+  "storeAddress": "Tầng 12, Tòa nhà Innovation Tower, Cầu Giấy, Hà Nội",
+  "copyrightText": "© 2026 TechBite E-Commerce Platform. All rights reserved.",
+  "logoUrl": "/uploads/images/logo-techbite.png",
+  "faviconUrl": "/uploads/images/favicon.ico",
+  "workingHours": "08:00 - 22:00 (Thứ 2 - Chủ Nhật)",
+  "taxCode": "0109988776",
+  "maintenanceMode": false,
+  "maintenanceMessage": "Hệ thống đang bảo trì nâng cấp định kỳ. Vui lòng quay lại sau ít phút!"
+}
+```
+
+#### Nhóm 2: `menus` (Menu Navigation)
+```json
+[
+  {
+    "id": "menu-nav-1",
+    "title": "Trang chủ",
+    "targetUrl": "/",
+    "location": "HEADER",
+    "icon": "Home",
+    "order": 1,
+    "openInNewTab": false,
+    "isActive": true,
+    "children": []
+  },
+  {
+    "id": "menu-nav-2",
+    "title": "Sản phẩm & Thực đơn",
+    "targetUrl": "/products",
+    "location": "HEADER",
+    "icon": "Utensils",
+    "order": 2,
+    "openInNewTab": false,
+    "isActive": true,
+    "children": [
+      {
+        "id": "menu-nav-2-1",
+        "title": "Burger & Combo Đỉnh Cao",
+        "targetUrl": "/categories/burger-combo",
+        "order": 1,
+        "isActive": true
+      }
+    ]
+  },
+  {
+    "id": "menu-nav-3",
+    "title": "Về chúng tôi",
+    "targetUrl": "/about",
+    "location": "FOOTER_COL1",
+    "order": 1,
+    "openInNewTab": false,
+    "isActive": true
+  },
+  {
+    "id": "menu-nav-4",
+    "title": "Chính sách đổi trả & Hoàn tiền",
+    "targetUrl": "/policy/returns",
+    "location": "FOOTER_COL2",
+    "order": 1,
+    "openInNewTab": false,
+    "isActive": true
+  }
+]
+```
+
+#### Nhóm 3: `seo` (Thông tin & SEO Metadata)
+```json
+{
+  "metaTitle": "TechBite - Sàn Thương Mại Điện Tử & Đặt Món Công Nghệ Hàng Đầu",
+  "metaDescription": "Trải nghiệm mua sắm thiết bị công nghệ & ẩm thực nhanh chất lượng cao, giao hàng hỏa tốc trong 30 phút cùng TechBite.",
+  "metaKeywords": "TechBite, E-commerce, FastFood, Công nghệ, Đặt món trực tuyến",
+  "canonicalUrl": "https://techbite.vn",
+  "metaRobots": "index, follow",
+  "ogTitle": "TechBite - Trải Nghiệm Mua Sắm Đỉnh Cao",
+  "ogDescription": "Khám phá hàng ngàn ưu đãi công nghệ và đồ ăn nhanh hấp dẫn mỗi ngày.",
+  "ogImageUrl": "/uploads/images/techbite-og-banner.jpg",
+  "ogType": "website",
+  "twitterCard": "summary_large_image",
+  "twitterSite": "@techbite_vn",
+  "facebookUrl": "https://facebook.com/techbite.vietnam",
+  "zaloUrl": "https://zalo.me/techbite",
+  "instagramUrl": "https://instagram.com/techbite_official",
+  "tiktokUrl": "https://tiktok.com/@techbite.store",
+  "youtubeUrl": "https://youtube.com/@techbite_vietnam",
+  "googleSiteVerification": "google-site-verification-token-sample-123456",
+  "googleAnalyticsId": "G-TECHBITE999",
+  "customHeadScript": "<!-- Google Tag Manager / Custom Head Scripts -->",
+  "customBodyScript": "<!-- Custom Body Scripts -->"
+}
+```
+
+#### Nhóm 4: `email` (Cấu hình Email SMTP)
+```json
+{
+  "mailDriver": "smtp",
+  "smtpHost": "smtp.gmail.com",
+  "smtpPort": 587,
+  "smtpEncryption": "tls",
+  "smtpUser": "no-reply@techbite.vn",
+  "smtpPassword": "encrypted_app_password_or_token",
+  "fromName": "TechBite Platform",
+  "fromEmail": "no-reply@techbite.vn",
+  "replyToEmail": "support@techbite.vn",
+  "adminAlertEmail": "admin@techbite.vn",
+  "enableOrderAlertAdmin": true,
+  "enableWelcomeMail": true
+}
+```
+
 ---
 
 ## 3. GIAO KÈO API (API CONTRACT & DTOS)
 
-### 3.1 Nhóm API Admin Settings (`/api/v1/admin/settings`)
+### 3.1 Bảng Tổng Hợp Endpoints
 
-#### 1. `GET /api/v1/admin/settings`
-- **Mục đích:** Lấy toàn bộ thông tin thiết lập hệ thống (General, Payment, Shipping, Banners, Menus, SEO) để hiển thị lên Admin Dashboard.
-- **Bảo mật:** `JwtAuthGuard` + `RolesGuard(ADMIN, STAFF)`
-- **Response Success (200 OK):**
+| Nhóm | Method | Route Path | Phân Quyền | Caching / Invalidation | Mục Đích |
+|---|---|---|---|---|---|
+| **Admin Settings** | `GET` | `/api/v1/admin/settings` | `ADMIN`, `STAFF` | No Cache (DB Master) | Lấy toàn bộ 4 nhóm cấu hình cho Admin Dashboard |
+| **Admin Settings** | `PUT` | `/api/v1/admin/settings` | `ADMIN` | Invalidate Redis Public Cache | Cập nhật cấu hình tổng thể hoặc từng tab độc lập |
+| **Admin Settings** | `GET` | `/api/v1/admin/settings/:group` | `ADMIN`, `STAFF` | No Cache | Lấy chi tiết 1 nhóm: `general`, `menus`, `seo`, `email` |
+| **Admin Settings** | `PATCH` | `/api/v1/admin/settings/:group` | `ADMIN` | Invalidate Redis Public Cache | Cập nhật nhanh 1 nhóm cấu hình đơn lẻ |
+| **Admin Email** | `POST` | `/api/v1/admin/settings/email/test` | `ADMIN` | No Cache | Gửi thử nghiệm 1 email test SMTP xác thực cấu hình |
+| **Public Storefront** | `GET` | `/api/v1/settings/public` | Public | Redis Cache 1h (`cache:v1:settings:public`) | Lấy thông tin chung, navigation menus, footer cho Storefront |
+| **Public Storefront** | `GET` | `/api/v1/settings/seo` | Public | Redis Cache 1h (`cache:v1:settings:seo`) | Lấy đầy đủ thẻ meta SEO, OpenGraph, GA4 cho Next.js Metadata API |
+| **Public Storefront** | `GET` | `/api/v1/settings/menus` | Public | Redis Cache 1h (`cache:v1:settings:menus`) | Lấy danh sách menu Header & Footer đã lọc `isActive: true` |
+
+---
+
+### 3.2 Đặc Tả DTOs & Validation Rules (TypeScript)
+
+#### 1. DTO Cấu hình chung (`general-settings.dto.ts`)
+```typescript
+import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+
+export class GeneralSettingsDto {
+  @IsString()
+  @IsNotEmpty({ message: 'Tên cửa hàng không được để trống' })
+  storeName: string;
+
+  @IsEmail({}, { message: 'Email liên hệ không đúng định dạng' })
+  @IsNotEmpty({ message: 'Email liên hệ không được để trống' })
+  storeEmail: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Số điện thoại không được để trống' })
+  storePhone: string;
+
+  @IsOptional()
+  @IsString()
+  hotline?: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Địa chỉ cửa hàng không được để trống' })
+  storeAddress: string;
+
+  @IsString()
+  copyrightText: string;
+
+  @IsOptional()
+  @IsString()
+  logoUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  faviconUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  workingHours?: string;
+
+  @IsOptional()
+  @IsString()
+  taxCode?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  maintenanceMode?: boolean;
+
+  @IsOptional()
+  @IsString()
+  maintenanceMessage?: string;
+}
+```
+
+#### 2. DTO Menu Navigation (`menu-settings.dto.ts`)
+```typescript
+import { IsArray, IsBoolean, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export enum MenuLocation {
+  HEADER = 'HEADER',
+  FOOTER_COL1 = 'FOOTER_COL1',
+  FOOTER_COL2 = 'FOOTER_COL2',
+  FOOTER_COL3 = 'FOOTER_COL3',
+  MOBILE = 'MOBILE',
+}
+
+export class SubMenuItemDto {
+  @IsString()
+  @IsNotEmpty()
+  id: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Tiêu đề menu con không được để trống' })
+  title: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Đường dẫn liên kết không được để trống' })
+  targetUrl: string;
+
+  @IsInt()
+  order: number;
+
+  @IsBoolean()
+  isActive: boolean;
+}
+
+export class MenuItemSettingDto {
+  @IsString()
+  @IsNotEmpty()
+  id: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Tiêu đề menu không được để trống' })
+  title: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Đường dẫn liên kết không được để trống' })
+  targetUrl: string;
+
+  @IsEnum(MenuLocation, { message: 'Vị trí menu không hợp lệ' })
+  location: MenuLocation;
+
+  @IsOptional()
+  @IsString()
+  icon?: string;
+
+  @IsInt()
+  order: number;
+
+  @IsBoolean()
+  openInNewTab: boolean;
+
+  @IsBoolean()
+  isActive: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SubMenuItemDto)
+  children?: SubMenuItemDto[];
+}
+```
+
+#### 3. DTO Thông tin & SEO (`seo-settings.dto.ts`)
+```typescript
+import { IsOptional, IsString, MaxLength } from 'class-validator';
+
+export class SeoSocialSettingsDto {
+  @IsString()
+  @MaxLength(120, { message: 'Meta Title không nên vượt quá 120 ký tự' })
+  @IsNotEmpty({ message: 'Meta Title không được để trống' })
+  metaTitle: string;
+
+  @IsString()
+  @MaxLength(300, { message: 'Meta Description không nên vượt quá 300 ký tự' })
+  @IsNotEmpty({ message: 'Meta Description không được để trống' })
+  metaDescription: string;
+
+  @IsString()
+  metaKeywords: string;
+
+  @IsOptional()
+  @IsString()
+  canonicalUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  metaRobots?: string; // 'index, follow' | 'noindex, nofollow'
+
+  @IsOptional()
+  @IsString()
+  ogTitle?: string;
+
+  @IsOptional()
+  @IsString()
+  ogDescription?: string;
+
+  @IsOptional()
+  @IsString()
+  ogImageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  ogType?: string; // 'website'
+
+  @IsOptional()
+  @IsString()
+  twitterCard?: string; // 'summary_large_image'
+
+  @IsOptional()
+  @IsString()
+  twitterSite?: string;
+
+  @IsOptional()
+  @IsString()
+  facebookUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  zaloUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  instagramUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  tiktokUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  youtubeUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  googleSiteVerification?: string;
+
+  @IsOptional()
+  @IsString()
+  googleAnalyticsId?: string;
+
+  @IsOptional()
+  @IsString()
+  customHeadScript?: string;
+
+  @IsOptional()
+  @IsString()
+  customBodyScript?: string;
+}
+```
+
+#### 4. DTO Cấu hình Email & Test SMTP (`email-settings.dto.ts`)
+```typescript
+import { IsBoolean, IsEmail, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
+
+export enum SmtpEncryption {
+  NONE = 'none',
+  SSL = 'ssl',
+  TLS = 'tls',
+}
+
+export class EmailSettingsDto {
+  @IsOptional()
+  @IsString()
+  mailDriver?: string; // default: 'smtp'
+
+  @IsString()
+  @IsNotEmpty({ message: 'SMTP Host không được để trống' })
+  smtpHost: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(65535)
+  smtpPort: number;
+
+  @IsEnum(SmtpEncryption)
+  smtpEncryption: SmtpEncryption;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Tài khoản SMTP User không được để trống' })
+  smtpUser: string;
+
+  @IsOptional()
+  @IsString()
+  smtpPassword?: string; // Nếu để trống khi update -> giữ nguyên mật khẩu cũ trong DB
+
+  @IsString()
+  @IsNotEmpty({ message: 'Tên người gửi (From Name) không được để trống' })
+  fromName: string;
+
+  @IsEmail({}, { message: 'From Email không đúng định dạng' })
+  fromEmail: string;
+
+  @IsOptional()
+  @IsEmail({}, { message: 'Reply-To Email không đúng định dạng' })
+  replyToEmail?: string;
+
+  @IsOptional()
+  @IsEmail({}, { message: 'Admin Alert Email không đúng định dạng' })
+  adminAlertEmail?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  enableOrderAlertAdmin?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  enableWelcomeMail?: boolean;
+}
+
+export class TestEmailConnectionDto {
+  @IsEmail({}, { message: 'Email nhận thử nghiệm không đúng định dạng' })
+  @IsNotEmpty({ message: 'Email nhận thử nghiệm không được để trống' })
+  targetEmail: string;
+
+  @IsOptional()
+  customSettings?: EmailSettingsDto; // Cho phép test trực tiếp thông số nhập trên Form trước khi lưu
+}
+```
+
+---
+
+### 3.3 Chi Tiết Response Payload
+
+#### Response: `GET /api/v1/admin/settings` (200 OK)
 ```json
 {
   "statusCode": 200,
   "message": "Lấy thông tin thiết lập hệ thống thành công",
   "data": {
     "general": {
-      "storeName": "TechBite - Chuỗi Cửa Hàng Công Nghệ",
+      "storeName": "TechBite - Chuỗi Cửa Hàng Công Nghệ & Đồ Ăn Đỉnh Cao",
       "storeEmail": "contact@techbite.vn",
       "storePhone": "1900 6868",
+      "hotline": "0988 123 456",
       "storeAddress": "Tầng 12, Tòa nhà Innovation Tower, Cầu Giấy, Hà Nội",
       "copyrightText": "© 2026 TechBite E-Commerce Platform.",
       "logoUrl": "/uploads/images/logo-techbite.png",
-      "faviconUrl": "/uploads/images/favicon.ico"
+      "faviconUrl": "/uploads/images/favicon.ico",
+      "workingHours": "08:00 - 22:00",
+      "maintenanceMode": false
     },
-    "payment": {
-      "bankName": "MB Bank",
-      "bankAccountNo": "9999888899",
-      "bankAccountHolder": "CTY TNHH TECHBITE VIETNAM",
-      "vietQrTemplate": "compact",
-      "enableCod": true,
-      "paymentNote": "Vui lòng kiểm tra lại đúng Mã Đơn Hàng trong nội dung..."
-    },
-    "shipping": {
-      "defaultShippingFee": 30000,
-      "freeShippingThreshold": 500000,
-      "estimatedDeliveryTime": "24 - 48 giờ đối với nội thành"
-    },
-    "banners": [
-      {
-        "id": 1,
-        "title": "Đại Tiệc Công Nghệ TechBite 2026 🚀",
-        "subtitle": "Giảm tới 50% cho tất cả thiết bị thông minh",
-        "imageUrl": "/uploads/images/banner-hero-1.webp",
-        "targetUrl": "/products?discount=true",
-        "category": "HOME",
-        "position": "HERO_BANNER",
-        "order": 1,
-        "isActive": true
-      }
-    ],
     "menus": [
       {
-        "id": "m-1",
+        "id": "menu-nav-1",
         "title": "Trang chủ",
         "targetUrl": "/",
         "location": "HEADER",
         "icon": "Home",
         "order": 1,
         "openInNewTab": false,
-        "isActive": true
+        "isActive": true,
+        "children": []
       }
     ],
     "seo": {
       "metaTitle": "TechBite - Sàn Thương Mại Điện Tử Công Nghệ",
-      "metaDescription": "Mua sắm thiết bị công nghệ chính hãng...",
-      "metaKeywords": "TechBite, E-commerce, Công nghệ",
+      "metaDescription": "Mua sắm thiết bị công nghệ & đồ ăn chất lượng cao...",
+      "metaKeywords": "TechBite, E-commerce, FastFood",
+      "canonicalUrl": "https://techbite.vn",
+      "metaRobots": "index, follow",
+      "ogImageUrl": "/uploads/images/techbite-og-banner.jpg",
       "facebookUrl": "https://facebook.com/techbite.vietnam",
-      "zaloUrl": "https://zalo.me/techbite",
-      "instagramUrl": "https://instagram.com/techbite_official",
-      "tiktokUrl": "https://tiktok.com/@techbite.store"
+      "zaloUrl": "https://zalo.me/techbite"
+    },
+    "email": {
+      "mailDriver": "smtp",
+      "smtpHost": "smtp.gmail.com",
+      "smtpPort": 587,
+      "smtpEncryption": "tls",
+      "smtpUser": "no-reply@techbite.vn",
+      "hasPasswordConfigured": true,
+      "fromName": "TechBite Platform",
+      "fromEmail": "no-reply@techbite.vn",
+      "replyToEmail": "support@techbite.vn",
+      "adminAlertEmail": "admin@techbite.vn",
+      "enableOrderAlertAdmin": true,
+      "enableWelcomeMail": true
     }
   }
 }
 ```
 
-#### 2. `PUT /api/v1/admin/settings`
-- **Mục đích:** Cập nhật đồng loạt các nhóm cấu hình hệ thống (`general`, `payment`, `shipping`, `menus`, `seo`).
-- **Bảo mật:** `JwtAuthGuard` + `RolesGuard(ADMIN)`
-- **Request Body Payload (`UpdateSystemSettingsDto`):**
-```json
-{
-  "general": {
-    "storeName": "TechBite Official Store",
-    "storeEmail": "contact@techbite.vn",
-    "storePhone": "1900 6868",
-    "storeAddress": "Số 1 Đại Cồ Việt, Hai Bà Trưng, Hà Nội",
-    "copyrightText": "© 2026 TechBite Inc.",
-    "logoUrl": "/uploads/images/logo-v2.png",
-    "faviconUrl": "/uploads/images/favicon-v2.ico"
-  },
-  "payment": {
-    "bankName": "MB Bank",
-    "bankAccountNo": "9999888899",
-    "bankAccountHolder": "CTY TNHH TECHBITE VIETNAM",
-    "vietQrTemplate": "compact",
-    "enableCod": true,
-    "paymentNote": "Ghi rõ mã đơn hàng khi chuyển khoản"
-  },
-  "shipping": {
-    "defaultShippingFee": 30000,
-    "freeShippingThreshold": 500000,
-    "estimatedDeliveryTime": "24 - 48 giờ"
-  },
-  "menus": [
-    {
-      "id": "m-1",
-      "title": "Trang chủ",
-      "targetUrl": "/",
-      "location": "HEADER",
-      "icon": "Home",
-      "order": 1,
-      "openInNewTab": false,
-      "isActive": true
-    }
-  ],
-  "seo": {
-    "metaTitle": "TechBite Store",
-    "metaDescription": "Cửa hàng công nghệ hàng đầu",
-    "metaKeywords": "TechBite, Công nghệ",
-    "facebookUrl": "https://facebook.com/techbite",
-    "zaloUrl": "https://zalo.me/techbite",
-    "instagramUrl": "",
-    "tiktokUrl": ""
-  }
-}
-```
-- **Response Success (200 OK):**
-```json
-{
-  "statusCode": 200,
-  "message": "Cập nhật thiết lập hệ thống thành công",
-  "data": { "success": true }
-}
-```
+> [!IMPORTANT]
+> **Bảo mật Payload:** Tuyệt đối **KHÔNG** trả về `smtpPassword` dạng thô trong API Response. Trả về cờ `hasPasswordConfigured: true` để Frontend hiển thị trạng thái đã thiết lập mật khẩu mà không làm lộ credentials.
 
 ---
 
-### 3.2 Nhóm API Admin Banners (`/api/v1/admin/banners`)
+## 4. XỬ LÝ BẤT ĐỒNG BỘ, CACHING & DYNAMIC SMTP (ARCHITECTURE)
 
-#### 1. `GET /api/v1/admin/banners`
-- **Query Parameters:**
-  - `category` (optional): `'HOME'` | `'PRODUCT'`
-  - `position` (optional): `'HERO_BANNER'` | `'PROMOTION_BANNER'` | `'POPUP_BANNER'`
-  - `search` (optional): Từ khóa tìm kiếm theo tiêu đề banner
-- **Response Success (200 OK):** Trả về danh sách Banner đầy đủ (bao gồm cả banner inactive) xếp theo `order` tăng dần.
+### 4.1 Cơ Chế Dynamic SMTP Transporter trong `MailService`
+Để tránh việc khởi động lại ứng dụng NestJS mỗi khi Quản trị viên thay đổi tài khoản hoặc mật khẩu SMTP:
+1. `MailService` quản lý một biến `cachedTransporter` và cờ `lastConfigHash`.
+2. Khi thực hiện gửi email (`sendOrderConfirmation`, `sendRegisterWelcome`, `testConnection`), `MailService` đọc cấu hình `email` từ bảng `system_settings` (hoặc cache Redis).
+3. Nếu cấu hình thay đổi (hoặc chưa khởi tạo), `MailService` khởi tạo lại `nodemailer.createTransport({...})` tương ứng tức thì.
 
-#### 2. `POST /api/v1/admin/banners`
-- **Request Body Payload (`CreateBannerDto`):**
-```json
-{
-  "title": "Banner Khuyến Mãi Mới",
-  "subtitle": "Mô tả ngắn banner",
-  "imageUrl": "/uploads/images/banner-new.webp",
-  "targetUrl": "/products?sale=true",
-  "category": "HOME",
-  "position": "HERO_BANNER",
-  "order": 1,
-  "isActive": true
-}
-```
-
-#### 3. `PATCH /api/v1/admin/banners/:id`
-- **Request Body Payload (`UpdateBannerDto`):** Cho phép cập nhật từng phần thông tin Banner.
-
-#### 4. `DELETE /api/v1/admin/banners/:id`
-- **Mục đích:** Xóa Banner khỏi cơ sở dữ liệu và tự động gọi `UploadService` để xóa tập tin hình ảnh thực tế trên đĩa server.
-
-#### 5. `PATCH /api/v1/admin/banners/reorder`
-- **Request Body Payload (`ReorderBannersDto`):**
-```json
-{
-  "items": [
-    { "id": 1, "order": 1 },
-    { "id": 2, "order": 2 },
-    { "id": 3, "order": 3 }
-  ]
-}
-```
-
----
-
-### 3.3 Nhóm API Public Storefront (`/api/v1/settings` & `/api/v1/banners`)
-
-#### 1. `GET /api/v1/settings/public`
-- **Mục đích:** Cung cấp thông tin cấu hình công khai cho ứng dụng Storefront Frontend (`apps/frontend`).
-- **Response Data:** Chỉ bao gồm các dữ liệu an toàn (`storeName`, `storePhone`, `storeAddress`, `logoUrl`, `payment` info, `shipping` fee info, `menus`, `seo`).
-- **Caching:** Cache trên Redis key `cache:v1:settings:public` (TTL 3600s).
-
-#### 2. `GET /api/v1/banners`
-- **Query Params:** `category` (`HOME` / `PRODUCT`), `position` (`HERO_BANNER` / `PROMOTION_BANNER`)
-- **Response Data:** Trả về danh sách các Banner active (`isActive: true`) được sắp xếp theo thứ tự `order` tăng dần.
-- **Caching:** Cache trên Redis key `cache:v1:banners:${category}:${position}` (TTL 3600s).
-
----
-
-## 4. QUY TRÌNH XỬ LÝ & LOGIC NGHIỆP VỤ (BUSINESS LOGIC & WORKFLOWS)
-
-### 4.1 Luồng Khởi tạo Dữ liệu Mặc định (Database Seeding)
-- Khi khởi tạo hệ thống hoặc chạy script `prisma/seed.ts`, hệ thống tự động kiểm tra xem các key trong `system_settings` (`general`, `payment`, `shipping`, `menus`, `seo`) đã tồn tại chưa.
-- Nếu chưa có, tự động tạo mới các record mẫu chuẩn định dạng JSON để ứng dụng Frontend không bao giờ bị lỗi Null Pointer.
-
-### 4.2 Luồng Lưu Cấu Hình & Xóa Rác Cache Redis
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Admin as Admin User
+    actor Admin as Quản Trị Viên
     participant Dash as Admin Dashboard
     participant API as Admin Settings Controller
-    participant Service as Settings Service
-    participant DB as MySQL DB
-    participant Redis as Redis Cache Server
+    participant Service as Settings & Mail Service
+    participant DB as MySQL (system_settings)
+    participant Smtp as Mail Server (Gmail / SendGrid / Ethereal)
 
-    Admin->>Dash: Bấm "Lưu thay đổi 💾"
-    Dash->>API: PUT /api/v1/admin/settings (Payload JSON)
-    API->>Service: updateSettings(dto)
-    Service->>DB: Upsert system_settings records (Transaction)
-    DB-->>Service: Updated Status OK
-    Service->>Redis: redis.del("cache:v1:settings:public")
-    Service->>Redis: redis.delByPattern("cache:v1:banners:*")
-    Redis-->>Service: Cache Purged
-    Service-->>API: Response Success (200 OK)
-    API-->>Dash: Toast "Lưu cấu hình thành công"
-```
-
-### 4.3 Luồng Xóa Banner & Tự động Xóa File Ảnh Vật lý
-- Khi gọi `DELETE /api/v1/admin/banners/:id`:
-  1. Service tìm banner theo `id`. Nếu không thấy, ném `NotFoundException('Không tìm thấy Banner')`.
-  2. Lấy `imageUrl` của banner.
-  3. Xóa record Banner khỏi DB trong Prisma.
-  4. Gọi `uploadService.deleteImageFile(imageUrl)` để kiểm tra và xóa file vật lý tương ứng trên thư mục `/uploads/images/`.
-  5. Xóa Redis cache `cache:v1:banners:*`.
-
----
-
-## 5. DTO VALIDATION SPECIFICATIONS
-
-```typescript
-// create-banner.dto.ts
-export class CreateBannerDto {
-  @IsString()
-  @IsNotEmpty({ message: 'Tiêu đề banner không được để trống' })
-  @MaxLength(255)
-  title: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  subtitle?: string;
-
-  @IsString()
-  @IsNotEmpty({ message: 'Hình ảnh banner không được để trống' })
-  imageUrl: string;
-
-  @IsOptional()
-  @IsString()
-  targetUrl?: string;
-
-  @IsEnum(BannerCategory)
-  category: BannerCategory;
-
-  @IsEnum(BannerPosition)
-  position: BannerPosition;
-
-  @IsOptional()
-  @IsInt()
-  order?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
-}
+    Admin->>Dash: Nhập thông số SMTP mới & bấm "Gửi Email Thử Nghiệm ✉️"
+    Dash->>API: POST /api/v1/admin/settings/email/test
+    API->>Service: testEmailConnection(dto)
+    Service->>Smtp: Verify Transporter & sendMail({ to: targetEmail })
+    alt Kết nối SMTP thành công
+        Smtp-->>Service: 250 Message Delivered OK
+        Service-->>API: { success: true, message: "Kết nối và gửi thử thành công" }
+        API-->>Dash: Toast xanh "Kiểm tra SMTP thành công"
+        Admin->>Dash: Bấm "Lưu Cài Đặt"
+        Dash->>API: PUT /api/v1/admin/settings
+        API->>DB: Upsert key 'email' vào DB
+        API->>Service: Reset cached Transporter
+    else Lỗi xác thực SMTP (Sai User / Port / Mật khẩu ứng dụng)
+        Smtp-->>Service: 535 Authentication Credentials Invalid
+        Service-->>API: Throw BadRequestException(Lỗi xác thực SMTP)
+        API-->>Dash: Toast đỏ hiển thị chi tiết mã lỗi SMTP
+    end
 ```
 
 ---
 
-## 6. LỘ TRÌNH THI CÔNG API (IMPLEMENTATION STEPS FOR BACKEND ENGINE)
+### 4.2 Chiến Lược Caching & Invalidation Redis
 
-1. **Cập nhật Schema & DB Migration:**
-   - Cập nhật `schema.prisma` thêm model `SystemSetting`, enum `BannerCategory`, `BannerPosition` và nâng cấp model `Banner`.
-   - Chạy `npx prisma db push` & `npx prisma generate`.
+1. **Public Settings Cache Key:** `cache:v1:settings:public` (TTL: 3600s).
+2. **SEO Metadata Cache Key:** `cache:v1:settings:seo` (TTL: 3600s).
+3. **Navigation Menus Cache Key:** `cache:v1:settings:menus` (TTL: 3600s).
+4. **Invalidation Trigger:** Khi có bất kỳ request `PUT /api/v1/admin/settings` hoặc `PATCH /api/v1/admin/settings/:group`, hệ thống xóa toàn bộ các key cache liên quan trên Redis (`cache:v1:settings:*`) đảm bảo Client nhận ngay dữ liệu mới nhất.
 
-2. **Seeding Dữ liệu Mặc định:**
-   - Cập nhật `prisma/seed.ts` bổ sung dữ liệu khởi tạo cho `system_settings` và `banners`.
+---
 
-3. **Xây dựng Settings & Banners Modules (`src/settings`, `src/banners`):**
-   - Tạo DTOs validation cho Settings & Banners.
-   - Viết `AdminSettingsService` và `AdminSettingsController` cho Admin Dashboard.
-   - Viết `AdminBannersService` và `AdminBannersController` cho Admin Dashboard.
-   - Viết `SettingsController` và `BannersController` cho Storefront Public API.
+## 5. BẢO MẬT & PHÂN QUYỀN (SECURITY & ROLE GUARDS)
 
-4. **Tích hợp Cache Management & File Cleanup:**
-   - Inject `RedisService` vào Settings/Banners services để quản lý purge cache.
-   - Inject `UploadService` vào Banners Service để dọn dẹp tập tin đĩa khi xóa banner.
+1. **Authentication:** Bắt buộc áp dụng `JwtAuthGuard` cho toàn bộ các route `/api/v1/admin/settings/**`.
+2. **Role Authorization:** 
+   - Quyền `ADMIN`: Toàn quyền xem và chỉnh sửa tất cả 4 nhóm (`general`, `menus`, `seo`, `email`), thực hiện gửi Test Email.
+   - Quyền `STAFF`: Chỉ được phép xem (`GET`) cấu hình chung và menu, **CẤM** xem hoặc thay đổi cấu hình `email` và `seo`.
+3. **Mã hóa Mật khẩu SMTP:** Mật khẩu SMTP lưu trong database phải được mã hóa 2 chiều an toàn bằng thuật toán AES-256-GCM với Secret Key từ biến môi trường `APP_ENCRYPTION_KEY`.
 
-5. **Kiểm thử API & Zero-Error Check:**
-   - Chạy `npm run build` trên `app/backend` đảm bảo 0 lỗi TypeScript và 0 lỗi Validation.
+---
+
+## 6. LỘ TRÌNH THI CÔNG CHI TIẾT (IMPLEMENTATION CHECKLIST)
+
+- [ ] **Bước 1 (DTOs & Interfaces):** Khởi tạo đầy đủ các file DTOs: `general-settings.dto.ts`, `menu-settings.dto.ts`, `seo-settings.dto.ts`, `email-settings.dto.ts`, `update-system-settings.dto.ts` trong thư mục `src/settings/dto/`.
+- [ ] **Bước 2 (Dynamic Mail Transport):** Nâng cấp `MailService` trong `src/mail/mail.service.ts` để đọc cấu hình SMTP trực tiếp từ DB `SystemSetting` thay vì chỉ dùng `.env`, bổ sung method `testSmtpConnection(dto)`.
+- [ ] **Bước 3 (Admin Settings Service & Controller):**
+  - Mở rộng `SettingsService` hỗ trợ lấy và cập nhật từng nhóm cấu hình (`general`, `menus`, `seo`, `email`).
+  - Xử lý che giấu mật khẩu `smtpPassword` khi trả về response cho client.
+  - Thêm endpoint `POST /api/v1/admin/settings/email/test` trong `AdminSettingsController`.
+- [ ] **Bước 4 (Public Storefront Endpoints):**
+  - Thêm endpoint `GET /api/v1/settings/seo` và `GET /api/v1/settings/menus` trong `SettingsController` có tích hợp Caching Redis.
+- [ ] **Bước 5 (Database Seeding):** Cập nhật `prisma/seed.ts` để khởi tạo dữ liệu mẫu chuẩn hóa cho cả 4 nhóm `general`, `menus`, `seo`, `email`.
+- [ ] **Bước 6 (Kiểm thử Build & Type Check):** Chạy `npm run build` trên `app/backend` đảm bảo 0 lỗi TypeScript (`npx tsc --noEmit`).

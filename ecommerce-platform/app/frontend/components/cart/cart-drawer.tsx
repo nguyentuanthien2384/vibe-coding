@@ -76,7 +76,7 @@ export const CartDrawer: React.FC = () => {
   return (
     <>
       {/* Backdrop overlay */}
-      <Backdrop isOpen={isOpen} onClick={closeCart} />
+      <Backdrop isOpen={isOpen} onClick={closeCart} className="z-40" />
 
       {/* Drawer Container */}
       <div
