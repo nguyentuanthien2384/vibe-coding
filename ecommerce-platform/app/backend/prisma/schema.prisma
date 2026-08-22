@@ -412,9 +412,12 @@ enum NotificationType {
   ORDER_STATUS_CHANGED
   PAYMENT_CONFIRMED
   SYSTEM_ALERT
+  NEW_ORDER
+  NEW_CUSTOMER
+  PAYMENT_SUBMITTED
 }
 
-/// Bảng lưu thông báo đẩy In-App của người dùng
+/// Bảng lưu thông báo đẩy In-App của người dùng & Quản trị viên
 model Notification {
   id        Int              @id @default(autoincrement())
   userId    Int
@@ -422,6 +425,7 @@ model Notification {
   content   String           @db.Text
   type      NotificationType @default(ORDER_STATUS_CHANGED)
   orderCode String?          @db.VarChar(50)
+  actionUrl String?          @db.VarChar(500)
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
 

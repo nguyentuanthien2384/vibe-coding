@@ -1,9 +1,37 @@
+export type AdminNotificationType =
+  | 'NEW_ORDER'
+  | 'NEW_CUSTOMER'
+  | 'PAYMENT_SUBMITTED'
+  | 'PAYMENT_CONFIRMED'
+  | 'ORDER_STATUS_CHANGED'
+  | 'SYSTEM_ALERT'
+  | 'ORDER'
+  | 'STOCK'
+  | 'SYSTEM';
+
 export interface AdminNotification {
-  id: string;
+  id: number | string;
   title: string;
-  message: string;
-  type: 'ORDER' | 'STOCK' | 'SYSTEM';
-  createdAt: string;
+  content: string;
+  message?: string;
+  type: AdminNotificationType;
+  orderCode?: string | null;
+  actionUrl?: string | null;
   isRead: boolean;
-  actionUrl?: string;
+  createdAt: string;
+}
+
+export interface AdminNotificationsApiResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    items: AdminNotification[];
+    unreadCount: number;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
 }

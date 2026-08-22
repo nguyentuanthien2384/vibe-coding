@@ -319,11 +319,8 @@ export const CheckoutContainer: React.FC = () => {
     setIsCompletingCheckout(true);
     setActiveModal("NONE");
 
-    // Thanh toán là điểm kết thúc quan trọng: dùng điều hướng trực tiếp để
-    // không bị gián đoạn bởi state giỏ hàng hoặc transition của trang checkout.
-    window.location.replace(
-      `/checkout/success?orderCode=${currentOrderCode}&total=${total}&payment=${paymentMethod}`
-    );
+    // Điều hướng trực tiếp tới trang Chi tiết đơn hàng vừa tạo
+    window.location.replace(`/orders/${currentOrderCode}`);
   };
 
   return (

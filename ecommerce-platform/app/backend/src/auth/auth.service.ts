@@ -1,17 +1,20 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   Logger,
   UnauthorizedException,
+  forwardRef,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Role } from '@prisma/client';
+import { NotificationType, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   UserRegisteredEvent,
   PasswordChangedEvent,
@@ -39,6 +42,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
     private readonly eventEmitter: EventEmitter2,
+    @Inject(forwardRef(() => NotificationsService))
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -114,6 +119,14 @@ export class AuthService {
         registeredAt: newUser.createdAt,
       }),
     );
+
+    // Gửi thông báo In-App Realtime tới toàn bộ Quản trị viên Dashboard
+    void this.notificationsService.broadcastToAdmins({
+      title: 'Khách hàng mới đăng ký',
+      content: `Khách hàng ${newUser.fullName} (${newUser.email}) vừa đăng ký tài khoản thành công.`,
+      type: NotificationType.NEW_CUSTOMER,
+      actionUrl: '/customers',
+    });
 
     this.logger.log(`✅ Đăng ký người dùng thành công: User ID ${newUser.id} (${newUser.email})`);
 

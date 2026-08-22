@@ -14,6 +14,7 @@ export interface RealtimeNotificationPayload {
     content: string;
     type: NotificationType;
     orderCode: string | null;
+    actionUrl: string | null;
     isRead: boolean;
     createdAt: Date;
   };
@@ -27,7 +28,7 @@ export class NotificationsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Tạo thông báo đẩy In-App trong DB và phát tín hiệu Realtime qua RxJS SSE Stream
+   * Tạo thông báo đẩy In-App trong DB và phát tín hiệu Realtime qua RxJS SSE Stream cho 1 user
    */
   async createNotification(params: {
     userId: number;
@@ -35,6 +36,7 @@ export class NotificationsService {
     content: string;
     type?: NotificationType;
     orderCode?: string;
+    actionUrl?: string;
   }) {
     const notification = await this.prisma.notification.create({
       data: {
@@ -43,6 +45,7 @@ export class NotificationsService {
         content: params.content,
         type: params.type || NotificationType.ORDER_STATUS_CHANGED,
         orderCode: params.orderCode,
+        actionUrl: params.actionUrl,
         isRead: false,
       },
     });
@@ -58,6 +61,61 @@ export class NotificationsService {
     });
 
     return notification;
+  }
+
+  /**
+   * Broadcast thông báo đẩy tới TOÀN BỘ tài khoản Quản trị (Role: ADMIN, STAFF)
+   */
+  async broadcastToAdmins(params: {
+    title: string;
+    content: string;
+    type: NotificationType;
+    orderCode?: string;
+    actionUrl?: string;
+  }) {
+    try {
+      const adminUsers = await this.prisma.user.findMany({
+        where: {
+          role: { in: ['ADMIN', 'STAFF'] },
+          isActive: true,
+        },
+        select: { id: true, email: true },
+      });
+
+      if (adminUsers.length === 0) return;
+
+      const createdNotifications = await Promise.all(
+        adminUsers.map(async (admin) => {
+          const notif = await this.prisma.notification.create({
+            data: {
+              userId: admin.id,
+              title: params.title,
+              content: params.content,
+              type: params.type,
+              orderCode: params.orderCode,
+              actionUrl: params.actionUrl,
+              isRead: false,
+            },
+          });
+
+          // Broadcast qua SSE realtime
+          this.notificationSubject.next({
+            userId: admin.id,
+            notification: notif,
+          });
+
+          return notif;
+        }),
+      );
+
+      this.logger.log(
+        `[Admin Notification Broadcast] Sent "${params.title}" to ${adminUsers.length} admin/staff accounts.`,
+      );
+
+      return createdNotifications;
+    } catch (error) {
+      this.logger.error('[Admin Notification Broadcast Error]', error);
+    }
   }
 
   /**

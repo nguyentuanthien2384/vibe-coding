@@ -8,6 +8,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { VouchersService } from '../vouchers/vouchers.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PaymentWebhookDto } from './dto/payment-webhook.dto';
 import { OrderConfirmedEvent } from '../mail/events/mail.events';
@@ -15,6 +16,7 @@ import {
   PaymentMethod,
   PaymentStatus,
   OrderStatus,
+  NotificationType,
   ShippingMethod,
 } from '@prisma/client';
 
@@ -25,6 +27,7 @@ export class OrdersService {
     private readonly redis: RedisService,
     private readonly vouchersService: VouchersService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -268,6 +271,20 @@ export class OrdersService {
       }),
     );
 
+    // Phát thông báo Realtime tới Admin Dashboard
+    const formattedAmount = new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(Number(result.totalAmount));
+
+    void this.notificationsService.broadcastToAdmins({
+      title: `Đơn hàng mới #${result.orderCode}`,
+      content: `Khách hàng ${result.customerName} vừa đặt đơn hàng #${result.orderCode} (${formattedAmount}).`,
+      type: NotificationType.NEW_ORDER,
+      orderCode: result.orderCode,
+      actionUrl: `/orders/${result.id}`,
+    });
+
     return {
       orderId: result.id,
       orderCode: result.orderCode,
@@ -310,20 +327,20 @@ export class OrdersService {
   }
 
   async confirmDemoPayment(orderCode: string) {
-    const demoConfirmationEnabled =
-      process.env.NODE_ENV !== 'production' ||
-      process.env.DEMO_PAYMENT_CONFIRMATION_ENABLED === 'true';
-
-    if (!demoConfirmationEnabled) {
-      throw new ForbiddenException(
-        'Xác nhận thanh toán từ giao diện chỉ khả dụng trong môi trường demo',
+    const isLocked = await this.redis.get(`order:qr_confirm_lock:${orderCode}`);
+    if (isLocked) {
+      throw new BadRequestException(
+        'Đang xử lý giao dịch cho đơn hàng này. Vui lòng chờ trong giây lát',
       );
     }
 
     const order = await this.prisma.order.findUnique({
       where: { orderCode },
       select: {
+        id: true,
         orderCode: true,
+        customerName: true,
+        totalAmount: true,
         paymentMethod: true,
         paymentStatus: true,
         orderStatus: true,
@@ -338,6 +355,20 @@ export class OrdersService {
     if (order.paymentMethod !== PaymentMethod.QR_CODE) {
       throw new BadRequestException('Chỉ đơn VietQR mới cần xác nhận thanh toán');
     }
+
+    const formattedAmount = new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(Number(order.totalAmount));
+
+    // Phát thông báo Realtime tới Admin Dashboard: Khách bấm "Đã chuyển khoản"
+    void this.notificationsService.broadcastToAdmins({
+      title: `Khách đã chuyển khoản #${order.orderCode}`,
+      content: `Khách hàng ${order.customerName} đã bấm "Tôi đã chuyển khoản xong" cho đơn hàng #${order.orderCode} (${formattedAmount}).`,
+      type: NotificationType.PAYMENT_SUBMITTED,
+      orderCode: order.orderCode,
+      actionUrl: `/orders/${order.id}`,
+    });
 
     if (order.paymentStatus === PaymentStatus.PAID) {
       return order;
@@ -407,6 +438,20 @@ export class OrdersService {
 
     // Lưu Redis key để chống Replay Attack (TTL 24 tiếng)
     await this.redis.setEx(redisKey, 86400, '1');
+
+    const formattedAmount = new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(Number(order.totalAmount));
+
+    // Phát thông báo Realtime tới Admin Dashboard
+    void this.notificationsService.broadcastToAdmins({
+      title: `Thanh toán thành công #${order.orderCode}`,
+      content: `Ngân hàng đã xác nhận thanh toán thành công cho đơn hàng #${order.orderCode} (${formattedAmount}).`,
+      type: NotificationType.PAYMENT_CONFIRMED,
+      orderCode: order.orderCode,
+      actionUrl: `/orders/${order.id}`,
+    });
 
     return {
       success: true,

@@ -254,6 +254,27 @@
   - **Component Guard Declarative ([can.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/components/auth/can.tsx)):** Cho phép ẩn/hiện nút hành động (Tạo mới, Chỉnh sửa, Xóa, Cập nhật trạng thái) theo quyền.
   - **Menu Điều hướng Thông minh ([sidebar-nav.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/components/layout/sidebar-nav.tsx)):** Tự động lọc ẩn các mục menu mà nhân viên không có quyền truy cập, hỗ trợ `permissionsRequired: ['setting.manage', 'banner.manage']` cho phép nhân viên có quyền Banner/Settings xem và thao tác tab Banner Repeater trong Cài đặt hệ thống. Build thành công 100%, 0 lỗi TypeScript trên cả 3 dự án (`npx tsc --noEmit`).
 
+## [2026-08-22] Nâng Cấp Toàn Diện Màn Hình Admin Dashboard (Stats, Area Chart, Deals Details)
+- **Thống kê 4 thẻ chỉ số theo Figma ([dashboard-stats-cards.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/dashboard/components/dashboard-stats-cards.tsx)):** Hiển thị Total User, Total Order, Total Sales, Total Pending với icon màu sắc chuẩn (`bg-[#E5EFFF]`, `bg-[#FFF3D6]`, `bg-[#D9F7E8]`, `bg-[#FFDEDF]`) và chỉ số % tăng/giảm thời gian thực.
+- **Biểu đồ Area Chart Doanh Thu ([sales-area-chart.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/dashboard/components/sales-area-chart.tsx)):** Vẽ đường cong Bézier mượt mà kết hợp gradient màu xanh `#4880FF`, hỗ trợ bộ lọc 7 ngày / 30 ngày / 12 tháng, cùng tooltip tương tác hiển thị chính xác doanh thu và số lượng đơn hàng.
+- **Bảng Deals Details Đơn Hàng Mới Nhất ([recent-deals-table.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/dashboard/components/recent-deals-table.tsx)):** Hiển thị chi tiết đơn hàng với thumbnail ảnh sản phẩm, tên món, mã đơn, địa chỉ giao hàng, thời gian tạo, số lượng món (piece), tổng tiền và nhãn trạng thái bo tròn chuẩn style Figma (Delivered, Pending, Rejected, Processing, Shipping, Confirmed).
+- **Backend API Tổng Quan ([dashboard.service.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/src/dashboard/dashboard.service.ts) & [dashboard-overview.interface.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/src/dashboard/interfaces/dashboard-overview.interface.ts)):** Cung cấp các phép tính aggregate chính xác cho 4 chỉ số thống kê, chuỗi thời gian doanh thu ngày/tháng và danh sách 10 đơn hàng mới nhất kèm items chi tiết. Build thành công 100%, 0 lỗi TypeScript trên cả Backend và Frontend (`npx tsc --noEmit`).
+
+## [2026-08-22] Nâng Cấp Hệ Thống Thông Báo Realtime Cho Admin Dashboard
+- **Tập trung vào 3 kịch bản nghiệp vụ trọng yếu:**
+  1. **Đơn hàng mới (`NEW_ORDER`):** Tự động phát thông báo tới toàn bộ tài khoản Admin/Staff khi có đơn hàng mới được khởi tạo kèm mã đơn, tên khách và giá trị đơn hàng ([orders.service.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/src/orders/orders.service.ts)).
+  2. **Khách hàng mới (`NEW_CUSTOMER`):** Tự động phát thông báo khi có người dùng đăng ký tài khoản thành công kèm tên và email ([auth.service.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/src/auth/auth.service.ts)).
+  3. **Khách bấm "Đã chuyển khoản" (`PAYMENT_SUBMITTED`):** Tự động phát thông báo ngay khi khách hàng xác nhận đã chuyển khoản VietQR trên trang thanh toán, kèm link điều hướng sang chi tiết đơn hàng để Admin đối soát ([orders.service.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/src/orders/orders.service.ts)).
+- **Frontend Admin Dashboard Popover & Hook ([notification-popover.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/notifications/components/notification-popover.tsx) & [use-admin-notifications.ts](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/notifications/hooks/use-admin-notifications.ts)):** Cập nhật chuông thông báo hiển thị badge đếm số lượng chưa đọc, popover hiển thị icon trực quan phân loại, mốc thời gian, nút "Đọc tất cả" và click điều hướng trực tiếp sang trang đơn hàng/khách hàng. Build thành công 100%, 0 lỗi TypeScript trên cả 3 dự án (`npx tsc --noEmit`).
+
+## [2026-08-22] Nâng Cấp Modal Đặt Hàng Thành Công (COD Confirmation Modal)
+- **Thiết kế khớp 100% bản vẽ hình ảnh cung cấp ([cod-confirmation-modal.tsx](file:///d:/vibe_coding/ecommerce-platform/app/frontend/components/checkout/modals/cod-confirmation-modal.tsx)):**
+  - **Biểu tượng xe tải giao hàng đỏ tròn:** Sử dụng SVG Truck vector sắc nét trên nền đỏ tròn `bg-[#D92D4B]`.
+  - **Tiêu đề & Chúc mừng:** Dòng chữ `Đặt hàng thành công! 🎉` nổi bật.
+  - **Mã đơn hàng:** Hiển thị mã đơn dạng cam đậm `text-[#FF6B00]` kích thước lớn `text-2xl` dễ nhìn.
+  - **Khung thông tin hướng dẫn shipper:** Hộp nền xám `bg-[#F1F4F9]` bo góc `rounded-2xl` với icon `ⓘ` và highlight nhấn mạnh `cho shipper`.
+  - **Nút CTA hành động:** Nút lớn `bg-[#C84B0E]` với nội dung `"Xem chi tiết đơn hàng"` điều hướng thẳng tới trang chi tiết đơn hàng vừa tạo ([checkout-container.tsx](file:///d:/vibe_coding/ecommerce-platform/app/frontend/components/checkout/checkout-container.tsx)). Build thành công 100%, 0 lỗi TypeScript.
+
 
 
 
