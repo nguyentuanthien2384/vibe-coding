@@ -12,33 +12,135 @@ import {
   renderPaymentConfirmedByAdminEmail,
 } from './templates/email-templates';
 
+interface DynamicEmailConfig {
+  mailDriver?: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpEncryption: string;
+  smtpUser: string;
+  smtpPassword?: string;
+  fromName: string;
+  fromEmail: string;
+  replyToEmail?: string;
+  adminAlertEmail?: string;
+  enableOrderAlertAdmin?: boolean;
+  enableWelcomeMail?: boolean;
+}
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private transporter: nodemailer.Transporter;
+  private cachedTransporter: nodemailer.Transporter | null = null;
+  private lastConfigHash: string = '';
+  private cachedFromAddress: string = '';
+  private cachedReplyTo: string = '';
+  private cachedConfig: DynamicEmailConfig | null = null;
 
-  constructor(private readonly prisma: PrismaService) {
-    this.initTransporter();
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
-  private initTransporter() {
-    const host = process.env.MAIL_HOST || 'smtp.ethereal.email';
-    const port = parseInt(process.env.MAIL_PORT || '587', 10);
-    const user = process.env.MAIL_USER || '';
-    const pass = process.env.MAIL_PASS || '';
-
-    if (user && pass) {
-      this.transporter = nodemailer.createTransport({
-        host,
-        port,
-        secure: port === 465,
-        auth: { user, pass },
+  /**
+   * Lấy cấu hình SMTP động từ DB (hoặc fallback .env) và khởi tạo / tái sử dụng Transporter
+   */
+  private async getTransporterInfo(): Promise<{
+    transporter: nodemailer.Transporter;
+    fromAddress: string;
+    replyToAddress?: string;
+    config: DynamicEmailConfig | null;
+  }> {
+    try {
+      // 1. Đọc cấu hình từ system_settings
+      const settingRecord = await this.prisma.systemSetting.findUnique({
+        where: { key: 'email' },
       });
-    } else {
-      // In development fallback to test json transport if credentials not set
-      this.transporter = nodemailer.createTransport({
-        jsonTransport: true,
-      });
+
+      let config: DynamicEmailConfig | null = null;
+      if (settingRecord && settingRecord.value) {
+        config = settingRecord.value as unknown as DynamicEmailConfig;
+      }
+
+      // 2. Tính toán hash cấu hình để phát hiện thay đổi
+      const currentHash = config
+        ? `${config.smtpHost}:${config.smtpPort}:${config.smtpEncryption}:${config.smtpUser}:${config.smtpPassword || ''}:${config.fromEmail}:${config.fromName}`
+        : 'fallback-env';
+
+      // 3. Nếu cấu hình không đổi và đã có cachedTransporter, tái sử dụng
+      if (this.cachedTransporter && this.lastConfigHash === currentHash) {
+        return {
+          transporter: this.cachedTransporter,
+          fromAddress: this.cachedFromAddress,
+          replyToAddress: this.cachedReplyTo || undefined,
+          config: this.cachedConfig,
+        };
+      }
+
+      // 4. Khởi tạo Transporter mới
+      let transporter: nodemailer.Transporter;
+      let fromAddress: string;
+      let replyToAddress: string = '';
+
+      if (config && config.smtpHost && config.smtpUser) {
+        transporter = nodemailer.createTransport({
+          host: config.smtpHost,
+          port: config.smtpPort || 587,
+          secure: config.smtpEncryption === 'ssl' || config.smtpPort === 465,
+          auth: {
+            user: config.smtpUser,
+            pass: config.smtpPassword || '',
+          },
+          ...(config.smtpEncryption === 'tls' ? { requireTLS: true } : {}),
+          connectionTimeout: 10000,
+          greetingTimeout: 5000,
+        });
+
+        fromAddress = `"${config.fromName || 'TechBite Platform'}" <${config.fromEmail || config.smtpUser}>`;
+        replyToAddress = config.replyToEmail || config.fromEmail || '';
+      } else {
+        // Fallback về biến môi trường .env
+        const host = process.env.MAIL_HOST || 'smtp.ethereal.email';
+        const port = parseInt(process.env.MAIL_PORT || '587', 10);
+        const user = process.env.MAIL_USER || '';
+        const pass = process.env.MAIL_PASS || '';
+
+        if (user && pass) {
+          transporter = nodemailer.createTransport({
+            host,
+            port,
+            secure: port === 465,
+            auth: { user, pass },
+          });
+        } else {
+          transporter = nodemailer.createTransport({
+            jsonTransport: true,
+          });
+        }
+
+        fromAddress = process.env.MAIL_FROM || '"TechBite Platform" <noreply@techbite.vn>';
+      }
+
+      // Lưu cache
+      this.cachedTransporter = transporter;
+      this.lastConfigHash = currentHash;
+      this.cachedFromAddress = fromAddress;
+      this.cachedReplyTo = replyToAddress;
+      this.cachedConfig = config;
+
+      this.logger.log(`[MailService] Initialized SMTP Transporter (${fromAddress})`);
+
+      return {
+        transporter,
+        fromAddress,
+        replyToAddress: replyToAddress || undefined,
+        config,
+      };
+    } catch (error) {
+      this.logger.error('[MailService] Lỗi khởi tạo Transporter:', error);
+      // Fallback an toàn
+      const fallbackTransporter = nodemailer.createTransport({ jsonTransport: true });
+      return {
+        transporter: fallbackTransporter,
+        fromAddress: '"TechBite Platform" <noreply@techbite.vn>',
+        config: null,
+      };
     }
   }
 
@@ -74,12 +176,13 @@ export class MailService {
       return;
     }
 
-    const fromAddress = process.env.MAIL_FROM || '"TechBite Platform" <noreply@techbite.vn>';
-
     try {
-      await this.transporter.sendMail({
+      const { transporter, fromAddress, replyToAddress } = await this.getTransporterInfo();
+
+      await transporter.sendMail({
         from: fromAddress,
         to: log.recipient,
+        replyTo: replyToAddress,
         subject: log.subject,
         html: htmlContent,
       });
@@ -112,6 +215,12 @@ export class MailService {
    * Xử lý gửi email Đăng ký thành công
    */
   async sendRegisterWelcome(userId: number, recipient: string, fullName: string) {
+    const { config } = await this.getTransporterInfo();
+    if (config && config.enableWelcomeMail === false) {
+      this.logger.log(`[Email Skipped] Welcome email disabled in settings for ${recipient}`);
+      return;
+    }
+
     const { subject, html } = renderRegisterWelcomeEmail(fullName);
     const log = await this.createLog({
       userId,
@@ -145,6 +254,18 @@ export class MailService {
       metadata: { orderCode: data.orderCode, totalAmount: data.totalAmount },
     });
     setImmediate(() => this.dispatchMail(log.id, html));
+
+    // Gửi cảnh báo đơn hàng mới cho Admin nếu được bật
+    const { config } = await this.getTransporterInfo();
+    if (config?.enableOrderAlertAdmin && config.adminAlertEmail && config.adminAlertEmail !== data.email) {
+      const adminLog = await this.createLog({
+        recipient: config.adminAlertEmail,
+        subject: `[TechBite Admin] Có đơn hàng mới #${data.orderCode} - ${new Intl.NumberFormat('vi-VN').format(data.totalAmount)}đ`,
+        type: EmailType.ORDER_CONFIRMATION,
+        metadata: { orderCode: data.orderCode, isAdminAlert: true, totalAmount: data.totalAmount },
+      });
+      setImmediate(() => this.dispatchMail(adminLog.id, html));
+    }
   }
 
   /**

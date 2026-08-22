@@ -1,20 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useCartStore } from "../../store/use-cart-store";
 import { useAuthStore } from "../../store/use-auth-store";
 import { useAuthInit } from "../../hooks/use-auth-init";
 import { SearchBar } from "../search/search-bar";
 import { MobileSearchModal } from "../search/mobile-search-modal";
+import { getImageUrl } from "../../lib/image-url";
+import { GeneralSettings, MenuItemSetting } from "../../types/settings";
 
-import { NotificationBell } from "../notifications/notification-bell";
+interface HeaderProps {
+  generalSettings?: GeneralSettings;
+  menus?: MenuItemSetting[];
+}
 
-export const Header = () => {
+export const Header: React.FC<HeaderProps> = ({
+  generalSettings,
+  menus,
+}) => {
   const pathname = usePathname();
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
   // Tự động khôi phục phiên đăng nhập và kích hoạt refresh token khi F5
@@ -33,6 +42,7 @@ export const Header = () => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setIsMobileSearchOpen(false);
+    setOpenDropdownId(null);
   }, [pathname]);
 
   const totalCount = mounted
@@ -44,8 +54,56 @@ export const Header = () => {
     ? displayName.trim().split(' ').filter(Boolean).pop()
     : 'Tài khoản';
 
+  // Lọc header navigation menus từ props hoặc default
+  const headerMenus = (menus && menus.length > 0)
+    ? menus
+        .filter((m) => (!m.location || m.location === 'HEADER') && m.isActive !== false)
+        .sort((a, b) => a.order - b.order)
+    : [
+        { id: 'm-1', title: 'Trang chủ', targetUrl: '/', location: 'HEADER', order: 1, openInNewTab: false, isActive: true },
+        { id: 'm-2', title: 'Thực đơn', targetUrl: '/products', location: 'HEADER', order: 2, openInNewTab: false, isActive: true },
+        { id: 'm-3', title: 'Combo Deadline 💻', targetUrl: '/categories/combo-deadline', location: 'HEADER', order: 3, openInNewTab: false, isActive: true },
+        { id: 'm-4', title: 'Khuyến mãi 🔥', targetUrl: '/products?onSale=true', location: 'HEADER', order: 4, openInNewTab: false, isActive: true },
+      ];
+
+  const storeName = generalSettings?.storeName || 'TechBite';
+  const logoUrl = generalSettings?.logoUrl ? getImageUrl(generalSettings.logoUrl) : null;
+  const hotline = generalSettings?.hotline || generalSettings?.storePhone;
+  const workingHours = generalSettings?.workingHours;
+
   return (
     <>
+      {/* Top Contact Bar */}
+      {(hotline || workingHours) && (
+        <div className="bg-slate-900 text-slate-300 text-[11px] sm:text-xs py-1.5 px-4 border-b border-slate-800">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 truncate">
+              {hotline && (
+                <span className="flex items-center gap-1.5">
+                  <span className="text-orange-400 font-bold">📞 Hotline:</span>
+                  <a href={`tel:${hotline}`} className="hover:text-white transition-colors font-medium">
+                    {hotline}
+                  </a>
+                </span>
+              )}
+              {workingHours && (
+                <span className="hidden md:flex items-center gap-1.5 border-l border-slate-700 pl-4">
+                  <span className="text-orange-400">⏰</span>
+                  <span>{workingHours}</span>
+                </span>
+              )}
+            </div>
+            <div className="hidden sm:flex items-center gap-3 text-slate-400 text-[11px]">
+              <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                <span>⚡</span> Giao nhanh 15–30p
+              </span>
+              <span>•</span>
+              <span>Freeship cho đơn từ 150k 🛵</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
           {/* Mobile Menu Hamburger Button */}
@@ -70,30 +128,117 @@ export const Header = () => {
             </svg>
           </button>
 
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group shrink-0">
-            <div className="w-9 h-9 bg-orange-600 rounded-xl flex items-center justify-center font-extrabold text-white text-xl shadow-md shadow-orange-600/20 group-hover:bg-orange-500 transition-colors">
-              ⚡
-            </div>
-            <span className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900">
-              Tech<span className="text-orange-600">Bite</span>
+          {/* Logo & Store Name */}
+          <Link href="/" className="flex items-center gap-2.5 group shrink-0">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoUrl}
+                alt={storeName}
+                className="w-9 h-9 object-contain rounded-xl shadow-sm"
+              />
+            ) : (
+              <div className="w-9 h-9 bg-orange-600 rounded-xl flex items-center justify-center font-extrabold text-white text-xl shadow-md shadow-orange-600/20 group-hover:bg-orange-500 transition-colors">
+                ⚡
+              </div>
+            )}
+            <span className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 group-hover:text-orange-600 transition-colors">
+              {storeName}
             </span>
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-700 ml-4">
-            <Link href="/" className="text-orange-600">
-              Trang chủ
-            </Link>
-            <Link href="/products" className="hover:text-orange-600 transition-colors">
-              Thực đơn
-            </Link>
-            <Link href="/categories/combo-deadline" className="hover:text-orange-600 transition-colors">
-              Combo Deadline 💻
-            </Link>
-            <Link href="/products" className="hover:text-orange-600 transition-colors">
-              Khuyến mãi 🔥
-            </Link>
+          <nav className="hidden lg:flex items-center gap-5 text-sm font-semibold text-slate-700 ml-4">
+            {headerMenus.map((item) => {
+              const isExternal = item.openInNewTab || item.targetUrl.startsWith('http');
+              const isActive = !isExternal && (
+                item.targetUrl === '/'
+                  ? pathname === '/'
+                  : pathname.startsWith(item.targetUrl)
+              );
+              const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+
+              if (hasChildren) {
+                return (
+                  <div
+                    key={item.id}
+                    className="relative group py-2"
+                    onMouseEnter={() => setOpenDropdownId(item.id)}
+                    onMouseLeave={() => setOpenDropdownId(null)}
+                  >
+                    <button
+                      type="button"
+                      className={`flex items-center gap-1.5 transition-colors ${
+                        isActive ? 'text-orange-600 font-bold' : 'hover:text-orange-600'
+                      }`}
+                    >
+                      {item.icon && <span className="text-sm">{item.icon}</span>}
+                      <span>{item.title}</span>
+                      <svg
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          openDropdownId === item.id ? 'rotate-180 text-orange-600' : 'text-slate-400'
+                        }`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {/* Submenu Dropdown */}
+                    <div
+                      className={`absolute top-full left-0 w-56 pt-2 transition-all duration-200 ${
+                        openDropdownId === item.id
+                          ? 'opacity-100 visible translate-y-0'
+                          : 'opacity-0 invisible -translate-y-2 pointer-events-none'
+                      }`}
+                    >
+                      <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 space-y-1">
+                        {item.children?.filter((c) => c.isActive !== false).map((sub) => (
+                          <Link
+                            key={sub.id}
+                            href={sub.targetUrl}
+                            className="block px-3 py-2 text-xs font-semibold text-slate-700 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-colors"
+                          >
+                            {sub.title}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (isExternal) {
+                return (
+                  <a
+                    key={item.id}
+                    href={item.targetUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-orange-600 transition-colors flex items-center gap-1.5"
+                  >
+                    {item.icon && <span>{item.icon}</span>}
+                    <span>{item.title}</span>
+                  </a>
+                );
+              }
+
+              return (
+                <Link
+                  key={item.id}
+                  href={item.targetUrl}
+                  className={`transition-colors flex items-center gap-1.5 ${
+                    isActive ? 'text-orange-600 font-bold' : 'hover:text-orange-600'
+                  }`}
+                >
+                  {item.icon && <span>{item.icon}</span>}
+                  <span>{item.title}</span>
+                </Link>
+              );
+            })}
+
             {mounted && user?.role === 'ADMIN' && (
               <Link
                 href="/admin/email-logs"
@@ -199,11 +344,16 @@ export const Header = () => {
             {/* Drawer Header */}
             <div className="p-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center font-bold text-white">
-                  ⚡
-                </div>
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoUrl} alt={storeName} className="w-8 h-8 object-contain rounded-lg" />
+                ) : (
+                  <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center font-bold text-white">
+                    ⚡
+                  </div>
+                )}
                 <span className="text-lg font-extrabold tracking-tight text-slate-900">
-                  Tech<span className="text-orange-600">Bite</span>
+                  {storeName}
                 </span>
               </div>
               <button
@@ -231,66 +381,65 @@ export const Header = () => {
             <div className="p-4 flex-1 overflow-y-auto space-y-4">
               <div className="space-y-1">
                 <p className="px-3 text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  Điều hướng
+                  Điều hướng chính
                 </p>
-                <Link
-                  href="/"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-orange-50 text-orange-600 font-semibold text-sm"
-                >
-                  <span>🏠</span> Trang chủ
-                </Link>
-                <Link
-                  href="/products"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm transition-colors"
-                >
-                  <span>🍱</span> Tất cả thực đơn
-                </Link>
-                <Link
-                  href="/categories/combo-deadline"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm transition-colors"
-                >
-                  <span>💻</span> Combo Deadline
-                </Link>
-                <Link
-                  href="/products"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm transition-colors"
-                >
-                  <span>🔥</span> Khuyến mãi Hot
-                </Link>
+                {headerMenus.map((item) => {
+                  const isActive = item.targetUrl === '/' ? pathname === '/' : pathname.startsWith(item.targetUrl);
+                  return (
+                    <div key={item.id} className="space-y-1">
+                      <Link
+                        href={item.targetUrl}
+                        target={item.openInNewTab ? '_blank' : undefined}
+                        rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                          isActive
+                            ? 'bg-orange-50 text-orange-600 font-bold'
+                            : 'hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        {item.icon && <span>{item.icon}</span>}
+                        <span>{item.title}</span>
+                      </Link>
+
+                      {/* Submenu items on mobile */}
+                      {item.children && item.children.length > 0 && (
+                        <div className="pl-6 space-y-1">
+                          {item.children.filter((c) => c.isActive !== false).map((sub) => (
+                            <Link
+                              key={sub.id}
+                              href={sub.targetUrl}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className="block px-3 py-1.5 rounded-lg text-xs text-slate-600 hover:text-orange-600 hover:bg-slate-50"
+                            >
+                              • {sub.title}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
-              <hr className="border-slate-100" />
-
-              <div className="space-y-1">
-                <p className="px-3 text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  Danh mục món
-                </p>
-                <Link
-                  href="/categories/do-an-vat"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 text-sm hover:bg-slate-50"
-                >
-                  <span>🍟</span> Đồ ăn vặt
-                </Link>
-                <Link
-                  href="/categories/nuoc-uong"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 text-sm hover:bg-slate-50"
-                >
-                  <span>🧃</span> Nước uống
-                </Link>
-                <Link
-                  href="/categories/trai-cay-to"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 text-sm hover:bg-slate-50"
-                >
-                  <span>🍓</span> Trái cây tô
-                </Link>
-              </div>
+              {/* Thông tin liên hệ nhanh trong drawer */}
+              {(hotline || workingHours) && (
+                <div className="p-3 bg-slate-50 rounded-2xl space-y-1.5 text-xs text-slate-600 border border-slate-100">
+                  {hotline && (
+                    <p className="flex items-center gap-1.5">
+                      <span className="text-orange-600">📞 Hotline:</span>
+                      <a href={`tel:${hotline}`} className="font-semibold text-slate-900">
+                        {hotline}
+                      </a>
+                    </p>
+                  )}
+                  {workingHours && (
+                    <p className="text-[11px] text-slate-500">
+                      ⏰ {workingHours}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Footer inside Drawer */}
