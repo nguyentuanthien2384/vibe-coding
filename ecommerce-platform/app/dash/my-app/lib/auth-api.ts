@@ -14,6 +14,9 @@ export interface MeApiResponse {
     email: string;
     avatarUrl: string | null;
     role: 'ADMIN' | 'STAFF' | 'CUSTOMER';
+    roleGroupId?: number | null;
+    roleGroupName?: string;
+    permissions?: string[];
   };
 }
 
@@ -31,6 +34,9 @@ export const authApi = {
       email: userData.email,
       avatarUrl: userData.avatarUrl,
       role: (userData.role === 'ADMIN' ? 'ADMIN' : 'STAFF') as 'ADMIN' | 'STAFF',
+      roleGroupId: userData.roleGroupId,
+      roleGroupName: userData.roleGroupName,
+      permissions: userData.permissions || [],
     };
   },
 

@@ -141,9 +141,10 @@ export class AuthService {
   async login(dto: LoginDto): Promise<LoginResult> {
     const { email, password } = dto;
 
-    // 1. Tìm user theo Email
+    // 1. Tìm user theo Email (kèm nhóm quyền)
     const user = await this.prisma.user.findUnique({
       where: { email },
+      include: { roleGroup: true },
     });
 
     if (!user) {
@@ -206,6 +207,8 @@ export class AuthService {
 
     this.logger.log(`✅ Người dùng đăng nhập thành công: User ID ${user.id} (${user.email})`);
 
+    const permissions = this.calculateUserPermissions(user);
+
     const userResponse: AuthUserResponse = {
       id: user.id,
       email: user.email,
@@ -213,6 +216,9 @@ export class AuthService {
       phone: user.phone,
       avatarUrl: user.avatarUrl,
       role: user.role,
+      roleGroupId: user.roleGroupId,
+      roleGroupName: user.roleGroup?.name || (user.role === Role.ADMIN ? 'Super Admin' : undefined),
+      permissions,
       createdAt: user.createdAt,
       lastLoginAt,
     };
@@ -361,16 +367,56 @@ export class AuthService {
   }
 
   /**
+   * Tính toán danh sách quyền hạn hiệu lực của người dùng
+   */
+  private calculateUserPermissions(user: {
+    role: Role;
+    roleGroup?: { permissions?: any } | null;
+    customPermissions?: any;
+  }): string[] {
+    if (user.role === Role.ADMIN) {
+      return [
+        'product.view',
+        'product.manage',
+        'category.manage',
+        'order.view',
+        'order.update_status',
+        'payment.confirm',
+        'report.export',
+        'customer.view',
+        'banner.manage',
+        '*',
+      ];
+    }
+
+    if (user.role === Role.STAFF) {
+      const inherited =
+        user.roleGroup?.permissions && Array.isArray(user.roleGroup.permissions)
+          ? (user.roleGroup.permissions as string[])
+          : [];
+      const custom = Array.isArray(user.customPermissions)
+        ? (user.customPermissions as string[])
+        : [];
+      return Array.from(new Set([...inherited, ...custom]));
+    }
+
+    return [];
+  }
+
+  /**
    * Lấy thông tin tài khoản cá nhân hiện tại
    */
   async getProfile(userId: number): Promise<AuthUserResponse> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
+      include: { roleGroup: true },
     });
 
     if (!user || !user.isActive) {
       throw new UnauthorizedException('Tài khoản không tồn tại hoặc đã bị tạm khóa');
     }
+
+    const permissions = this.calculateUserPermissions(user);
 
     return {
       id: user.id,
@@ -379,6 +425,9 @@ export class AuthService {
       phone: user.phone,
       avatarUrl: user.avatarUrl,
       role: user.role,
+      roleGroupId: user.roleGroupId,
+      roleGroupName: user.roleGroup?.name || (user.role === Role.ADMIN ? 'Super Admin' : undefined),
+      permissions,
       createdAt: user.createdAt,
       lastLoginAt: user.lastLoginAt,
     };

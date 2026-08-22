@@ -6,4 +6,7 @@ export interface AdminUser {
   email: string;
   avatarUrl: string | null;
   role: AdminRole;
+  roleGroupId?: number | null;
+  roleGroupName?: string;
+  permissions?: string[];
 }

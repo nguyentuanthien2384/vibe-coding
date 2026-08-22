@@ -20,6 +20,8 @@ import { UploadModule } from './upload/upload.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { CustomersModule } from './customers/customers.module';
 import { SettingsModule } from './settings/settings.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { StaffsModule } from './staffs/staffs.module';
 
 @Module({
   imports: [
@@ -45,6 +47,8 @@ import { SettingsModule } from './settings/settings.module';
     NotificationsModule,
     CustomersModule,
     SettingsModule,
+    DashboardModule,
+    StaffsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -56,5 +60,4 @@ import { SettingsModule } from './settings/settings.module';
   ],
 })
 export class AppModule {}
-
 

@@ -7,6 +7,9 @@ export interface AuthUserResponse {
   phone: string | null;
   avatarUrl: string | null;
   role: Role;
+  roleGroupId?: number | null;
+  roleGroupName?: string;
+  permissions?: string[];
   createdAt: Date;
   lastLoginAt?: Date | null;
 }

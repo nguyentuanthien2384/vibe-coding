@@ -3,7 +3,8 @@
 // Chạy: npm run db:seed
 
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
-import { PrismaClient, BannerType } from '@prisma/client';
+import { PrismaClient, BannerType, Role } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
@@ -526,6 +527,167 @@ async function main() {
   });
   console.log('✅ Đã tạo 6 system settings mẫu (general, menus, seo, email, payment, shipping)');
 
+  // ─── ROLE GROUPS & STAFFS ──────────────────────────────────────────────────
+  const superAdminRole = await prisma.roleGroup.upsert({
+    where: { slug: 'super-admin' },
+    create: {
+      name: 'Super Admin',
+      slug: 'super-admin',
+      description: 'Toàn quyền quản trị hệ thống. Không thể chỉnh sửa.',
+      isSystem: true,
+      permissions: [
+        'product.view',
+        'product.manage',
+        'category.manage',
+        'order.view',
+        'order.update_status',
+        'payment.confirm',
+        'report.export',
+        'customer.view',
+        'banner.manage',
+      ],
+    },
+    update: {
+      isSystem: true,
+      permissions: [
+        'product.view',
+        'product.manage',
+        'category.manage',
+        'order.view',
+        'order.update_status',
+        'payment.confirm',
+        'report.export',
+        'customer.view',
+        'banner.manage',
+      ],
+    },
+  });
+
+  const storeManagerRole = await prisma.roleGroup.upsert({
+    where: { slug: 'cua-hang-truong' },
+    create: {
+      name: 'Cửa hàng trưởng',
+      slug: 'cua-hang-truong',
+      description: 'Quản lý sản phẩm, đơn hàng và xem báo cáo khách hàng.',
+      isSystem: false,
+      permissions: [
+        'product.view',
+        'product.manage',
+        'category.manage',
+        'order.view',
+        'order.update_status',
+        'payment.confirm',
+        'report.export',
+        'customer.view',
+      ],
+    },
+    update: {},
+  });
+
+  const warehouseRole = await prisma.roleGroup.upsert({
+    where: { slug: 'nhan-vien-kho' },
+    create: {
+      name: 'Nhân viên kho',
+      slug: 'nhan-vien-kho',
+      description: 'Chỉ quản lý tồn kho và cập nhật trạng thái đơn hàng.',
+      isSystem: false,
+      permissions: ['product.view', 'order.view', 'order.update_status'],
+    },
+    update: {},
+  });
+
+  const cskhRole = await prisma.roleGroup.upsert({
+    where: { slug: 'cskh-marketing' },
+    create: {
+      name: 'CSKH & Marketing',
+      slug: 'cskh-marketing',
+      description: 'Quản lý đơn hàng, thông tin khách hàng và banner quảng cáo.',
+      isSystem: false,
+      permissions: ['order.view', 'customer.view', 'banner.manage'],
+    },
+    update: {},
+  });
+  console.log('✅ Đã tạo 4 nhóm quyền mẫu (Super Admin, Cửa hàng trưởng, Nhân viên kho, CSKH)');
+
+  const staffPassword = await bcrypt.hash('Password123', 12);
+  const adminPassword = await bcrypt.hash('Admin123@', 12);
+
+  // Admin Account
+  await prisma.user.upsert({
+    where: { email: 'admin@techbite.com' },
+    create: {
+      email: 'admin@techbite.com',
+      password: adminPassword,
+      fullName: 'Nguyễn Văn A',
+      phone: '0901234567',
+      role: Role.ADMIN,
+      roleGroupId: superAdminRole.id,
+      isActive: true,
+      notes: 'Quản trị viên sáng lập hệ thống TechBite.',
+    },
+    update: {
+      roleGroupId: superAdminRole.id,
+    },
+  });
+
+  // Staff 1
+  await prisma.user.upsert({
+    where: { email: 'staff.01@techbite.com' },
+    create: {
+      email: 'staff.01@techbite.com',
+      password: staffPassword,
+      fullName: 'Trần Thị B',
+      phone: '0908765432',
+      role: Role.STAFF,
+      roleGroupId: storeManagerRole.id,
+      isActive: true,
+      notes: 'Quản lý bán lẻ và đơn hàng ca sáng.',
+    },
+    update: {
+      roleGroupId: storeManagerRole.id,
+    },
+  });
+
+  // Staff 2 (Blocked)
+  await prisma.user.upsert({
+    where: { email: 'staff.02@techbite.com' },
+    create: {
+      email: 'staff.02@techbite.com',
+      password: staffPassword,
+      fullName: 'Lê Văn C',
+      phone: '0912345678',
+      role: Role.STAFF,
+      roleGroupId: warehouseRole.id,
+      isActive: false,
+      notes: 'Tài khoản tạm khóa do chuyển công tác.',
+    },
+    update: {
+      roleGroupId: warehouseRole.id,
+      isActive: false,
+    },
+  });
+
+  // Staff 3 (With custom permissions)
+  await prisma.user.upsert({
+    where: { email: 'staff.03@techbite.com' },
+    create: {
+      email: 'staff.03@techbite.com',
+      password: staffPassword,
+      fullName: 'Phạm Minh D',
+      phone: '0987654321',
+      role: Role.STAFF,
+      roleGroupId: cskhRole.id,
+      customPermissions: ['product.view'],
+      isActive: true,
+      notes: 'CSKH và quản lý nội dung banner khuyến mãi.',
+    },
+    update: {
+      roleGroupId: cskhRole.id,
+      customPermissions: ['product.view'],
+    },
+  });
+  console.log('✅ Đã tạo 4 tài khoản quản trị & nhân viên mẫu');
+
   console.log(`✅ Đã tạo ${products.count} products`);
   console.log('');
   console.log('🎉 Seeding hoàn tất!');
@@ -535,6 +697,8 @@ async function main() {
   console.log(`   Products              : ${products.count}`);
   console.log(`   Vouchers              : 2`);
   console.log(`   System Settings       : 6`);
+  console.log(`   Role Groups           : 4`);
+  console.log(`   Staff Accounts        : 4`);
 }
 
 main()

@@ -7,6 +7,7 @@ export interface NavItem {
   iconName: string;
   badgeCount?: number;
   rolesAllowed?: AdminRole[];
+  permissionRequired?: string;
   children?: NavItem[];
 }
 

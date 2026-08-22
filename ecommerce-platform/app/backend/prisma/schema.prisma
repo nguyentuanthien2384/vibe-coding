@@ -171,30 +171,55 @@ model Product {
 // Source: .docs/backend-plans/register-plan.md
 // =============================================================================
 
+/// Bảng định nghĩa nhóm quyền / chức danh quản trị trong hệ thống
+model RoleGroup {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  isSystem    Boolean  @default(false)
+  permissions Json     // Mảng JSON chứa danh sách permission IDs: ["product.view", "order.view", ...]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users User[]
+
+  @@index([slug], name: "idx_role_group_slug")
+  @@index([isSystem], name: "idx_role_group_system")
+  @@map("role_groups")
+}
+
 /// Bảng quản lý người dùng hệ thống (Khách hàng, Nhân viên, Quản trị viên)
 model User {
-  id          Int       @id @default(autoincrement())
-  email       String    @unique @db.VarChar(255)
-  password    String    @db.VarChar(255)
-  fullName    String    @db.VarChar(100)
-  phone       String?   @db.VarChar(20)
-  avatarUrl   String?   @db.VarChar(500)
-  notes       String?   @db.Text
-  role        Role      @default(CUSTOMER)
-  isActive    Boolean   @default(true)
-  lastLoginAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                Int        @id @default(autoincrement())
+  email             String     @unique @db.VarChar(255)
+  password          String     @db.VarChar(255)
+  fullName          String     @db.VarChar(100)
+  phone             String?    @db.VarChar(20)
+  avatarUrl         String?    @db.VarChar(500)
+  notes             String?    @db.Text
+  role              Role       @default(CUSTOMER)
+  isActive          Boolean    @default(true)
+  lastLoginAt       DateTime?
+  
+  // Quan hệ Nhóm quyền & Đặc quyền bổ sung
+  roleGroupId       Int?
+  roleGroup         RoleGroup? @relation(fields: [roleGroupId], references: [id], onDelete: SetNull)
+  customPermissions Json?      // Mảng JSON chứa các đặc quyền cấp riêng: ["banner.manage"]
 
-  cart          Cart?
-  orders        Order[]
-  addresses     Address[]
-  emailLogs     EmailLog[]
-  notifications Notification[]
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  cart              Cart?
+  orders            Order[]
+  addresses         Address[]
+  emailLogs         EmailLog[]
+  notifications     Notification[]
 
   @@index([email], name: "idx_user_email")
   @@index([role, isActive], name: "idx_user_role_active")
-  @@index([role, isActive, createdAt(sort: Desc)], name: "idx_user_admin_customer_filter")
+  @@index([roleGroupId], name: "idx_user_role_group")
+  @@index([role, isActive, createdAt(sort: Desc)], name: "idx_user_admin_staff_filter")
   @@index([fullName, email, phone], name: "idx_user_search")
   @@map("users")
 }
