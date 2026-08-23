@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { OrderStatus, PaymentStatus, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -7,12 +7,18 @@ import {
   DashboardRecentOrder,
   DashboardRevenuePoint,
 } from './interfaces/dashboard-overview.interface';
+import {
+  AdminGlobalSearchResponse,
+  GlobalSearchResultItem,
+} from './interfaces/global-search.interface';
 
 const VIETNAM_TIME_ZONE = 'Asia/Ho_Chi_Minh';
 const LOW_STOCK_THRESHOLD = 5;
 
 @Injectable()
 export class DashboardService {
+  private readonly logger = new Logger(DashboardService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async getOverview(): Promise<DashboardOverviewResponse> {
@@ -380,4 +386,335 @@ export class DashboardService {
   private addDays(date: Date, days: number): Date {
     return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
   }
+
+  private removeVietnameseTones(str: string): string {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'd')
+      .toLowerCase()
+      .trim();
+  }
+
+  async globalSearch(query: string, limit: number = 5): Promise<AdminGlobalSearchResponse> {
+    try {
+      const trimmed = query?.trim() ?? '';
+      if (!trimmed) {
+        return {
+          statusCode: 200,
+          data: {
+            orders: [],
+            products: [],
+            customers: [],
+            categories: [],
+            staffs: [],
+            actions: this.getStaticQuickActions(trimmed),
+            totalResults: 0,
+          },
+        };
+      }
+
+      const normalized = this.removeVietnameseTones(trimmed);
+      const rawWords = trimmed.split(/\s+/).filter((w) => w.length > 0);
+      const normWords = normalized.split(/\s+/).filter((w) => w.length > 0);
+
+      // Tập hợp các token từ khóa (nguyên bản, không dấu, từng từ đơn lẻ)
+      const allTokens = Array.from(new Set([trimmed, normalized, ...rawWords, ...normWords])).filter(
+        (t) => t.length >= 1,
+      );
+
+      // Điều kiện tìm kiếm sản phẩm (tên, slug, mô tả)
+      const productOrConditions: any[] = [];
+      for (const token of allTokens) {
+        const slugToken = this.removeVietnameseTones(token).replace(/[^a-z0-9]+/g, '-');
+        productOrConditions.push({ name: { contains: token } });
+        if (slugToken) {
+          productOrConditions.push({ slug: { contains: slugToken } });
+        }
+        productOrConditions.push({ description: { contains: token } });
+      }
+
+      // Điều kiện tìm kiếm đơn hàng (mã đơn, tên, sđt, email)
+      const orderOrConditions: any[] = [];
+      for (const token of allTokens) {
+        orderOrConditions.push({ orderCode: { contains: token } });
+        orderOrConditions.push({ customerName: { contains: token } });
+        orderOrConditions.push({ customerPhone: { contains: token } });
+        orderOrConditions.push({ customerEmail: { contains: token } });
+      }
+
+      // Điều kiện tìm kiếm khách hàng & nhân sự
+      const userOrConditions: any[] = [];
+      for (const token of allTokens) {
+        userOrConditions.push({ fullName: { contains: token } });
+        userOrConditions.push({ email: { contains: token } });
+        userOrConditions.push({ phone: { contains: token } });
+      }
+
+      // Điều kiện tìm kiếm danh mục (tên, slug)
+      const categoryOrConditions: any[] = [];
+      for (const token of allTokens) {
+        const slugToken = this.removeVietnameseTones(token).replace(/[^a-z0-9]+/g, '-');
+        categoryOrConditions.push({ name: { contains: token } });
+        if (slugToken) {
+          categoryOrConditions.push({ slug: { contains: slugToken } });
+        }
+      }
+
+      const [ordersRaw, productsRaw, customersRaw, categoriesRaw, staffsRaw] = await Promise.all([
+        // 1. Orders
+        this.prisma.order.findMany({
+          where: {
+            OR: orderOrConditions,
+          },
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            orderCode: true,
+            customerName: true,
+            customerPhone: true,
+            totalAmount: true,
+            orderStatus: true,
+            paymentStatus: true,
+            createdAt: true,
+          },
+        }),
+
+        // 2. Products
+        this.prisma.product.findMany({
+          where: {
+            OR: productOrConditions,
+          },
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            price: true,
+            salePrice: true,
+            stock: true,
+            imageUrl: true,
+            isActive: true,
+          },
+        }),
+
+        // 3. Customers
+        this.prisma.user.findMany({
+          where: {
+            role: Role.CUSTOMER,
+            OR: userOrConditions,
+          },
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            avatarUrl: true,
+            isActive: true,
+          },
+        }),
+
+        // 4. Categories
+        this.prisma.category.findMany({
+          where: {
+            OR: categoryOrConditions,
+          },
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            iconUrl: true,
+          },
+        }),
+
+        // 5. Staffs
+        this.prisma.user.findMany({
+          where: {
+            role: { in: [Role.ADMIN, Role.STAFF] },
+            OR: userOrConditions,
+          },
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            role: true,
+            avatarUrl: true,
+            isActive: true,
+          },
+        }),
+      ]);
+
+      const orders: GlobalSearchResultItem[] = ordersRaw.map((o) => ({
+        id: o.id,
+        title: `#${o.orderCode}`,
+        subtitle: `${o.customerName} - ${Number(o.totalAmount).toLocaleString('vi-VN')} đ`,
+        badge: o.orderStatus,
+        badgeType: o.orderStatus === OrderStatus.DELIVERED ? 'success' : o.orderStatus === OrderStatus.CANCELLED ? 'danger' : 'warning',
+        url: `/orders/${o.id}`,
+        type: 'order',
+      }));
+
+      const products: GlobalSearchResultItem[] = productsRaw.map((p) => ({
+        id: p.id,
+        title: p.name,
+        subtitle: `${Number(p.salePrice ?? p.price).toLocaleString('vi-VN')} đ - Kho: ${p.stock}`,
+        badge: p.stock > 0 ? (p.isActive ? 'Đang bán' : 'Ẩn') : 'Hết hàng',
+        badgeType: p.stock > 0 ? 'success' : 'danger',
+        imageUrl: p.imageUrl ?? undefined,
+        url: `/products/${p.id}/edit`,
+        type: 'product',
+      }));
+
+      const customers: GlobalSearchResultItem[] = customersRaw.map((c) => ({
+        id: c.id,
+        title: c.fullName,
+        subtitle: `${c.email}${c.phone ? ` • ${c.phone}` : ''}`,
+        badge: c.isActive ? 'Hoạt động' : 'Đã khóa',
+        badgeType: c.isActive ? 'success' : 'danger',
+        imageUrl: c.avatarUrl ?? undefined,
+        url: `/customers/${c.id}`,
+        type: 'customer',
+      }));
+
+      const categories: GlobalSearchResultItem[] = categoriesRaw.map((cat) => ({
+        id: cat.id,
+        title: cat.name,
+        subtitle: `Slug: /${cat.slug}`,
+        imageUrl: cat.iconUrl ?? undefined,
+        url: `/categories?search=${encodeURIComponent(cat.name)}`,
+        type: 'category',
+      }));
+
+      const staffs: GlobalSearchResultItem[] = staffsRaw.map((s) => ({
+        id: s.id,
+        title: s.fullName,
+        subtitle: `${s.email} • ${s.phone ?? ''}`,
+        badge: s.role,
+        badgeType: s.role === Role.ADMIN ? 'info' : 'neutral',
+        imageUrl: s.avatarUrl ?? undefined,
+        url: `/staffs/${s.id}`,
+        type: 'staff',
+      }));
+
+      const actions = this.getStaticQuickActions(trimmed);
+
+      const totalResults =
+        orders.length + products.length + customers.length + categories.length + staffs.length;
+
+      return {
+        statusCode: 200,
+        data: {
+          orders,
+          products,
+          customers,
+          categories,
+          staffs,
+          actions,
+          totalResults,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Lỗi khi thực hiện tìm kiếm toàn cục: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Lỗi hệ thống khi thực hiện tìm kiếm dữ liệu');
+    }
+  }
+
+  private getStaticQuickActions(query: string): GlobalSearchResultItem[] {
+    const defaultActions: GlobalSearchResultItem[] = [
+      {
+        id: 'action-dashboard',
+        title: 'Tổng quan Dashboard',
+        subtitle: 'Xem báo cáo doanh thu & chỉ số',
+        url: '/dashboard',
+        type: 'action',
+        badge: 'Trang chủ',
+        badgeType: 'info',
+      },
+      {
+        id: 'action-products',
+        title: 'Quản lý Sản phẩm',
+        subtitle: 'Xem danh sách và thêm sản phẩm mới',
+        url: '/products',
+        type: 'action',
+        badge: 'Sản phẩm',
+        badgeType: 'neutral',
+      },
+      {
+        id: 'action-orders',
+        title: 'Quản lý Đơn hàng',
+        subtitle: 'Xử lý và theo dõi trạng thái đơn hàng',
+        url: '/orders',
+        type: 'action',
+        badge: 'Đơn hàng',
+        badgeType: 'neutral',
+      },
+      {
+        id: 'action-customers',
+        title: 'Quản lý Khách hàng',
+        subtitle: 'Danh sách và lịch sử mua sắm của khách',
+        url: '/customers',
+        type: 'action',
+        badge: 'Khách hàng',
+        badgeType: 'neutral',
+      },
+      {
+        id: 'action-categories',
+        title: 'Quản lý Chuyên mục',
+        subtitle: 'Cấu trúc cây danh mục sản phẩm',
+        url: '/categories',
+        type: 'action',
+        badge: 'Danh mục',
+        badgeType: 'neutral',
+      },
+      {
+        id: 'action-staffs',
+        title: 'Quản lý Nhân viên & Phân quyền',
+        subtitle: 'Danh sách tài khoản và nhóm quyền',
+        url: '/staffs',
+        type: 'action',
+        badge: 'Hệ thống',
+        badgeType: 'neutral',
+      },
+      {
+        id: 'action-settings',
+        title: 'Cài đặt Hệ thống',
+        subtitle: 'Cấu hình chung, thông báo, bảo mật',
+        url: '/settings',
+        type: 'action',
+        badge: 'Cài đặt',
+        badgeType: 'neutral',
+      },
+    ];
+
+    if (!query) {
+      return defaultActions.slice(0, 4);
+    }
+
+    const lower = query.toLowerCase();
+    const normalized = this.removeVietnameseTones(query);
+
+    return defaultActions.filter((a) => {
+      const titleNorm = this.removeVietnameseTones(a.title);
+      const subNorm = a.subtitle ? this.removeVietnameseTones(a.subtitle) : '';
+      const badgeNorm = a.badge ? this.removeVietnameseTones(a.badge) : '';
+
+      return (
+        titleNorm.includes(normalized) ||
+        subNorm.includes(normalized) ||
+        badgeNorm.includes(normalized) ||
+        a.title.toLowerCase().includes(lower)
+      );
+    });
+  }
 }
+

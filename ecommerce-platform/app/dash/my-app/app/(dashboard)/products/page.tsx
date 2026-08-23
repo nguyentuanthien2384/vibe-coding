@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import ProductPageClient from '../../../features/products/components/product-page-client';
 import { productsApi } from '../../../lib/products-api';
 import { AdminProductListResponse } from '../../../features/products/types/product.types';
@@ -17,5 +18,10 @@ export default async function ProductsPage() {
     initialData = null;
   }
 
-  return <ProductPageClient initialData={initialData} />;
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-500">Đang tải danh sách sản phẩm...</div>}>
+      <ProductPageClient initialData={initialData} />
+    </Suspense>
+  );
 }
+

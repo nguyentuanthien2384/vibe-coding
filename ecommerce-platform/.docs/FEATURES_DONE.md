@@ -275,6 +275,17 @@
   - **Khung thông tin hướng dẫn shipper:** Hộp nền xám `bg-[#F1F4F9]` bo góc `rounded-2xl` với icon `ⓘ` và highlight nhấn mạnh `cho shipper`.
   - **Nút CTA hành động:** Nút lớn `bg-[#C84B0E]` với nội dung `"Xem chi tiết đơn hàng"` điều hướng thẳng tới trang chi tiết đơn hàng vừa tạo ([checkout-container.tsx](file:///d:/vibe_coding/ecommerce-platform/app/frontend/components/checkout/checkout-container.tsx)). Build thành công 100%, 0 lỗi TypeScript.
 
+## [2026-08-23] Hoàn thành Tính năng Global Search (Command Palette / Quick Omnisearch) Admin Dashboard Full-stack
+- **Quy hoạch & Kiến trúc:** Phân tách rõ tầng Global Search toàn cục trên Header (`Ctrl + K` / `Cmd + K`) và In-Page Table Filter tại từng màn hình danh mục/đơn hàng/sản phẩm.
+- **Backend API & Service ([global-search.dto.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/src/dashboard/dto/global-search.dto.ts), [dashboard.service.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/src/dashboard/dashboard.service.ts), [dashboard.controller.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/src/dashboard/dashboard.controller.ts)):** Mở endpoint `GET /api/v1/admin/dashboard/search/global` bảo mật qua `JwtAuthGuard` & `@Roles(ADMIN, STAFF)`. Truy vấn song song bằng `Promise.all()` trên các bảng `Order`, `Product`, `User` (Khách hàng & Nhân viên), `Category` và format dữ liệu chuẩn mực.
+- **Frontend Dashboard Command Palette ([use-global-search.ts](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/search/hooks/use-global-search.ts), [global-search-modal.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/search/components/global-search-modal.tsx), [admin-search-bar.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/components/layout/admin-search-bar.tsx)):**
+  - Hỗ trợ phím tắt toàn hệ thống `Ctrl + K` / `Cmd + K`, `ESC` để đóng và phím `↑` / `↓` / `Enter` để điều hướng danh sách kết quả.
+  - Tối ưu hiệu năng với `useDebounce` 300ms.
+  - Gom nhóm kết quả trực quan (Đơn hàng, Sản phẩm, Khách hàng, Danh mục, Nhân viên, Quick Actions) kèm highlight từ khóa (`<mark>`).
+  - Lưu và quản lý lịch sử tìm kiếm gần đây trong `localStorage`.
+  - Xử lý trọn vẹn 3 trạng thái Loading (Spinner), Error và Empty state. Build thành công 100%, 0 lỗi TypeScript trên cả Backend và Frontend (`npx tsc --noEmit`).
+
+
 
 
 

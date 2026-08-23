@@ -1,10 +1,12 @@
-import { Controller, Get, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Query, UseGuards } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { DashboardService } from './dashboard.service';
 import { DashboardOverviewResponse } from './interfaces/dashboard-overview.interface';
+import { AdminGlobalSearchResponse } from './interfaces/global-search.interface';
+import { GlobalSearchQueryDto } from './dto/global-search.dto';
 
 @Controller('admin/dashboard')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -17,4 +19,12 @@ export class DashboardController {
   getOverview(): Promise<DashboardOverviewResponse> {
     return this.dashboardService.getOverview();
   }
+
+  @Get('search/global')
+  @Roles(Role.ADMIN, Role.STAFF)
+  @HttpCode(HttpStatus.OK)
+  globalSearch(@Query() query: GlobalSearchQueryDto): Promise<AdminGlobalSearchResponse> {
+    return this.dashboardService.globalSearch(query.q, query.limit);
+  }
 }
+

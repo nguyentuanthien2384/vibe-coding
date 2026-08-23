@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ProductItem, CategoryOption, AdminProductListResponse, Pagination } from '../types/product.types';
 import { productsApi, GetAdminProductsParams } from '../../../lib/products-api';
 import { categoriesApi } from '../../../lib/categories-api';
@@ -21,6 +22,8 @@ interface ProductPageClientProps {
 
 export default function ProductPageClient({ initialData }: ProductPageClientProps) {
   const { showToast } = useToast();
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get('search') || searchParams.get('q') || '';
 
   // Data & Pagination state
   const [products, setProducts] = useState<ProductItem[]>(initialData?.data ?? []);
@@ -37,7 +40,7 @@ export default function ProductPageClient({ initialData }: ProductPageClientProp
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Filter state
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [stockFilter, setStockFilter] = useState('ALL');

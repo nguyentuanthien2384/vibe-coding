@@ -128,6 +128,7 @@ model Category {
   products Product[]
 
   @@index([slug], name: "idx_category_slug")
+  @@index([name], name: "idx_category_name")
   @@index([isActive, position], name: "idx_category_active_position")
   @@index([parentId], name: "idx_category_parent")
   @@map("categories")
@@ -218,6 +219,7 @@ model User {
 
   @@index([email], name: "idx_user_email")
   @@index([role, isActive], name: "idx_user_role_active")
+  @@index([role, fullName], name: "idx_user_role_fullname")
   @@index([roleGroupId], name: "idx_user_role_group")
   @@index([role, isActive, createdAt(sort: Desc)], name: "idx_user_admin_staff_filter")
   @@index([fullName, email, phone], name: "idx_user_search")
@@ -324,6 +326,7 @@ model Order {
   orderItems OrderItem[]
 
   @@index([orderCode], name: "idx_order_code")
+  @@index([customerName], name: "idx_order_customer_name")
   @@index([userId, createdAt(sort: Desc)], name: "idx_order_user_created")
   @@index([sessionId], name: "idx_order_session")
   @@index([paymentStatus, orderStatus], name: "idx_order_status")
