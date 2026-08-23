@@ -3,10 +3,11 @@
 // components/product-list/filter-price-range.tsx
 import { useEffect, useMemo, useState } from 'react';
 import { FilterPriceRangeProps } from '@/types/product-list';
+import { formatNumberVND, parseNumberVND } from '@/lib/format-currency';
 
 function formatCurrency(val?: number): string {
   if (val === undefined || isNaN(val)) return '';
-  return new Intl.NumberFormat('vi-VN').format(val);
+  return formatNumberVND(val);
 }
 
 interface PricePreset {
@@ -199,13 +200,14 @@ const FilterPriceRange = ({
         </span>
         <div className="flex items-center gap-2">
           <input
-            type="number"
-            min={priceRange?.min ?? 0}
-            max={priceRange?.max}
-            step={5000}
+            type="text"
+            inputMode="numeric"
             placeholder={minPlaceholder}
-            value={inputMin}
-            onChange={(e) => setInputMin(e.target.value)}
+            value={formatNumberVND(inputMin)}
+            onChange={(e) => {
+              const parsed = parseNumberVND(e.target.value);
+              setInputMin(parsed === '' ? '' : String(parsed));
+            }}
             onKeyDown={handleKeyDown}
             className={`w-full text-xs px-2.5 py-1.5 rounded-lg border ${
               errorMsg
@@ -215,13 +217,14 @@ const FilterPriceRange = ({
           />
           <span className="text-slate-400 text-xs">-</span>
           <input
-            type="number"
-            min={priceRange?.min ?? 0}
-            max={priceRange?.max}
-            step={5000}
+            type="text"
+            inputMode="numeric"
             placeholder={maxPlaceholder}
-            value={inputMax}
-            onChange={(e) => setInputMax(e.target.value)}
+            value={formatNumberVND(inputMax)}
+            onChange={(e) => {
+              const parsed = parseNumberVND(e.target.value);
+              setInputMax(parsed === '' ? '' : String(parsed));
+            }}
             onKeyDown={handleKeyDown}
             className={`w-full text-xs px-2.5 py-1.5 rounded-lg border ${
               errorMsg

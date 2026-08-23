@@ -27,6 +27,7 @@ import { productsApi } from '../../../lib/products-api';
 import { uploadApi } from '../../../lib/upload-api';
 import { getImageUrl } from '../../../lib/image-url';
 import { useToast } from '../../../components/ui/toast';
+import { formatNumberVND, parseNumberVND } from '../../../lib/format-currency';
 import JSONRichEditor from './rich-editor/json-rich-editor';
 import MediaManagerModal, { SelectedImagePayload } from '../../media/components/media-manager-modal';
 
@@ -501,12 +502,12 @@ export default function ProductFormContainer({
                     Giá gốc (VNĐ) <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="number"
-                    min={0}
+                    type="text"
+                    inputMode="numeric"
                     required
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
-                    placeholder="89000"
+                    value={formatNumberVND(price)}
+                    onChange={(e) => setPrice(parseNumberVND(e.target.value))}
+                    placeholder="89.000"
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-extrabold text-[#4880FF] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4880FF] transition-all"
                   />
                 </div>
@@ -517,11 +518,11 @@ export default function ProductFormContainer({
                     Giá khuyến mãi (VNĐ)
                   </label>
                   <input
-                    type="number"
-                    min={0}
-                    value={salePrice}
-                    onChange={(e) => setSalePrice(e.target.value === '' ? '' : Number(e.target.value))}
-                    placeholder="69000 (tùy chọn)"
+                    type="text"
+                    inputMode="numeric"
+                    value={formatNumberVND(salePrice)}
+                    onChange={(e) => setSalePrice(parseNumberVND(e.target.value))}
+                    placeholder="69.000 (tùy chọn)"
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4880FF] transition-all"
                   />
                 </div>
@@ -532,12 +533,12 @@ export default function ProductFormContainer({
                     Tồn kho <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="number"
-                    min={0}
+                    type="text"
+                    inputMode="numeric"
                     required
-                    value={stock}
-                    onChange={(e) => setStock(e.target.value === '' ? '' : Number(e.target.value))}
-                    placeholder="45"
+                    value={formatNumberVND(stock)}
+                    onChange={(e) => setStock(parseNumberVND(e.target.value))}
+                    placeholder="10"
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-[#202224] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4880FF] transition-all"
                   />
                 </div>
