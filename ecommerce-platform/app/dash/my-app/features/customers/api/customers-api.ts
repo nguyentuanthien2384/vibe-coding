@@ -93,16 +93,19 @@ export async function getCustomerOrders(
  */
 export async function createCustomer(input: CreateCustomerInput): Promise<CustomerDetail> {
   const payload: any = {
+    type: input.type || 'REGISTERED',
     fullName: input.fullName,
-    email: input.email,
-    phone: input.phone,
-    password: input.password || '123456',
   };
+
+  if (input.email) payload.email = input.email;
+  if (input.phone) payload.phone = input.phone;
+  if (input.password) payload.password = input.password;
+  if (input.notes) payload.notes = input.notes;
 
   if (input.address) {
     payload.address = {
       recipientName: input.address.recipientName || input.fullName,
-      phone: input.address.phone || input.phone,
+      phone: input.address.phone || input.phone || '',
       provinceCode: input.address.provinceCode || '79',
       provinceName: input.address.provinceName,
       districtCode: input.address.districtCode || '760',
@@ -142,16 +145,30 @@ export async function updateCustomerStatus(
 }
 
 /**
- * Cập nhật thông tin cá nhân cơ bản của khách hàng (Hỗ trợ Quick Edit)
+ * Cập nhật thông tin cá nhân cơ bản của khách hàng (Hỗ trợ Quick Edit & Chuyển đổi Khách thành viên)
  */
 export async function updateCustomerInfo(
   input: UpdateCustomerInfoInput
 ): Promise<CustomerDetail> {
   const payload: any = {
     fullName: input.fullName,
-    email: input.email,
-    phone: input.phone,
   };
+
+  if (input.type !== undefined) {
+    payload.type = input.type;
+  }
+
+  if (input.email !== undefined) {
+    payload.email = input.email;
+  }
+
+  if (input.phone !== undefined) {
+    payload.phone = input.phone;
+  }
+
+  if (input.password !== undefined && input.password.trim()) {
+    payload.password = input.password.trim();
+  }
 
   if (input.status !== undefined) {
     payload.status = input.status;

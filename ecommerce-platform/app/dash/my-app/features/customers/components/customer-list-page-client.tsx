@@ -112,11 +112,13 @@ const CustomerListPageClient = () => {
   const handleCreateSubmit = async (input: CreateCustomerInput) => {
     try {
       await createCustomer(input);
-      showToast('success', 'Tạo mới tài khoản khách hàng thành công!');
+      showToast('success', input.type === 'GUEST'
+        ? 'Tạo mới hồ sơ khách hàng vãng lai thành công!'
+        : 'Tạo mới tài khoản khách hàng thành viên thành công!');
       setIsCreateModalOpen(false);
       await loadData();
     } catch (err: any) {
-      showToast('error', err?.message || 'Lỗi khi tạo tài khoản khách hàng');
+      showToast('error', err?.message || 'Lỗi khi tạo khách hàng');
     }
   };
 
@@ -134,7 +136,9 @@ const CustomerListPageClient = () => {
   const handleEditSubmit = async (input: UpdateCustomerInfoInput) => {
     try {
       await updateCustomerInfo(input);
-      showToast('success', 'Cập nhật thông tin khách hàng thành công!');
+      showToast('success', input.type === 'REGISTERED' && selectedCustomerForEdit?.type === 'GUEST'
+        ? 'Đã chuyển đổi thành công sang Khách hàng thành viên!'
+        : 'Cập nhật thông tin khách hàng thành công!');
       setSelectedCustomerForEdit(null);
       await loadData();
     } catch (err: any) {

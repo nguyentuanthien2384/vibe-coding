@@ -19,6 +19,7 @@ import {
 import { useDebounce } from '@/hooks/use-debounce';
 import { searchGlobalAdmin } from '../api/global-search-api';
 import { AdminGlobalSearchData } from '../types/global-search.types';
+import { getImageUrl } from '@/lib/image-url';
 
 type SearchTab = 'all' | 'orders' | 'products' | 'customers' | 'categories' | 'staffs';
 
@@ -399,7 +400,7 @@ export function SearchResultsPageClient() {
                   >
                     {prod.imageUrl ? (
                       <img
-                        src={prod.imageUrl}
+                        src={getImageUrl(prod.imageUrl)}
                         alt={prod.title}
                         className="w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-slate-100"
                       />

@@ -49,17 +49,21 @@ export class CustomerAddressInputDto {
 }
 
 export class CreateCustomerDto {
+  @IsOptional()
+  @IsString()
+  type?: 'REGISTERED' | 'GUEST';
+
   @IsString()
   @IsNotEmpty({ message: 'Họ và tên không được để trống' })
   fullName: string;
 
+  @IsOptional()
   @IsEmail({}, { message: 'Email không đúng định dạng' })
-  @IsNotEmpty({ message: 'Email không được để trống' })
-  email: string;
+  email?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: 'Số điện thoại không được để trống' })
-  phone: string;
+  phone?: string;
 
   @IsOptional()
   @IsString()
@@ -69,6 +73,10 @@ export class CreateCustomerDto {
     message: 'Mật khẩu phải chứa ít nhất một chữ cái và một chữ số',
   })
   password?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 
   @IsOptional()
   @ValidateNested()

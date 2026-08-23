@@ -201,6 +201,46 @@ export class AdminCustomersService {
       }
     }
 
+    // Quét thêm danh sách khách hàng vãng lai tạo thủ công từ Redis (nếu chưa có trong guestMap)
+    const manualGuestKeys = await this.redisService.keys('customer:profile:guest:*');
+    for (const key of manualGuestKeys) {
+      const rawProfile = await this.redisService.get(key);
+      if (rawProfile) {
+        try {
+          const profile = JSON.parse(rawProfile);
+          const identifier = key.replace('customer:profile:guest:', '');
+          const guestKey = `guest:${identifier}`;
+          if (!guestMap.has(guestKey)) {
+            if (search) {
+              const searchLower = search.toLowerCase();
+              const matchesSearch =
+                (profile.fullName || '').toLowerCase().includes(searchLower) ||
+                (profile.email || '').toLowerCase().includes(searchLower) ||
+                (profile.phone || '').toLowerCase().includes(searchLower);
+              if (!matchesSearch) continue;
+            }
+
+            guestMap.set(guestKey, {
+              id: guestKey,
+              fullName: profile.fullName?.includes('(Khách vãng lai)')
+                ? profile.fullName
+                : `${profile.fullName} (Khách vãng lai)`,
+              email: profile.email || 'Chưa cung cấp',
+              phone: profile.phone || 'Chưa cập nhật',
+              avatarUrl: null,
+              type: 'GUEST',
+              status: 'ACTIVE',
+              totalOrders: 0,
+              totalSpent: 0,
+              createdAt: profile.createdAt || new Date().toISOString(),
+              lastOrderAt: null,
+              notes: profile.notes || null,
+            });
+          }
+        } catch {}
+      }
+    }
+
     const guestListItems: CustomerListItem[] = Array.from(guestMap.values());
 
     // 3. Kết hợp & Lọc theo Type
@@ -276,6 +316,15 @@ export class AdminCustomersService {
       // Đọc ghi chú nội bộ của khách vãng lai từ Redis
       const guestNotes = await this.redisService.get(`customer:notes:guest:${targetIdentifier}`);
 
+      // Đọc profile khách vãng lai từ Redis (nếu có)
+      const guestProfileRaw = await this.redisService.get(`customer:profile:guest:${targetIdentifier}`);
+      let guestProfile: any = null;
+      if (guestProfileRaw) {
+        try {
+          guestProfile = JSON.parse(guestProfileRaw);
+        } catch {}
+      }
+
       // Đọc sổ địa chỉ bổ sung của khách vãng lai từ Redis
       const guestAddressesRaw = await this.redisService.get(`customer:addresses:guest:${targetIdentifier}`);
       let customGuestAddresses: CustomerAddressItem[] = [];
@@ -312,20 +361,22 @@ export class AdminCustomersService {
           message: 'Lấy thông tin chi tiết khách vãng lai thành công',
           data: {
             id: idStr,
-            fullName: `${targetIdentifier} (Khách vãng lai)`,
-            email: targetIdentifier.includes('@') ? targetIdentifier : 'Chưa cung cấp',
-            phone: targetIdentifier.includes('@') ? 'Chưa cập nhật' : targetIdentifier,
+            fullName: guestProfile?.fullName
+              ? (guestProfile.fullName.includes('(Khách vãng lai)') ? guestProfile.fullName : `${guestProfile.fullName} (Khách vãng lai)`)
+              : `${targetIdentifier} (Khách vãng lai)`,
+            email: guestProfile?.email || (targetIdentifier.includes('@') ? targetIdentifier : 'Chưa cung cấp'),
+            phone: guestProfile?.phone || (targetIdentifier.match(/^[0-9]+$/) ? targetIdentifier : 'Chưa cập nhật'),
             avatarUrl: null,
             type: 'GUEST',
             status: 'ACTIVE',
             totalOrders: 0,
             totalSpent: 0,
             averageOrderValue: 0,
-            createdAt: new Date().toISOString(),
+            createdAt: guestProfile?.createdAt || new Date().toISOString(),
             lastOrderAt: null,
             registeredAt: null,
             addresses: customGuestAddresses,
-            notes: guestNotes || 'Khách hàng vãng lai đặt mua trực tiếp không đăng ký tài khoản',
+            notes: guestNotes || guestProfile?.notes || 'Khách hàng vãng lai đặt mua trực tiếp không đăng ký tài khoản',
           },
         };
       }
@@ -517,15 +568,87 @@ export class AdminCustomersService {
   }
 
   /**
-   * Tạo mới khách hàng thủ công bởi Admin (Mật khẩu tuân thủ rule RegisterDto)
+   * Tạo mới khách hàng thủ công bởi Admin (Hỗ trợ Khách thành viên & Khách vãng lai)
    */
   async create(dto: CreateCustomerDto): Promise<CustomerMutateResponse> {
+    const isGuest = dto.type === 'GUEST';
+
+    if (isGuest) {
+      // 1. Tạo khách hàng vãng lai thủ công
+      const fullName = dto.fullName.trim();
+      const email = dto.email?.trim().toLowerCase() || '';
+      const phone = dto.phone?.trim() || '';
+
+      if (!email && !phone) {
+        throw new BadRequestException('Khách hàng vãng lai cần có ít nhất Email hoặc Số điện thoại để liên hệ.');
+      }
+
+      const identifier = email || phone || `guest-${Date.now()}`;
+      const guestKey = `guest:${identifier}`;
+
+      // Lưu profile khách vãng lai vào Redis
+      const profileData = {
+        fullName,
+        email: email || 'Chưa cung cấp',
+        phone: phone || 'Chưa cập nhật',
+        notes: dto.notes?.trim() || null,
+        createdAt: new Date().toISOString(),
+      };
+      await this.redisService.setEx(`customer:profile:guest:${identifier}`, 86400 * 365, JSON.stringify(profileData));
+
+      if (dto.notes?.trim()) {
+        await this.redisService.setEx(`customer:notes:guest:${identifier}`, 86400 * 365, dto.notes.trim());
+      }
+
+      if (dto.address) {
+        const addressItem: CustomerAddressItem = {
+          id: Date.now(),
+          recipientName: dto.address.recipientName?.trim() || fullName,
+          phone: dto.address.phone?.trim() || phone,
+          provinceCode: dto.address.provinceCode || '79',
+          provinceName: dto.address.provinceName.trim(),
+          districtCode: dto.address.districtCode || '760',
+          districtName: dto.address.districtName.trim(),
+          wardCode: dto.address.wardCode || '26740',
+          wardName: dto.address.wardName.trim(),
+          detailAddress: dto.address.detailAddress.trim(),
+          isDefault: true,
+        };
+        await this.redisService.setEx(`customer:addresses:guest:${identifier}`, 86400 * 365, JSON.stringify([addressItem]));
+      }
+
+      await this.redisService.del('cache:v1:admin:customers:stats');
+
+      return {
+        statusCode: 201,
+        message: 'Tạo hồ sơ khách hàng vãng lai thành công',
+        data: {
+          id: guestKey,
+          fullName: `${fullName} (Khách vãng lai)`,
+          email: email || 'Chưa cung cấp',
+          phone: phone || 'Chưa cập nhật',
+          role: 'GUEST',
+          isActive: true,
+          createdAt: profileData.createdAt,
+        },
+      };
+    }
+
+    // 2. Tạo khách hàng thành viên (REGISTERED)
+    if (!dto.email?.trim()) {
+      throw new BadRequestException('Email không được để trống khi tạo khách hàng thành viên');
+    }
+    if (!dto.phone?.trim()) {
+      throw new BadRequestException('Số điện thoại không được để trống khi tạo khách hàng thành viên');
+    }
+
+    const emailClean = dto.email.trim().toLowerCase();
     const existing = await this.prisma.user.findUnique({
-      where: { email: dto.email.trim().toLowerCase() },
+      where: { email: emailClean },
     });
 
     if (existing) {
-      throw new ConflictException('Email đã tồn tại trong hệ thống');
+      throw new ConflictException('Email này đã tồn tại trong hệ thống');
     }
 
     // Mật khẩu mặc định nếu để trống: Password123 (chứa chữ cái và số, độ dài >= 6)
@@ -535,11 +658,12 @@ export class AdminCustomersService {
     const newUser = await this.prisma.user.create({
       data: {
         fullName: dto.fullName.trim(),
-        email: dto.email.trim().toLowerCase(),
+        email: emailClean,
         phone: dto.phone.trim(),
         password: hashedPassword,
         role: 'CUSTOMER',
         isActive: true,
+        notes: dto.notes?.trim() || null,
       },
     });
 
@@ -561,11 +685,28 @@ export class AdminCustomersService {
       });
     }
 
+    // Tự động liên kết các đơn hàng cũ của khách này nếu có
+    await this.prisma.order.updateMany({
+      where: {
+        OR: [
+          { customerEmail: { equals: emailClean } },
+          { customerPhone: { equals: dto.phone.trim() } },
+        ],
+      },
+      data: {
+        userId: newUser.id,
+      },
+    });
+
+    // Dọn dẹp redis nếu trước đó là khách vãng lai
+    await this.redisService.del(`customer:notes:guest:${emailClean}`);
+    await this.redisService.del(`customer:addresses:guest:${emailClean}`);
+    await this.redisService.del(`customer:profile:guest:${emailClean}`);
     await this.redisService.del('cache:v1:admin:customers:stats');
 
     return {
       statusCode: 201,
-      message: 'Tạo tài khoản khách hàng mới thành công',
+      message: 'Tạo tài khoản khách hàng thành viên thành công',
       data: {
         id: newUser.id.toString(),
         fullName: newUser.fullName,
@@ -639,6 +780,148 @@ export class AdminCustomersService {
     if (rawId.startsWith('guest:')) {
       const targetIdentifier = rawId.replace('guest:', '').trim().toLowerCase();
 
+      // NÂNG CẤP KHÁCH VÃNG LAI THÀNH KHÁCH THÀNH VIÊN
+      if (dto.type === 'REGISTERED') {
+        const emailToRegister = (dto.email || (targetIdentifier.includes('@') ? targetIdentifier : '')).trim().toLowerCase();
+        if (!emailToRegister) {
+          throw new BadRequestException('Vui lòng cung cấp địa chỉ Email hợp lệ để chuyển đổi khách vãng lai thành khách thành viên.');
+        }
+
+        const existingUser = await this.prisma.user.findUnique({
+          where: { email: emailToRegister },
+        });
+        if (existingUser) {
+          throw new ConflictException(`Email ${emailToRegister} đã được đăng ký cho tài khoản thành viên khác.`);
+        }
+
+        const phoneToRegister = (dto.phone || (targetIdentifier.match(/^[0-9]+$/) ? targetIdentifier : '')).trim() || 'Chưa cập nhật';
+        const fullNameToRegister = (dto.fullName || targetIdentifier).trim().replace(/\s*\(Khách vãng lai\)$/i, '');
+
+        // Lấy ghi chú nội bộ và địa chỉ cũ từ Redis
+        const existingNotes = dto.notes !== undefined
+          ? dto.notes.trim()
+          : await this.redisService.get(`customer:notes:guest:${targetIdentifier}`);
+        const existingAddressesRaw = await this.redisService.get(`customer:addresses:guest:${targetIdentifier}`);
+        let customGuestAddresses: CustomerAddressItem[] = [];
+        if (existingAddressesRaw) {
+          try {
+            customGuestAddresses = JSON.parse(existingAddressesRaw);
+          } catch {}
+        }
+
+        // Mật khẩu khởi tạo
+        const rawPassword = dto.password?.trim() || 'Password123';
+        const hashedPassword = await bcrypt.hash(rawPassword, 12);
+        const isActive = dto.status !== CustomerAccountStatus.BLOCKED;
+
+        // Tạo tài khoản User mới
+        const newUser = await this.prisma.user.create({
+          data: {
+            fullName: fullNameToRegister,
+            email: emailToRegister,
+            phone: phoneToRegister,
+            password: hashedPassword,
+            role: 'CUSTOMER',
+            isActive: isActive,
+            notes: existingNotes || null,
+          },
+        });
+
+        // Liên kết toàn bộ đơn hàng quá khứ của khách vãng lai này sang User mới
+        await this.prisma.order.updateMany({
+          where: {
+            OR: [
+              { customerEmail: { equals: emailToRegister } },
+              ...(phoneToRegister !== 'Chưa cập nhật' ? [{ customerPhone: { equals: phoneToRegister } }] : []),
+              ...(targetIdentifier.startsWith('order-') ? [{ id: parseInt(targetIdentifier.replace('order-', ''), 10) }] : []),
+              { customerEmail: { equals: targetIdentifier } },
+              { customerPhone: { equals: targetIdentifier } },
+            ],
+          },
+          data: {
+            userId: newUser.id,
+          },
+        });
+
+        // Di chuyển toàn bộ địa chỉ sang bảng Address
+        const pastOrders = await this.prisma.order.findMany({
+          where: { userId: newUser.id },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        const addedAddresses = new Set<string>();
+        // Địa chỉ từ Redis
+        for (const addr of customGuestAddresses) {
+          const key = `${addr.provinceName}-${addr.districtName}-${addr.wardName}-${addr.detailAddress}`;
+          if (!addedAddresses.has(key) && addr.provinceName && addr.detailAddress) {
+            addedAddresses.add(key);
+            await this.prisma.address.create({
+              data: {
+                userId: newUser.id,
+                recipientName: addr.recipientName || newUser.fullName,
+                phone: addr.phone || newUser.phone || 'Chưa cập nhật',
+                provinceCode: addr.provinceCode || '79',
+                provinceName: addr.provinceName,
+                districtCode: addr.districtCode || '760',
+                districtName: addr.districtName,
+                wardCode: addr.wardCode || '26740',
+                wardName: addr.wardName,
+                detailAddress: addr.detailAddress,
+                isDefault: addr.isDefault || addedAddresses.size === 1,
+              },
+            });
+          }
+        }
+
+        // Địa chỉ từ Orders
+        for (const ord of pastOrders) {
+          if (ord.provinceName && ord.detailAddress) {
+            const key = `${ord.provinceName}-${ord.districtName}-${ord.wardName}-${ord.detailAddress}`;
+            if (!addedAddresses.has(key)) {
+              addedAddresses.add(key);
+              await this.prisma.address.create({
+                data: {
+                  userId: newUser.id,
+                  recipientName: ord.customerName || newUser.fullName,
+                  phone: ord.customerPhone || newUser.phone || 'Chưa cập nhật',
+                  provinceCode: '79',
+                  provinceName: ord.provinceName,
+                  districtCode: '760',
+                  districtName: ord.districtName,
+                  wardCode: '26740',
+                  wardName: ord.wardName,
+                  detailAddress: ord.detailAddress,
+                  isDefault: addedAddresses.size === 1,
+                },
+              });
+            }
+          }
+        }
+
+        // Xóa các key rác của khách vãng lai trên Redis
+        await this.redisService.del(`customer:notes:guest:${targetIdentifier}`);
+        await this.redisService.del(`customer:addresses:guest:${targetIdentifier}`);
+        await this.redisService.del(`customer:profile:guest:${targetIdentifier}`);
+        await this.redisService.del('cache:v1:admin:customers:stats');
+
+        return {
+          statusCode: 200,
+          message: 'Chuyển đổi khách hàng vãng lai thành khách hàng thành viên thành công!',
+          data: {
+            id: newUser.id.toString(),
+            fullName: newUser.fullName,
+            email: newUser.email,
+            phone: newUser.phone,
+            status: newUser.isActive ? 'ACTIVE' : 'BLOCKED',
+            role: 'CUSTOMER',
+            type: 'REGISTERED',
+            isActive: newUser.isActive,
+            notes: newUser.notes,
+            updatedAt: newUser.updatedAt.toISOString(),
+          },
+        };
+      }
+
       // 1. Lưu ghi chú nội bộ của khách vãng lai vào Redis
       if (dto.notes !== undefined) {
         await this.redisService.setEx(
@@ -679,6 +962,26 @@ export class AdminCustomersService {
             },
             data: orderUpdateData,
           });
+        }
+
+        // Cập nhật profile trên Redis nếu có
+        const existingProfileRaw = await this.redisService.get(`customer:profile:guest:${targetIdentifier}`);
+        if (existingProfileRaw) {
+          try {
+            const parsed = JSON.parse(existingProfileRaw);
+            const updatedProfile = {
+              ...parsed,
+              fullName: orderUpdateData.customerName || parsed.fullName,
+              email: orderUpdateData.customerEmail || parsed.email,
+              phone: orderUpdateData.customerPhone || parsed.phone,
+              notes: dto.notes !== undefined ? dto.notes : parsed.notes,
+            };
+            const newIdentifier = (orderUpdateData.customerEmail || orderUpdateData.customerPhone || targetIdentifier).toLowerCase();
+            await this.redisService.setEx(`customer:profile:guest:${newIdentifier}`, 86400 * 365, JSON.stringify(updatedProfile));
+            if (newIdentifier !== targetIdentifier) {
+              await this.redisService.del(`customer:profile:guest:${targetIdentifier}`);
+            }
+          } catch {}
         }
 
         // Nếu email hoặc SĐT thay đổi, di chuyển notes sang key mới nếu cần

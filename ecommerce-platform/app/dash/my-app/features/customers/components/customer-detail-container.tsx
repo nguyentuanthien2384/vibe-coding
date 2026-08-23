@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import CustomerDetailHeader from './customer-detail-header';
 import CustomerDetailGrid from './customer-detail-grid';
 import UpdateCustomerStatusModal from './update-customer-status-modal';
@@ -17,6 +18,7 @@ interface CustomerDetailContainerProps {
 }
 
 const CustomerDetailContainer = ({ customerId }: CustomerDetailContainerProps) => {
+  const router = useRouter();
   const { showToast } = useToast();
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,10 +57,16 @@ const CustomerDetailContainer = ({ customerId }: CustomerDetailContainerProps) =
 
   const handleEditSubmit = async (input: UpdateCustomerInfoInput) => {
     try {
-      await updateCustomerInfo(input);
-      showToast('success', 'Cập nhật thông tin khách hàng thành công!');
+      const updated = await updateCustomerInfo(input);
+      showToast('success', input.type === 'REGISTERED' && customer?.type === 'GUEST'
+        ? 'Đã chuyển đổi thành công sang Khách hàng thành viên!'
+        : 'Cập nhật thông tin khách hàng thành công!');
       setIsEditModalOpen(false);
-      await loadData();
+      if (updated?.id && updated.id !== customer?.id) {
+        router.push(`/customers/${encodeURIComponent(updated.id)}`);
+      } else {
+        await loadData();
+      }
     } catch (err: any) {
       showToast('error', err?.message || 'Lỗi khi cập nhật thông tin');
     }

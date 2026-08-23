@@ -328,3 +328,20 @@
   - Tích hợp **Optimistic UI Updates** trên cả danh sách đơn hàng và trang chi tiết đơn: Khi bấm "Xác nhận", trạng thái đơn hàng và badge lập tức đổi sang `CONFIRMED` ngay trên màn hình mà không cần tải lại trang.
   - Bổ sung nút **Xác nhận đơn hàng nhanh (1-click)** trực tiếp tại hàng bảng đơn và trên thanh tiêu đề chi tiết đơn khi đơn ở trạng thái `PENDING`.
   - Tự động gọi đồng bộ `useOrderStatsStore.getState().fetchPendingCount()` giảm ngay số lượng đơn chưa xử lý trên Sidebar.
+
+## [2026-08-23] Bổ sung Chọn Loại Khách Hàng Khi Tạo Mới & Chuyển Đổi Khách Vãng Lai Thành Khách Thành Viên
+- **Bộ Chọn Loại Khách Hàng Khi Tạo Mới ([CreateCustomerModal](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/customers/components/create-customer-modal.tsx)):**
+  - Tích hợp 2 tab lựa chọn: **Khách Thành Viên** (Yêu cầu Họ tên, Email, SĐT, Mật khẩu khởi tạo, Địa chỉ) và **Khách Vãng Lai** (Họ tên, SĐT/Email, Ghi chú, Địa chỉ - không yêu cầu mật khẩu).
+  - Tự động điều chỉnh quy tắc validate và trường nhập linh hoạt theo loại khách hàng được chọn.
+- **Chuyển Đổi Khách Vãng Lai Thành Khách Thành Viên ([EditCustomerModal](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/customers/components/edit-customer-modal.tsx), [CustomerDetailContainer](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/customers/components/customer-detail-container.tsx)):**
+  - Cho phép Admin chuyển đổi loại tài khoản từ `Khách vãng lai` sang `Khách thành viên` ngay trong popup chỉnh sửa nhanh.
+  - Hiển thị banner hướng dẫn, ô nhập mật khẩu khởi tạo (mặc định gợi ý `Password123`) và thiết lập trạng thái tài khoản.
+  - Tự động điều hướng URL sang `/customers/[newUserId]` khi ID khách hàng thay đổi.
+- **Backend API & Data Synchronization ([admin-customers.service.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/src/customers/admin-customers.service.ts), [create-customer.dto.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/src/customers/dto/create-customer.dto.ts), [update-customer.dto.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/src/customers/dto/update-customer.dto.ts)):**
+  - Endpoint `POST /api/v1/admin/customers`: Hỗ trợ tạo `User` (thành viên) hoặc lưu hồ sơ vào Redis (vãng lai).
+  - Endpoint `PATCH /api/v1/admin/customers/:id`: Khi nhận `type: 'REGISTERED'` cho khách vãng lai, hệ thống tự động:
+    1. Kiểm tra tính duy nhất của Email và mã hóa mật khẩu `bcrypt` 12 vòng.
+    2. Tạo bản ghi `User` mới với `role: 'CUSTOMER'`.
+    3. Cập nhật `order.userId = newUser.id` cho tất cả đơn hàng trong quá khứ của khách hàng này.
+    4. Di chuyển toàn bộ sổ địa chỉ (từ Redis & Orders) sang bảng `Address` của `newUser`.
+    5. Xóa bỏ các key rác của khách vãng lai trên Redis và xóa cache thống kê. 0 lỗi TypeScript trên cả 3 dự án (`npx tsc --noEmit`).

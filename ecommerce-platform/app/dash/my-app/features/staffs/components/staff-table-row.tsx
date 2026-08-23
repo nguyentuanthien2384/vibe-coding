@@ -5,6 +5,7 @@ import { Mail, Phone, Shield, MoreHorizontal, ArrowRight, Power, UserCog } from 
 import { StaffListItem } from '@/features/staffs/types/staff.types';
 import StaffStatusBadge from './staff-status-badge';
 import StaffRoleBadge from './staff-role-badge';
+import UserAvatar from '@/components/ui/user-avatar';
 
 interface StaffTableRowProps {
   staff: StaffListItem;
@@ -12,13 +13,6 @@ interface StaffTableRowProps {
   onOpenAssignRole: (staff: StaffListItem) => void;
   onToggleStatus: (staff: StaffListItem) => void;
 }
-
-const AVATAR_COLORS: Record<number, string> = {
-  1: 'bg-[#15803D]', // Xanh lá đậm NA
-  2: 'bg-[#1D4ED8]', // Xanh dương TB
-  3: 'bg-[#831843]', // Đỏ tím mận LC
-  4: 'bg-[#E11D48]', // Đỏ san hô PD
-};
 
 export default function StaffTableRow({
   staff,
@@ -28,26 +22,17 @@ export default function StaffTableRow({
 }: StaffTableRowProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const initials = staff.fullName
-    .split(' ')
-    .map((n: string) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-
-  const avatarBg = AVATAR_COLORS[staff.numericId] || 'bg-blue-600';
-
   return (
     <tr className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors border-b border-gray-100 dark:border-slate-800/80 last:border-0">
       {/* CỘT 1: NHÂN VIÊN */}
       <td className="px-6 py-5 whitespace-nowrap">
         <div className="flex items-center gap-3.5">
-          <div className={`relative w-11 h-11 rounded-full ${avatarBg} text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0`}>
-            {initials}
-            {staff.status === 'ACTIVE' && (
-              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" />
-            )}
-          </div>
+          <UserAvatar
+            name={staff.fullName}
+            avatarUrl={staff.avatarUrl}
+            size="lg"
+            role={staff.role === 'ADMIN' ? 'ADMIN' : undefined}
+          />
           <div>
             <span className="text-sm font-bold text-slate-900 dark:text-white block">
               {staff.fullName}

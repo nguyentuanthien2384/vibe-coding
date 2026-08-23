@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X, UserPlus, MapPin } from 'lucide-react';
-import { CreateCustomerInput } from '../types/customer.types';
+import { X, UserPlus, MapPin, UserCheck, User, FileText } from 'lucide-react';
+import { CreateCustomerInput, CustomerType } from '../types/customer.types';
 
 interface CreateCustomerModalProps {
   isOpen: boolean;
@@ -11,10 +11,12 @@ interface CreateCustomerModalProps {
 }
 
 const CreateCustomerModal = ({ isOpen, onClose, onSubmit }: CreateCustomerModalProps) => {
+  const [customerType, setCustomerType] = useState<CustomerType>('REGISTERED');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [notes, setNotes] = useState('');
   const [provinceName, setProvinceName] = useState('');
   const [districtName, setDistrictName] = useState('');
   const [wardName, setWardName] = useState('');
@@ -25,19 +27,33 @@ const CreateCustomerModal = ({ isOpen, onClose, onSubmit }: CreateCustomerModalP
 
   if (!isOpen) return null;
 
+  const isGuest = customerType === 'GUEST';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !email.trim() || !phone.trim()) {
-      setErrorMsg('Vui lòng điền đầy đủ Họ tên, Email và Số điện thoại.');
+    if (!fullName.trim()) {
+      setErrorMsg('Vui lòng điền Họ và tên khách hàng.');
       return;
     }
 
-    // Kiểm tra quy tắc mật khẩu nếu người dùng tự điền
-    if (password.trim()) {
-      const pass = password.trim();
-      const hasLetterAndDigit = /^(?=.*[a-zA-Z])(?=.*\d)/.test(pass);
-      if (pass.length < 6 || pass.length > 50 || !hasLetterAndDigit) {
-        setErrorMsg('Mật khẩu phải từ 6 đến 50 ký tự và chứa ít nhất một chữ cái và một chữ số (Ví dụ: Password123).');
+    if (!isGuest) {
+      if (!email.trim() || !phone.trim()) {
+        setErrorMsg('Khách hàng thành viên bắt buộc phải có đầy đủ Email và Số điện thoại.');
+        return;
+      }
+
+      // Kiểm tra quy tắc mật khẩu nếu người dùng tự điền
+      if (password.trim()) {
+        const pass = password.trim();
+        const hasLetterAndDigit = /^(?=.*[a-zA-Z])(?=.*\d)/.test(pass);
+        if (pass.length < 6 || pass.length > 50 || !hasLetterAndDigit) {
+          setErrorMsg('Mật khẩu phải từ 6 đến 50 ký tự và chứa ít nhất một chữ cái và một chữ số (Ví dụ: Password123).');
+          return;
+        }
+      }
+    } else {
+      if (!phone.trim() && !email.trim()) {
+        setErrorMsg('Khách hàng vãng lai cần ít nhất Số điện thoại hoặc Email để liên hệ.');
         return;
       }
     }
@@ -46,11 +62,15 @@ const CreateCustomerModal = ({ isOpen, onClose, onSubmit }: CreateCustomerModalP
       setIsSubmitting(true);
       setErrorMsg('');
       await onSubmit({
+        type: customerType,
         fullName: fullName.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        password: password.trim() || undefined,
+        email: email.trim() || undefined,
+        phone: phone.trim() || undefined,
+        password: !isGuest && password.trim() ? password.trim() : undefined,
+        notes: notes.trim() || undefined,
         address: provinceName && detailAddress ? {
+          recipientName: fullName.trim(),
+          phone: phone.trim(),
           provinceName: provinceName.trim(),
           districtName: districtName.trim(),
           wardName: wardName.trim(),
@@ -59,10 +79,12 @@ const CreateCustomerModal = ({ isOpen, onClose, onSubmit }: CreateCustomerModalP
       });
 
       // Reset form
+      setCustomerType('REGISTERED');
       setFullName('');
       setEmail('');
       setPhone('');
       setPassword('');
+      setNotes('');
       setProvinceName('');
       setDistrictName('');
       setWardName('');
@@ -99,7 +121,51 @@ const CreateCustomerModal = ({ isOpen, onClose, onSubmit }: CreateCustomerModalP
         )}
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4 text-sm">
-          {/* Thông tin cá nhân */}
+          {/* Bộ chọn Loại Khách Hàng */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              Loại Khách Hàng <span className="text-rose-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setCustomerType('REGISTERED')}
+                className={`flex flex-col items-start p-3 rounded-xl border text-left transition-all ${
+                  customerType === 'REGISTERED'
+                    ? 'border-[#4880FF] bg-blue-50/70 dark:bg-blue-950/40 text-slate-800 dark:text-white shadow-sm ring-1 ring-[#4880FF]'
+                    : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-bold text-xs text-[#4880FF]">
+                  <UserCheck className="w-4 h-4" />
+                  <span>Khách Thành Viên</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-tight">
+                  Tạo tài khoản đăng nhập, cấp mật khẩu khởi tạo
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCustomerType('GUEST')}
+                className={`flex flex-col items-start p-3 rounded-xl border text-left transition-all ${
+                  customerType === 'GUEST'
+                    ? 'border-[#4880FF] bg-blue-50/70 dark:bg-blue-950/40 text-slate-800 dark:text-white shadow-sm ring-1 ring-[#4880FF]'
+                    : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-bold text-xs text-amber-600 dark:text-amber-400">
+                  <User className="w-4 h-4" />
+                  <span>Khách Vãng Lai</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-tight">
+                  Lưu thông tin mua lẻ, không tạo tài khoản đăng nhập
+                </p>
+              </button>
+            </div>
+          </div>
+
+          {/* Họ tên */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Họ và Tên <span className="text-rose-500">*</span>
@@ -114,14 +180,15 @@ const CreateCustomerModal = ({ isOpen, onClose, onSubmit }: CreateCustomerModalP
             />
           </div>
 
+          {/* Email & SĐT */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Email <span className="text-rose-500">*</span>
+                Email {!isGuest && <span className="text-rose-500">*</span>}
               </label>
               <input
                 type="email"
-                required
+                required={!isGuest}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="an.nguyen@example.com"
@@ -131,11 +198,11 @@ const CreateCustomerModal = ({ isOpen, onClose, onSubmit }: CreateCustomerModalP
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Số Điện Thoại <span className="text-rose-500">*</span>
+                Số Điện Thoại {!isGuest && <span className="text-rose-500">*</span>}
               </label>
               <input
                 type="tel"
-                required
+                required={!isGuest}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="0901234567"
@@ -144,20 +211,38 @@ const CreateCustomerModal = ({ isOpen, onClose, onSubmit }: CreateCustomerModalP
             </div>
           </div>
 
+          {/* Mật khẩu khởi tạo (Chỉ dành cho Thành viên) */}
+          {!isGuest && (
+            <div className="p-3 bg-blue-50/50 dark:bg-slate-800/60 rounded-xl border border-blue-100 dark:border-slate-700">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Mật khẩu khởi tạo
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mặc định: Password123 (nếu để trống)"
+                className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4880FF]/30"
+              />
+              <p className="mt-1 text-[11px] text-slate-400">
+                Tối thiểu 6 ký tự, gồm ít nhất một chữ cái và một chữ số.
+              </p>
+            </div>
+          )}
+
+          {/* Ghi chú quản trị */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Mật khẩu khởi tạo
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+              <FileText className="w-3.5 h-3.5 text-slate-400" />
+              Ghi Chú Quản Trị (Nội bộ)
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Để trống nếu lấy mật khẩu mặc định (Password123)"
-              className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4880FF]/30"
+            <textarea
+              rows={2}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="VD: Khách sỉ quen, gọi trước khi giao..."
+              className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4880FF]/30 text-xs resize-none"
             />
-            <p className="mt-1 text-[11px] text-slate-400">
-              Cần tối thiểu 6 ký tự, gồm ít nhất một chữ cái và một chữ số.
-            </p>
           </div>
 
           {/* Địa chỉ giao hàng ban đầu */}

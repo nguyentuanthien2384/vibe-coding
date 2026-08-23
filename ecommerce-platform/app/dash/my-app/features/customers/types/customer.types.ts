@@ -56,10 +56,12 @@ export interface CustomerOrderSummary {
 }
 
 export interface CreateCustomerInput {
+  type?: CustomerType;
   fullName: string;
-  email: string;
-  phone: string;
+  email?: string;
+  phone?: string;
   password?: string;
+  notes?: string;
   address?: {
     recipientName?: string;
     phone?: string;
@@ -82,8 +84,9 @@ export interface UpdateCustomerStatusInput {
 export interface UpdateCustomerInfoInput {
   customerId: string;
   fullName: string;
-  email: string;
-  phone: string;
+  email?: string;
+  phone?: string;
+  password?: string;
   status?: CustomerStatus;
   type?: CustomerType;
   notes?: string;

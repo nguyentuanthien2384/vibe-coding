@@ -124,5 +124,26 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       }
     }
   }
+
+  /**
+   * Lấy danh sách keys khớp với pattern
+   */
+  async keys(pattern: string): Promise<string[]> {
+    if (this.isConnected) {
+      try {
+        return await this.client.keys(pattern);
+      } catch (error) {
+        this.logger.error(`Redis keys failed for pattern ${pattern}: ${error.message}`);
+      }
+    }
+    const regexPattern = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+    const matched: string[] = [];
+    for (const key of this.inMemoryFallback.keys()) {
+      if (regexPattern.test(key)) {
+        matched.push(key);
+      }
+    }
+    return matched;
+  }
 }
 
