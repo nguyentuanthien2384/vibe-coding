@@ -16,7 +16,6 @@ import { useCartStore } from '../../store/use-cart-store';
 import { logoutApi, getMeApi } from '../../lib/auth';
 import { getMyOrdersApi, getOrderDetailApi } from '../../lib/orders';
 import { QRPaymentModal } from '../checkout/modals/qr-payment-modal';
-import { confirmDemoPaymentApi } from '../../lib/checkout';
 
 export const ProfileContainer: React.FC = () => {
   const router = useRouter();
@@ -309,7 +308,6 @@ export const ProfileContainer: React.FC = () => {
               });
               fetchUserOrders(currentPage, selectedStatus, searchQuery);
             }}
-            onConfirmDemoPayment={() => confirmDemoPaymentApi(qrModalData.orderCode)}
           />
         )}
       </div>

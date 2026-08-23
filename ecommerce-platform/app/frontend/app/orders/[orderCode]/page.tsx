@@ -1,9 +1,7 @@
 import { Metadata } from "next";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { MaintenanceBanner } from "@/components/layout/maintenance-banner";
 import { OrderDetailContainer } from "@/components/orders/order-detail-container";
-import { getPublicSettings } from "@/lib/settings";
 
 export async function generateMetadata({
   params,
@@ -22,21 +20,15 @@ export default async function OrderDetailPage({
 }: {
   params: Promise<{ orderCode: string }>;
 }) {
-  const [{ orderCode }, { general, menus, seo }] = await Promise.all([
-    params,
-    getPublicSettings(),
-  ]);
+  const { orderCode } = await params;
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {general.maintenanceMode && (
-        <MaintenanceBanner message={general.maintenanceMessage} />
-      )}
-      <Header generalSettings={general} menus={menus} />
+      <Header />
       <main className="flex-1">
         <OrderDetailContainer orderCode={orderCode} />
       </main>
-      <Footer generalSettings={general} menus={menus} seo={seo} />
+      <Footer />
     </div>
   );
 }

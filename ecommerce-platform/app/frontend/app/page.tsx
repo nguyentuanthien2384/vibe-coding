@@ -1,7 +1,4 @@
 import { Header } from "../components/layout/header";
-import { Footer } from "../components/layout/footer";
-import { MaintenanceBanner } from "../components/layout/maintenance-banner";
-import { FloatingContactWidget } from "../components/layout/floating-contact-widget";
 import { HeroBanner } from "../components/home/hero-banner";
 import { CategoryRail } from "../components/home/category-rail";
 import { FeaturedProductsSection } from "../components/home/featured-products";
@@ -10,7 +7,6 @@ import { Product } from "../components/home/product-card";
 import { CartDrawer } from "../components/cart/cart-drawer";
 import { Toast } from "../components/ui/toast";
 import { getHeroBanners, getCategories, getFeaturedProducts } from "../lib/home";
-import { getPublicSettings } from "../lib/settings";
 
 // Fallback khi banner chưa có trong DB
 const FALLBACK_HERO = {
@@ -31,16 +27,9 @@ export default async function HomePage({
   const resolvedParams = await searchParams;
   const activeCategorySlug = resolvedParams?.category || "";
 
-  // Fetch song song các nguồn dữ liệu chính kèm Settings
-  const [
-    { banners, isError: bannersIsError },
-    { categories },
-    { general, menus, seo },
-  ] = await Promise.all([
-    getHeroBanners(),
-    getCategories(),
-    getPublicSettings(),
-  ]);
+  // Fetch song song 2 nguồn dữ liệu chính
+  const [{ banners, isError: bannersIsError }, { categories, isError: categoriesIsError }] =
+    await Promise.all([getHeroBanners(), getCategories()]);
 
   // Tìm categoryId từ slug được chọn
   const activeCategory = categories.find((c) => c.slug === activeCategorySlug);
@@ -84,50 +73,56 @@ export default async function HomePage({
   }));
 
   return (
-    <div className="bg-gray-50 min-h-screen font-sans antialiased text-slate-900 pb-16 md:pb-0 flex flex-col justify-between">
-      <div>
-        {general.maintenanceMode && (
-          <MaintenanceBanner message={general.maintenanceMessage} />
-        )}
-        <Header generalSettings={general} menus={menus} />
+    <div className="bg-gray-50 min-h-screen font-sans antialiased text-slate-900 pb-16 md:pb-0">
+      <Header />
 
-        <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
-          {/* Section 1: Hero Banner */}
-          <HeroBanner {...heroProps} />
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+        {/* Section 1: Hero Banner */}
+        <HeroBanner {...heroProps} />
 
-          {/* Section 2: Category Rail */}
-          <CategoryRail
-            categories={categoryRailItems}
-            activeCategorySlug={activeCategorySlug}
-          />
+        {/* Section 2: Category Rail */}
+        <CategoryRail
+          categories={categoryRailItems}
+          activeCategorySlug={activeCategorySlug}
+        />
 
-          {/* Section 3: Social Proof Banner */}
-          <SocialProofBanner
-            statNumber="500+"
-            message="anh em dev đã nạp năng lượng tại TechBite"
-          />
+        {/* Section 3: Social Proof Banner */}
+        <SocialProofBanner
+          statNumber="500+"
+          message="anh em dev đã nạp năng lượng tại TechBite"
+        />
 
-          {/* Section 4: Featured Products */}
-          <FeaturedProductsSection
-            title={activeCategory ? `Danh Mục: ${activeCategory.name}` : "Món Bán Chạy 🔥"}
-            subtitle={
-              activeCategory
-                ? `Các món ngon thuộc danh mục ${activeCategory.name}`
-                : "Top 8 món được anh em dev order nhiều nhất tuần này"
-            }
-            actionLabel="Xem tất cả"
-            actionHref="/products"
-            products={featuredProducts}
-            isError={productsIsError}
-          />
-        </main>
-      </div>
+        {/* Section 4: Featured Products */}
+        <FeaturedProductsSection
+          title={activeCategory ? `Danh Mục: ${activeCategory.name}` : "Món Bán Chạy 🔥"}
+          subtitle={
+            activeCategory
+              ? `Các món ngon thuộc danh mục ${activeCategory.name}`
+              : "Top 8 món được anh em dev order nhiều nhất tuần này"
+          }
+          actionLabel="Xem tất cả"
+          actionHref="/products"
+          products={featuredProducts}
+          isError={productsIsError}
+        />
+      </main>
 
-      {/* Dynamic Footer */}
-      <Footer generalSettings={general} menus={menus} seo={seo} />
-
-      {/* Floating Contact & Quick Social Widget */}
-      <FloatingContactWidget generalSettings={general} seo={seo} />
+      {/* Footer */}
+      <footer className="bg-slate-900 text-white border-t border-slate-800 py-8 sm:py-10 mt-8 sm:mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+          <div>
+            <span className="text-xl font-extrabold tracking-tight">
+              Tech<span className="text-orange-500">Bite</span>
+            </span>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              Nạp năng lượng tức thì cho Đội ngũ Chạy Deadline &amp; Coder.
+            </p>
+          </div>
+          <p className="text-[11px] sm:text-xs text-slate-500">
+            © 2026 TechBite E-Commerce. All rights reserved.
+          </p>
+        </div>
+      </footer>
 
       {/* Slide-out Cart Drawer */}
       <CartDrawer />
@@ -137,3 +132,4 @@ export default async function HomePage({
     </div>
   );
 }
+

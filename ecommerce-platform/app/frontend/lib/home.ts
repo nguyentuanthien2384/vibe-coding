@@ -55,9 +55,7 @@ export async function getHeroBanners(): Promise<{ banners: BannerItem[]; isError
 
 export async function getCategories(): Promise<{ categories: CategoryItem[]; isError: boolean }> {
   try {
-    const res = await apiFetch<ApiResponse<CategoryItem[]>>('/api/v1/categories', {
-      cache: 'no-store',
-    });
+    const res = await apiFetch<ApiResponse<CategoryItem[]>>('/api/v1/categories');
     return { categories: res.data ?? [], isError: false };
   } catch (error) {
     console.error('Failed to fetch categories:', error);
@@ -74,9 +72,7 @@ export async function getFeaturedProducts(
     const endpoint = categoryId
       ? `/api/v1/products?categoryId=${categoryId}&page=${page}&limit=${limit}`
       : `/api/v1/products/featured?page=${page}&limit=${limit}`;
-    const res = await apiFetch<ApiResponseWithPagination<FeaturedProduct[]>>(endpoint, {
-      cache: 'no-store',
-    });
+    const res = await apiFetch<ApiResponseWithPagination<FeaturedProduct[]>>(endpoint);
     return { products: res.data ?? [], total: res.pagination?.total ?? 0, isError: false };
   } catch (error) {
     console.error('Failed to fetch featured products:', error);

@@ -13,7 +13,6 @@ import { useAuthStore } from "../../store/use-auth-store";
 import { useCartStore } from "../../store/use-cart-store";
 import { logoutApi } from "../../lib/auth";
 import { getImageUrl } from "../../lib/image-url";
-import { confirmDemoPaymentApi } from "../../lib/checkout";
 
 interface OrderDetailContainerProps {
   orderCode: string;
@@ -494,7 +493,6 @@ export const OrderDetailContainer: React.FC<OrderDetailContainerProps> = ({
             });
             fetchDetail();
           }}
-          onConfirmDemoPayment={() => confirmDemoPaymentApi(order.orderCode)}
         />
       )}
     </div>

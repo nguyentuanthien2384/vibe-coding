@@ -2,33 +2,20 @@
 
 import React from "react";
 import Link from "next/link";
-import { getImageUrl } from "../../lib/image-url";
-import { GeneralSettings } from "../../types/settings";
 
 interface CheckoutHeaderProps {
   currentStep?: number;
-  generalSettings?: GeneralSettings;
 }
 
 export const CheckoutHeader: React.FC<CheckoutHeaderProps> = ({
   currentStep = 2,
-  generalSettings,
 }) => {
-  const storeName = generalSettings?.storeName || 'TechBite';
-  const logoUrl = generalSettings?.logoUrl ? getImageUrl(generalSettings.logoUrl) : null;
-
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 w-full z-50 shadow-sm transition-all duration-200 ease-in-out">
       <div className="flex justify-between items-center px-4 md:px-6 py-4 max-w-[1280px] mx-auto">
         <Link href="/" className="flex items-center gap-2 group">
-          {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt={storeName} className="w-8 h-8 object-contain rounded-lg" />
-          ) : (
-            <span className="text-xl">⚡</span>
-          )}
-          <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 group-hover:text-orange-600 transition-colors">
-            {storeName}
+          <span className="text-2xl font-extrabold tracking-tight text-slate-900 group-hover:text-orange-600 transition-colors">
+            ⚡ TechBite
           </span>
         </Link>
 

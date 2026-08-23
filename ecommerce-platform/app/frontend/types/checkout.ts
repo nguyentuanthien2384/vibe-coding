@@ -128,5 +128,4 @@ export interface QRPaymentModalProps {
   qrInfo: QRPaymentInfo;
   onClose: () => void;
   onPaymentSuccess: () => void;
-  onConfirmDemoPayment: () => Promise<void>;
 }

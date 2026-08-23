@@ -102,15 +102,3 @@ export async function getOrderStatusApi(orderCode: string): Promise<{
   const json = await res.json();
   return json.data;
 }
-
-export async function confirmDemoPaymentApi(orderCode: string): Promise<void> {
-  const res = await fetch(
-    `/api/orders/${encodeURIComponent(orderCode)}/demo-confirm-payment`,
-    { method: 'POST', headers: getHeaders() },
-  );
-
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => null);
-    throw new Error(errorData?.message || 'Không thể xác nhận thanh toán');
-  }
-}

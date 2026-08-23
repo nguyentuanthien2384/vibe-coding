@@ -20,7 +20,7 @@ import { QRPaymentModal } from "./modals/qr-payment-modal";
 
 import { UserAddress } from "../../types/address.types";
 import { getAddressesApi, createAddressApi } from "../../lib/addresses";
-import { confirmDemoPaymentApi, createOrderApi } from "../../lib/checkout";
+import { createOrderApi } from "../../lib/checkout";
 import { showToast } from "../ui/toast";
 
 export const CheckoutContainer: React.FC = () => {
@@ -64,7 +64,6 @@ export const CheckoutContainer: React.FC = () => {
   // Errors & Modals
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCompletingCheckout, setIsCompletingCheckout] = useState(false);
   const [activeModal, setActiveModal] = useState<
     "NONE" | "COD_CONFIRM" | "QR_PAYMENT"
   >("NONE");
@@ -154,27 +153,14 @@ export const CheckoutContainer: React.FC = () => {
 
   // Redirect nếu giỏ hàng trống — chỉ sau khi đã fetch xong VÀ không còn loading
   useEffect(() => {
-    if (
-      mounted &&
-      !isCompletingCheckout &&
-      cartStore.isFetched &&
-      !cartStore.isLoading &&
-      cartStore.items.length === 0
-    ) {
+    if (mounted && cartStore.isFetched && !cartStore.isLoading && cartStore.items.length === 0) {
       showToast({
         message: "Giỏ hàng của bạn đang trống! Vui lòng chọn sản phẩm trước khi thanh toán.",
         type: "error",
       });
       router.replace("/");
     }
-  }, [
-    mounted,
-    isCompletingCheckout,
-    cartStore.isFetched,
-    cartStore.isLoading,
-    cartStore.items.length,
-    router,
-  ]);
+  }, [mounted, cartStore.isFetched, cartStore.isLoading, cartStore.items.length, router]);
 
   // Compute Items - strictly from cartStore without mock fallback
   const items: MiniCartItemData[] = cartStore.items.map((it) => ({
@@ -316,11 +302,13 @@ export const CheckoutContainer: React.FC = () => {
   };
 
   const handleFinishSuccess = () => {
-    setIsCompletingCheckout(true);
-    setActiveModal("NONE");
-
-    // Điều hướng trực tiếp tới trang Chi tiết đơn hàng vừa tạo
-    window.location.replace(`/orders/${currentOrderCode}`);
+    // Clear cart if user had items in Zustand
+    if (cartStore.items.length > 0) {
+      cartStore.clearCart();
+    }
+    router.push(
+      `/checkout/success?orderCode=${currentOrderCode}&total=${total}&payment=${paymentMethod}`
+    );
   };
 
   return (
@@ -381,7 +369,6 @@ export const CheckoutContainer: React.FC = () => {
           qrInfo={qrInfo}
           onClose={() => setActiveModal("NONE")}
           onPaymentSuccess={handleFinishSuccess}
-          onConfirmDemoPayment={() => confirmDemoPaymentApi(currentOrderCode)}
         />
       )}
     </>
