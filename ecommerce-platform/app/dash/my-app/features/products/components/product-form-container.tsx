@@ -19,6 +19,7 @@ import {
   Trash2,
   Plus,
   ArrowUpDown,
+  FolderOpen,
 } from 'lucide-react';
 import { ProductItem, ProductFormData, CategoryOption, ProductGalleryItem, JSONEditorContent } from '../types/product.types';
 import { categoriesApi } from '../../../lib/categories-api';
@@ -27,6 +28,7 @@ import { uploadApi } from '../../../lib/upload-api';
 import { getImageUrl } from '../../../lib/image-url';
 import { useToast } from '../../../components/ui/toast';
 import JSONRichEditor from './rich-editor/json-rich-editor';
+import MediaManagerModal, { SelectedImagePayload } from '../../media/components/media-manager-modal';
 
 interface ProductFormContainerProps {
   initialData?: ProductItem | null;
@@ -93,6 +95,33 @@ export default function ProductFormContainer({
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Media Manager Picker State
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<'cover' | 'gallery'>('gallery');
+
+  const handleSelectFromMedia = (payload: SelectedImagePayload) => {
+    if (mediaPickerTarget === 'cover') {
+      setImageUrl(payload.url);
+      if (!galleryImages.some((img) => img.url === payload.url)) {
+        const nextPos = galleryImages.length + 1;
+        setGalleryImages([...galleryImages, { url: payload.url, position: nextPos }]);
+      }
+      showToast('success', 'Đã chọn ảnh đại diện từ Thư viện Media');
+    } else {
+      if (galleryImages.some((img) => img.url === payload.url)) {
+        showToast('warning', 'Hình ảnh này đã tồn tại trong thư viện sản phẩm');
+        return;
+      }
+      const nextPos = galleryImages.length + 1;
+      const nextImages = [...galleryImages, { url: payload.url, position: nextPos }];
+      setGalleryImages(nextImages);
+      if (!imageUrl) {
+        setImageUrl(payload.url);
+      }
+      showToast('success', 'Đã thêm ảnh vào thư viện sản phẩm');
+    }
+  };
 
   // Load categories list on mount
   useEffect(() => {
@@ -628,218 +657,252 @@ export default function ProductFormContainer({
                 </div>
               )}
 
-              {/* Bottom Row: Upload & Add URL Controls */}
-              <div className="pt-4 border-t border-gray-100 space-y-3">
-                <label className="text-xs font-bold text-gray-600 uppercase tracking-wider block">
-                  ➕ Thêm ảnh mới vào thư viện
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Upload Multi-Files Box */}
-                  <label className="flex items-center justify-center p-3 border-2 border-dashed border-gray-200 rounded-2xl hover:border-[#4880FF] hover:bg-blue-50/40 transition-all cursor-pointer group">
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files) {
-                          handleMultipleFilesUpload(e.target.files);
-                        }
-                      }}
-                    />
-                    {isUploading ? (
-                      <div className="flex items-center gap-2 text-xs font-bold text-[#4880FF]">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Đang upload ảnh...</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-3">
-                        <Upload className="w-5 h-5 text-gray-400 group-hover:text-[#4880FF] transition-colors" />
-                        <div className="text-left">
-                          <p className="text-xs font-bold text-gray-700 group-hover:text-[#4880FF]">Tải ảnh từ máy tính</p>
-                          <p className="text-[10px] text-gray-400">Chọn 1 hoặc nhiều file (PNG, JPG, WebP)</p>
-                        </div>
-                      </div>
-                    )}
-                  </label>
-
-                  {/* Paste URL Box */}
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={inputUrl}
-                      onChange={(e) => setInputUrl(e.target.value)}
-                      placeholder="Dán URL ảnh hoặc path..."
-                      className="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono text-gray-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4880FF] transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddUrlToGallery}
-                      className="px-3.5 py-2.5 bg-gray-100 hover:bg-[#4880FF] hover:text-white text-gray-700 font-bold text-xs rounded-xl transition-all flex items-center gap-1 cursor-pointer shrink-0"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Thêm</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 4. Mô tả sản phẩm (JSON Editor Format) */}
-            <div className="bg-white p-6 rounded-3xl custom-shadow border border-gray-50 space-y-6">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <div className="flex items-center gap-2 text-base font-extrabold text-[#202224]">
-                  <Sparkles className="w-5 h-5 text-[#4880FF]" />
-                  <span>Mô tả sản phẩm (JSON Rich Editor)</span>
-                </div>
-              </div>
-
-              {/* Short Description JSON Editor */}
-              <JSONRichEditor
-                label="Mô tả ngắn (Short Description)"
-                value={shortDescription}
-                onChange={(val) => setShortDescription(val)}
-                placeholder="Nhập tóm tắt mô tả ngắn sản phẩm..."
-              />
-
-              {/* Long Description JSON Editor */}
-              <JSONRichEditor
-                label="Mô tả chi tiết (Long Description)"
-                value={longDescription}
-                onChange={(val) => setLongDescription(val)}
-                placeholder="Nhập chi tiết tính năng, thông số kỹ thuật sản phẩm..."
-              />
+  {/* Bottom Row: Upload, Media Library & Add URL Controls */}
+  <div className="pt-4 border-t border-gray-100 space-y-3">
+    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider block">
+      ➕ Thêm ảnh mới vào thư viện
+    </label>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* Upload Multi-Files Box */}
+      <label className="flex items-center justify-center p-3 border-2 border-dashed border-gray-200 rounded-2xl hover:border-[#4880FF] hover:bg-blue-50/40 transition-all cursor-pointer group">
+        <input
+          type="file"
+          multiple
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files) {
+              handleMultipleFilesUpload(e.target.files);
+            }
+          }}
+        />
+        {isUploading ? (
+          <div className="flex items-center gap-2 text-xs font-bold text-[#4880FF]">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Đang tải...</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-left">
+            <Upload className="w-4 h-4 text-gray-400 group-hover:text-[#4880FF] transition-colors" />
+            <div>
+              <p className="text-xs font-bold text-gray-700 group-hover:text-[#4880FF]">Tải từ máy</p>
+              <p className="text-[10px] text-gray-400">File PNG, JPG, WebP</p>
             </div>
           </div>
+        )}
+      </label>
 
-          {/* Right Sidebar Column: Preview & Settings */}
-          <div className="space-y-6">
-            {/* Xem trước Ảnh đại diện sản phẩm */}
-            <div className="bg-white p-6 rounded-3xl custom-shadow border border-gray-50 space-y-4">
-              <div className="flex items-center gap-2 text-base font-extrabold text-[#202224] border-b border-gray-100 pb-3">
-                <ImageIcon className="w-5 h-5 text-[#4880FF]" />
-                <span>Xem trước Ảnh đại diện <span className="text-red-500">*</span></span>
-              </div>
-
-              <div className="space-y-3">
-                <div className="w-full h-48 rounded-2xl bg-gray-50 border border-gray-200 p-2 flex items-center justify-center overflow-hidden relative shadow-inner">
-                  {resolvedPreviewUrl ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={resolvedPreviewUrl}
-                      alt="Product cover preview"
-                      className="w-full h-full object-contain rounded-xl"
-                    />
-                  ) : (
-                    <span className="text-xs text-gray-400 font-semibold">Chưa có ảnh đại diện</span>
-                  )}
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                    URL Ảnh đại diện hiện tại
-                  </label>
-                  <input
-                    type="text"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="/uploads/products/image.jpg..."
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono text-gray-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4880FF] transition-all"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* 5. Cấu hình Trạng thái & Nổi bật */}
-            <div className="bg-white p-6 rounded-3xl custom-shadow border border-gray-50 space-y-4">
-              <div className="flex items-center gap-2 text-base font-extrabold text-[#202224] border-b border-gray-100 pb-3">
-                <Layers className="w-5 h-5 text-[#4880FF]" />
-                <span>Trạng thái & Cấu hình</span>
-              </div>
-
-              {/* Status Selector */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">
-                  Trạng thái kinh doanh
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setStatus('ACTIVE')}
-                    className={`py-2.5 px-3 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
-                      status === 'ACTIVE'
-                        ? 'bg-green-50 text-green-700 border-green-200 shadow-sm'
-                        : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
-                    }`}
-                  >
-                    ● Đang bán (Active)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStatus('INACTIVE')}
-                    className={`py-2.5 px-3 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
-                      status === 'INACTIVE'
-                        ? 'bg-gray-200 text-gray-700 border-gray-300 shadow-sm'
-                        : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
-                    }`}
-                  >
-                    ○ Tạm ẩn (Inactive)
-                  </button>
-                </div>
-              </div>
-
-              {/* Featured Switch */}
-              <div className="pt-2 flex items-center justify-between border-t border-gray-100">
-                <div>
-                  <h4 className="text-sm font-bold text-[#202224]">Sản phẩm nổi bật</h4>
-                  <p className="text-xs text-gray-400 font-medium">Hiển thị ở vị trí ưu tiên trang chủ</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsFeatured(!isFeatured)}
-                  className={`w-12 h-7 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                    isFeatured ? 'bg-[#4880FF]' : 'bg-gray-300'
-                  }`}
-                >
-                  <div
-                    className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform ${
-                      isFeatured ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
-            </div>
-
-            {/* Submit Action Buttons */}
-            <div className="bg-white p-6 rounded-3xl custom-shadow border border-gray-50 space-y-3">
-              <button
-                type="submit"
-                disabled={isSubmitting || isUploading}
-                className="w-full py-3.5 px-4 bg-[#4880FF] hover:bg-blue-600 disabled:opacity-50 text-white font-extrabold text-sm rounded-xl transition-all shadow-md shadow-blue-200 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Đang lưu sản phẩm...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5" />
-                    <span>{mode === 'create' ? 'Tạo sản phẩm mới' : 'Cập nhật sản phẩm'}</span>
-                  </>
-                )}
-              </button>
-
-              <Link
-                href="/products"
-                className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold text-xs rounded-xl transition-all flex items-center justify-center"
-              >
-                Hủy bỏ quay lại
-              </Link>
-            </div>
+      {/* Pick from Media Library Button */}
+      <button
+        type="button"
+        onClick={() => {
+          setMediaPickerTarget('gallery');
+          setIsMediaPickerOpen(true);
+        }}
+        className="flex items-center justify-center p-3 border border-blue-200 bg-blue-50/60 rounded-2xl hover:bg-blue-100/70 hover:border-[#4880FF] text-[#4880FF] transition-all cursor-pointer group"
+      >
+        <div className="flex items-center gap-2 text-left">
+          <FolderOpen className="w-4 h-4 text-[#4880FF]" />
+          <div>
+            <p className="text-xs font-bold text-[#4880FF]">Thư viện Media</p>
+            <p className="text-[10px] text-blue-400">Chọn từ kho ảnh có sẵn</p>
           </div>
         </div>
-      </form>
+      </button>
+
+      {/* Paste URL Box */}
+      <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-2xl p-1.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#4880FF]">
+        <input
+          type="text"
+          value={inputUrl}
+          onChange={(e) => setInputUrl(e.target.value)}
+          placeholder="Dán URL ảnh..."
+          className="flex-1 px-2 py-1 bg-transparent text-xs font-mono text-gray-600 focus:outline-none"
+        />
+        <button
+          type="button"
+          onClick={handleAddUrlToGallery}
+          className="px-3 py-1.5 bg-gray-200 hover:bg-[#4880FF] hover:text-white text-gray-700 font-bold text-xs rounded-xl transition-all flex items-center gap-1 cursor-pointer shrink-0"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>Thêm</span>
+        </button>
+      </div>
     </div>
-  );
+  </div>
+</div>
+
+{/* 4. Mô tả sản phẩm (JSON Editor Format) */}
+<div className="bg-white p-6 rounded-3xl custom-shadow border border-gray-50 space-y-6">
+  <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+    <div className="flex items-center gap-2 text-base font-extrabold text-[#202224]">
+      <Sparkles className="w-5 h-5 text-[#4880FF]" />
+      <span>Mô tả sản phẩm (JSON Rich Editor)</span>
+    </div>
+  </div>
+
+  {/* Short Description JSON Editor */}
+  <JSONRichEditor
+    label="Mô tả ngắn (Short Description)"
+    value={shortDescription}
+    onChange={(val) => setShortDescription(val)}
+    placeholder="Nhập tóm tắt mô tả ngắn sản phẩm..."
+  />
+
+  {/* Long Description JSON Editor */}
+  <JSONRichEditor
+    label="Mô tả chi tiết (Long Description)"
+    value={longDescription}
+    onChange={(val) => setLongDescription(val)}
+    placeholder="Nhập chi tiết tính năng, thông số kỹ thuật sản phẩm..."
+  />
+</div>
+</div>
+
+{/* Right Sidebar Column: Preview & Settings */}
+<div className="space-y-6">
+{/* Xem trước Ảnh đại diện sản phẩm */}
+<div className="bg-white p-6 rounded-3xl custom-shadow border border-gray-50 space-y-4">
+  <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+    <div className="flex items-center gap-2 text-base font-extrabold text-[#202224]">
+      <ImageIcon className="w-5 h-5 text-[#4880FF]" />
+      <span>Ảnh đại diện <span className="text-red-500">*</span></span>
+    </div>
+    <button
+      type="button"
+      onClick={() => {
+        setMediaPickerTarget('cover');
+        setIsMediaPickerOpen(true);
+      }}
+      className="px-2.5 py-1 bg-blue-50 hover:bg-[#4880FF] text-[#4880FF] hover:text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+    >
+      <FolderOpen className="w-3.5 h-3.5" />
+      <span>Thư viện</span>
+    </button>
+  </div>
+
+  <div className="space-y-3">
+    <div className="w-full h-48 rounded-2xl bg-gray-50 border border-gray-200 p-2 flex items-center justify-center overflow-hidden relative shadow-inner">
+      {resolvedPreviewUrl ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={resolvedPreviewUrl}
+          alt="Product cover preview"
+          className="w-full h-full object-contain rounded-xl"
+        />
+      ) : (
+        <span className="text-xs text-gray-400 font-semibold">Chưa có ảnh đại diện</span>
+      )}
+    </div>
+
+    <div className="space-y-1">
+      <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+        URL Ảnh đại diện hiện tại
+      </label>
+      <input
+        type="text"
+        value={imageUrl}
+        onChange={(e) => setImageUrl(e.target.value)}
+        placeholder="/uploads/images/product.jpg..."
+        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono text-gray-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4880FF] transition-all"
+      />
+    </div>
+  </div>
+</div>
+
+{/* 5. Cấu hình Trạng thái & Nổi bật */}
+<div className="bg-white p-6 rounded-3xl custom-shadow border border-gray-50 space-y-4">
+  <div className="flex items-center gap-2 text-base font-extrabold text-[#202224] border-b border-gray-100 pb-3">
+    <Layers className="w-5 h-5 text-[#4880FF]" />
+    <span>Trạng thái & Cấu hình</span>
+  </div>
+
+  {/* Status Selector */}
+  <div className="space-y-2">
+    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+      Trạng thái kinh doanh
+    </label>
+    <div className="grid grid-cols-2 gap-2">
+      <button
+        type="button"
+        onClick={() => setStatus('ACTIVE')}
+        className={`py-2.5 px-3 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
+          status === 'ACTIVE'
+            ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
+            : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+        }`}
+      >
+        Đang bán
+      </button>
+      <button
+        type="button"
+        onClick={() => setStatus('INACTIVE')}
+        className={`py-2.5 px-3 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
+          status === 'INACTIVE'
+            ? 'bg-gray-600 text-white border-gray-600 shadow-sm'
+            : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+        }`}
+      >
+        Ngừng bán
+      </button>
+    </div>
+  </div>
+
+  {/* Is Featured Toggle */}
+  <div className="pt-2 border-t border-gray-100">
+    <label className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-200/80 cursor-pointer hover:bg-blue-50/50 transition-colors">
+      <div className="space-y-0.5">
+        <span className="text-xs font-bold text-[#202224] block">Sản phẩm nổi bật ⭐</span>
+        <span className="text-[11px] text-gray-400 block">Ưu tiên hiển thị trang chủ</span>
+      </div>
+      <input
+        type="checkbox"
+        checked={isFeatured}
+        onChange={(e) => setIsFeatured(e.target.checked)}
+        className="w-5 h-5 rounded-lg text-[#4880FF] focus:ring-[#4880FF] border-gray-300 transition-all cursor-pointer"
+      />
+    </label>
+  </div>
+</div>
+
+{/* Sticky Submit Bar */}
+<div className="bg-white p-6 rounded-3xl custom-shadow border border-gray-50 space-y-3">
+  <button
+    type="submit"
+    disabled={isSubmitting}
+    className="w-full py-3.5 px-4 bg-[#4880FF] hover:bg-blue-600 disabled:opacity-50 text-white font-extrabold text-sm rounded-xl transition-all shadow-md shadow-blue-200 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+  >
+    {isSubmitting ? (
+      <>
+        <Loader2 className="w-5 h-5 animate-spin" />
+        <span>Đang lưu sản phẩm...</span>
+      </>
+    ) : (
+      <>
+        <Save className="w-5 h-5" />
+        <span>{mode === 'create' ? 'Tạo sản phẩm mới' : 'Cập nhật sản phẩm'}</span>
+      </>
+    )}
+  </button>
+
+  <Link
+    href="/products"
+    className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold text-xs rounded-xl transition-all flex items-center justify-center"
+  >
+    Hủy bỏ quay lại
+  </Link>
+</div>
+</div>
+</div>
+</form>
+
+{/* Reusable Media Manager Modal for Cover and Gallery */}
+<MediaManagerModal
+  isOpen={isMediaPickerOpen}
+  onClose={() => setIsMediaPickerOpen(false)}
+  onSelectImage={handleSelectFromMedia}
+  title={mediaPickerTarget === 'cover' ? 'Chọn ảnh đại diện sản phẩm' : 'Chọn ảnh cho thư viện sản phẩm'}
+/>
+</div>
+);
 }

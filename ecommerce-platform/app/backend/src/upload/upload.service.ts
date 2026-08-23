@@ -1,12 +1,38 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { existsSync, promises as fs } from 'fs';
-import { basename, join } from 'path';
+import { basename, join, extname } from 'path';
 
 export interface DeleteImageOptions {
   excludeCategoryId?: number;
   excludeProductId?: number;
+}
+
+export interface MediaFileItem {
+  filename: string;
+  url: string;
+  size: number;
+  createdAt: string;
+  updatedAt: string;
+  mimeType: string;
+  isReferenced: boolean;
+}
+
+export interface MediaListResult {
+  data: MediaFileItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 @Injectable()
@@ -15,6 +41,155 @@ export class UploadService {
   private readonly uploadDir = join(process.cwd(), 'uploads', 'images');
 
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Lấy danh sách toàn bộ các file media đã upload với phân trang, tìm kiếm và kiểm tra tham chiếu.
+   */
+  async getMediaList(query: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<MediaListResult> {
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
+    const search = query.search ? query.search.trim().toLowerCase() : '';
+
+    if (!existsSync(this.uploadDir)) {
+      return {
+        data: [],
+        pagination: { page, limit, total: 0, totalPages: 0 },
+      };
+    }
+
+    try {
+      const allFiles = await fs.readdir(this.uploadDir);
+      
+      // Lọc các file hình ảnh hợp lệ
+      const validExtensions = ['.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif'];
+      const mediaFiles = allFiles.filter((file) => {
+        const ext = extname(file).toLowerCase();
+        return validExtensions.includes(ext);
+      });
+
+      // Đọc thông tin file chi tiết
+      const fileStatsPromises = mediaFiles.map(async (filename) => {
+        try {
+          const filePath = join(this.uploadDir, filename);
+          const stat = await fs.stat(filePath);
+          const ext = extname(filename).toLowerCase();
+
+          let mimeType = 'image/jpeg';
+          if (ext === '.png') mimeType = 'image/png';
+          else if (ext === '.webp') mimeType = 'image/webp';
+          else if (ext === '.svg') mimeType = 'image/svg+xml';
+          else if (ext === '.gif') mimeType = 'image/gif';
+
+          return {
+            filename,
+            url: `/uploads/images/${filename}`,
+            size: stat.size,
+            createdAt: (stat.birthtime || stat.mtime).toISOString(),
+            updatedAt: stat.mtime.toISOString(),
+            mimeType,
+            mtimeMs: stat.mtimeMs,
+          };
+        } catch {
+          return null;
+        }
+      });
+
+      const resolvedStats = (await Promise.all(fileStatsPromises)).filter(
+        (item): item is NonNullable<typeof item> => item !== null,
+      );
+
+      // Tìm kiếm theo tên file nếu có
+      let filtered = resolvedStats;
+      if (search) {
+        filtered = filtered.filter((item) =>
+          item.filename.toLowerCase().includes(search),
+        );
+      }
+
+      // Sắp xếp file mới nhất lên đầu
+      filtered.sort((a, b) => b.mtimeMs - a.mtimeMs);
+
+      const total = filtered.length;
+      const totalPages = Math.ceil(total / limit) || 1;
+      const offset = (page - 1) * limit;
+      const paginatedItems = filtered.slice(offset, offset + limit);
+
+      // Kiểm tra xem các file hiển thị có đang được tham chiếu trong DB hay không
+      const itemsWithRef = await Promise.all(
+        paginatedItems.map(async (item) => {
+          const isReferenced = await this.isImageReferencedElsewhere(item.filename);
+          return {
+            filename: item.filename,
+            url: item.url,
+            size: item.size,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            mimeType: item.mimeType,
+            isReferenced,
+          };
+        }),
+      );
+
+      return {
+        data: itemsWithRef,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Lỗi khi đọc danh sách media:', error);
+      return {
+        data: [],
+        pagination: { page, limit, total: 0, totalPages: 0 },
+      };
+    }
+  }
+
+  /**
+   * Xóa file ảnh trực tiếp theo tên file từ trang quản lý Media.
+   */
+  async deleteMediaFileByName(
+    filename: string,
+    force = false,
+  ): Promise<{ message: string; filename: string }> {
+    if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      throw new BadRequestException('Tên file không hợp lệ');
+    }
+
+    const filePath = join(this.uploadDir, filename);
+
+    if (!existsSync(filePath)) {
+      throw new NotFoundException(`Không tìm thấy file '${filename}' trên hệ thống`);
+    }
+
+    if (!force) {
+      const isReferenced = await this.isImageReferencedElsewhere(filename);
+      if (isReferenced) {
+        throw new BadRequestException(
+          `Không thể xóa file '${filename}' vì đang được sử dụng làm ảnh sản phẩm, chuyên mục hoặc banner. Nếu vẫn muốn xóa, vui lòng chọn xóa bắt buộc.`,
+        );
+      }
+    }
+
+    try {
+      await fs.unlink(filePath);
+      this.logger.log(`🗑️ Đã xóa file media: ${filename}`);
+      return {
+        message: 'Xóa tập tin media thành công',
+        filename,
+      };
+    } catch (error) {
+      this.logger.error(`Lỗi khi xóa file media: ${filePath}`, error);
+      throw new InternalServerErrorException('Không thể xóa tập tin media trên ổ đĩa');
+    }
+  }
 
   /**
    * Trích xuất tên file từ URL tương đối hoặc tuyệt đối.
@@ -36,7 +211,12 @@ export class UploadService {
       return null;
     }
 
-    if (!trimmed.includes('/uploads/images/') && !trimmed.startsWith('category-icon-') && !trimmed.startsWith('product-')) {
+    if (
+      !trimmed.includes('/uploads/images/') &&
+      !trimmed.startsWith('category-icon-') &&
+      !trimmed.startsWith('product-') &&
+      !trimmed.startsWith('media-')
+    ) {
       return null;
     }
 
@@ -166,5 +346,59 @@ export class UploadService {
     }
 
     return deletedCount;
+  }
+
+  /**
+   * Đổi tên file media an toàn và đồng bộ URL trong cơ sở dữ liệu nếu có.
+   */
+  async renameMediaFile(
+    oldFilename: string,
+    newFilenameRaw: string,
+  ): Promise<{ filename: string; url: string; message: string }> {
+    const ext = extname(oldFilename).toLowerCase();
+    let safeName = newFilenameRaw.trim().replace(/[^a-zA-Z0-9_-]/g, '-');
+    if (!safeName.endsWith(ext)) {
+      safeName += ext;
+    }
+
+    const oldPath = join(this.uploadDir, oldFilename);
+    const newPath = join(this.uploadDir, safeName);
+
+    if (!existsSync(oldPath)) {
+      throw new NotFoundException(`Tập tin '${oldFilename}' không tồn tại.`);
+    }
+
+    if (existsSync(newPath) && safeName !== oldFilename) {
+      throw new BadRequestException(`Tập tin '${safeName}' đã tồn tại.`);
+    }
+
+    await fs.rename(oldPath, newPath);
+
+    const oldUrl = `/uploads/images/${oldFilename}`;
+    const newUrl = `/uploads/images/${safeName}`;
+
+    // Cập nhật database nếu có tham chiếu
+    try {
+      await this.prisma.category.updateMany({
+        where: { iconUrl: oldUrl },
+        data: { iconUrl: newUrl },
+      });
+      await this.prisma.product.updateMany({
+        where: { imageUrl: oldUrl },
+        data: { imageUrl: newUrl },
+      });
+      await this.prisma.banner.updateMany({
+        where: { imageUrl: oldUrl },
+        data: { imageUrl: newUrl },
+      });
+    } catch (e) {
+      this.logger.warn(`Could not update references for renamed file ${oldFilename}: ${e}`);
+    }
+
+    return {
+      filename: safeName,
+      url: newUrl,
+      message: `Đổi tên file thành '${safeName}' thành công.`,
+    };
   }
 }

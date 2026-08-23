@@ -1,7 +1,4 @@
-/**
- * Utility: Convert TipTap/ProseMirror JSON document -> HTML string
- * Dùng để render rich text description từ backend (shortDescription, longDescription)
- */
+import { getImageUrl } from './image-url';
 
 type TipTapNode = {
   type: string;
@@ -71,13 +68,24 @@ function renderNode(node: TipTapNode): string {
       const inner = renderInlineContent(node.content);
       // Bỏ qua paragraph rỗng hoàn toàn
       if (!inner.trim()) return '<br>';
-      return `<p>${inner}</p>`;
+      const align = (node.attrs?.textAlign as string) || (node.attrs?.align as string) || '';
+      let alignClass = '';
+      if (align === 'center') alignClass = ' class="text-center"';
+      else if (align === 'right') alignClass = ' class="text-right"';
+      else if (align === 'justify') alignClass = ' class="text-justify"';
+      else if (align === 'left') alignClass = ' class="text-left"';
+      return `<p${alignClass}>${inner}</p>`;
     }
 
     case 'heading': {
       const level = (node.attrs?.level as number) || 2;
       const inner = renderInlineContent(node.content);
-      return `<h${level}>${inner}</h${level}>`;
+      const align = (node.attrs?.textAlign as string) || (node.attrs?.align as string) || '';
+      let alignClass = '';
+      if (align === 'center') alignClass = ' class="text-center"';
+      else if (align === 'right') alignClass = ' class="text-right"';
+      else if (align === 'left') alignClass = ' class="text-left"';
+      return `<h${level}${alignClass}>${inner}</h${level}>`;
     }
 
     case 'bulletList': {
@@ -112,6 +120,35 @@ function renderNode(node: TipTapNode): string {
         .map((n) => escapeHtml(n.text || ''))
         .join('\n');
       return `<pre><code>${code}</code></pre>`;
+    }
+
+    case 'image': {
+      const rawSrc = (node.attrs?.src as string) || '';
+      if (!rawSrc) return '';
+      const src = getImageUrl(rawSrc);
+      const alt = escapeHtml((node.attrs?.alt as string) || '');
+      const title = escapeHtml((node.attrs?.title as string) || '');
+      const width = (node.attrs?.width as string) || '100%';
+      const align = (node.attrs?.align as string) || 'center';
+      const href = (node.attrs?.href as string) || '';
+
+      let alignContainerClass = 'text-center';
+      let imgAlignClass = 'mx-auto';
+      if (align === 'left') {
+        alignContainerClass = 'text-left';
+        imgAlignClass = 'mr-auto';
+      } else if (align === 'right') {
+        alignContainerClass = 'text-right';
+        imgAlignClass = 'ml-auto';
+      }
+
+      let imgTag = `<img src="${src}" alt="${alt}" title="${title}" style="max-width: ${width};" class="rounded-2xl shadow-md border border-slate-100 object-cover inline-block ${imgAlignClass}" loading="lazy" />`;
+
+      if (href) {
+        imgTag = `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" class="inline-block transition-transform hover:scale-[1.01]" title="${title || alt || 'Xem liên kết'}">${imgTag}</a>`;
+      }
+
+      return `<figure class="my-6 ${alignContainerClass}">${imgTag}${title || alt ? `<figcaption class="text-xs text-slate-500 mt-2 font-medium">${title || alt}</figcaption>` : ''}</figure>`;
     }
 
     case 'horizontalRule':

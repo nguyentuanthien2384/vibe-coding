@@ -17,6 +17,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'orders', label: 'Đơn hàng', href: '/orders', iconName: 'ListOrdered', permissionRequired: 'order.view' },
       { id: 'products', label: 'Sản phẩm', href: '/products', iconName: 'Box', permissionRequired: 'product.view' },
       { id: 'categories', label: 'Danh mục', href: '/categories', iconName: 'FolderTree', permissionRequired: 'category.manage' },
+      { id: 'media', label: 'Quản lý Media', href: '/media', iconName: 'Image', permissionRequired: 'product.view' },
       { id: 'customers', label: 'Khách hàng', href: '/customers', iconName: 'Users', permissionRequired: 'customer.view' },
     ],
   },

@@ -345,3 +345,15 @@
     3. Cập nhật `order.userId = newUser.id` cho tất cả đơn hàng trong quá khứ của khách hàng này.
     4. Di chuyển toàn bộ sổ địa chỉ (từ Redis & Orders) sang bảng `Address` của `newUser`.
     5. Xóa bỏ các key rác của khách vãng lai trên Redis và xóa cache thống kê. 0 lỗi TypeScript trên cả 3 dự án (`npx tsc --noEmit`).
+
+## [2026-08-23] Hoàn thành Hệ Thống Quản Lý Media & Trình Soạn Thảo WYSIWYG Visual Editor
+- **Hệ thống Quản lý Media ([MediaManagerModal](file:///vibe_coding/ecommerce-platform/app/dash/my-app/features/media/components/media-manager-modal.tsx), [MediaPageClient](file:///vibe_coding/ecommerce-platform/app/dash/my-app/features/media/components/media-page-client.tsx), [EditMediaModal](file:///vibe_coding/ecommerce-platform/app/dash/my-app/features/media/components/edit-media-modal.tsx), [MediaPreviewModal](file:///vibe_coding/ecommerce-platform/app/dash/my-app/features/media/components/media-preview-modal.tsx)):**
+  - Thiết kế giao diện lưới vuông (Square Grid) trực quan, bo góc mềm mại (`rounded-2xl`) đồng bộ 100% với mockup.
+  - Đầy đủ tính năng: Tải ảnh mới (Drag-Drop / File Picker), Xem danh sách phân trang và tìm kiếm realtime debounced.
+  - Xem ảnh phóng to (Lightbox Zoom), Sửa tên file / thông tin ảnh (Rename & Metadata sync), Xóa ảnh an toàn kèm cảnh báo nếu đang được liên kết trong sản phẩm / danh mục.
+  - Tạo trang Quản lý Media độc lập (`/media`) trên Sidebar Admin Dashboard và Popup Picker tích hợp trong Form sản phẩm và Trình soạn thảo.
+- **Trình Soạn Thảo WYSIWYG Visual Editor ([JSONRichEditor](file:///vibe_coding/ecommerce-platform/app/dash/my-app/features/products/components/rich-editor/json-rich-editor.tsx)):**
+  - Hiển thị trực quan hình ảnh thật 100% trong khung soạn thảo, loại bỏ hoàn toàn hiển thị mã raw markdown thô.
+  - Thanh điều khiển nổi khi chọn ảnh: Đổi kích thước nhanh (`25%`, `50%`, `75%`, `100%`), Căn lề (`Trái`, `Giữa`, `Phải`), Di chuyển nhanh Lên/Xuống (`Move Up/Down`), Cắt (`Ctrl+X`), Sao chép (`Ctrl+C`), Dán ảnh (`Ctrl+V`), Xóa ảnh.
+  - Nhấp 1 lần (Single Click) chọn ảnh và hiển thị viền xanh outline riêng biệt; Nhấp đúp chuột (Double Click) mở Modal Cài đặt Chi tiết (Alt, Title, Link).
+  - Đồng bộ hai chiều TipTap JSON Schema (`domToTipTap` & `tiptapToEditorHTML`), hiển thị tương thích hoàn toàn sang Storefront (`tiptap-to-html.ts`). 0 lỗi TypeScript trên cả 3 dự án (`npx tsc --noEmit`).

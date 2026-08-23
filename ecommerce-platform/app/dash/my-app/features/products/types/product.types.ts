@@ -13,12 +13,18 @@ export interface ProductGalleryItem {
 
 export interface JSONEditorContent {
   type: 'doc';
+  attrs?: Record<string, unknown>;
   content: Array<{
     type: string;
+    attrs?: Record<string, unknown>;
+    text?: string;
+    marks?: Array<{ type: string; attrs?: Record<string, unknown> }>;
     content?: Array<{
       type: string;
+      attrs?: Record<string, unknown>;
       text?: string;
       marks?: Array<{ type: string; attrs?: Record<string, unknown> }>;
+      content?: Array<Record<string, unknown>>;
     }>;
   }>;
 }
