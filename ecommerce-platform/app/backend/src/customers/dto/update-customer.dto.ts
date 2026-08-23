@@ -1,4 +1,5 @@
-import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
+import { CustomerAccountStatus } from './update-customer-status.dto';
 
 export class UpdateCustomerDto {
   @IsOptional()
@@ -14,6 +15,11 @@ export class UpdateCustomerDto {
   email?: string;
 
   @IsOptional()
+  @IsEnum(CustomerAccountStatus)
+  status?: CustomerAccountStatus;
+
+  @IsOptional()
   @IsString()
   notes?: string;
 }
+

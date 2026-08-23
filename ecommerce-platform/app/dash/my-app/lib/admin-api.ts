@@ -37,7 +37,11 @@ async function refreshSession(): Promise<void> {
 }
 
 export async function adminFetchResponse(path: string, options: RequestInit = {}): Promise<Response> {
-  const response = await fetch(toProxyUrl(path), { ...options, credentials: 'include' });
+  const response = await fetch(toProxyUrl(path), {
+    cache: 'no-store',
+    ...options,
+    credentials: 'include',
+  });
   if (response.status !== 401 || path.includes('/auth/refresh')) return response;
 
   if (isRefreshing) {

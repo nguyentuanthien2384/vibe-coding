@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Clock } from 'lucide-react';
+import { ArrowLeft, Clock, Check, Loader2 } from 'lucide-react';
 import { OrderStatusBadge } from './order-status-badge';
 import { PaymentStatusBadge } from './payment-status-badge';
 import { OrderStatus, PaymentStatus } from '../types/order.types';
@@ -12,6 +12,8 @@ export interface OrderDetailHeaderProps {
   orderStatus: OrderStatus;
   paymentStatus: PaymentStatus;
   onChangeStatusClick: () => void;
+  onQuickConfirmClick?: () => void;
+  isUpdatingStatus?: boolean;
 }
 
 export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
@@ -20,6 +22,8 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
   orderStatus,
   paymentStatus,
   onChangeStatusClick,
+  onQuickConfirmClick,
+  isUpdatingStatus = false,
 }) => {
   return (
     <div className="space-y-4">
@@ -52,10 +56,31 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-3 self-start md:self-auto">
+        <div className="flex items-center gap-3 self-start md:self-auto flex-wrap">
+          {orderStatus === 'PENDING' && onQuickConfirmClick && (
+            <button
+              onClick={onQuickConfirmClick}
+              disabled={isUpdatingStatus}
+              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {isUpdatingStatus ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Đang xác nhận...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  <span>Xác nhận đơn hàng</span>
+                </>
+              )}
+            </button>
+          )}
+
           <button
             onClick={onChangeStatusClick}
-            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all"
+            disabled={isUpdatingStatus}
+            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all cursor-pointer disabled:opacity-50"
           >
             Đổi trạng thái
           </button>
@@ -65,3 +90,4 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
     </div>
   );
 };
+

@@ -25,7 +25,7 @@ const CustomerStatusBadge = ({ status, className = '' }: CustomerStatusBadgeProp
 
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full border ${style} ${className}`}
+      className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full border whitespace-nowrap ${style} ${className}`}
     >
       <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 opacity-75" />
       {label}

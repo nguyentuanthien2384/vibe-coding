@@ -8,18 +8,20 @@ import { PaymentStatusBadge } from './payment-status-badge';
 import { QuickStatusDropdown } from './quick-status-dropdown';
 import { QuickPaymentStatusDropdown } from './quick-payment-status-dropdown';
 import { PrintInvoiceButton } from './print-invoice-button';
-import { Eye, FileText } from 'lucide-react';
+import { Eye, FileText, Check } from 'lucide-react';
 
 export interface OrderTableRowProps {
   order: OrderListItem;
   onUpdateStatus: (id: string, newStatus: OrderStatus) => void;
   onUpdatePaymentStatus?: (id: string, newStatus: PaymentStatus) => void;
+  onQuickConfirm?: (id: string, orderCode: string) => void;
 }
 
 export const OrderTableRow: React.FC<OrderTableRowProps> = ({
   order,
   onUpdateStatus,
   onUpdatePaymentStatus,
+  onQuickConfirm,
 }) => {
   const formattedTotal = new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -90,7 +92,18 @@ export const OrderTableRow: React.FC<OrderTableRowProps> = ({
 
       {/* Actions */}
       <td className="py-4 px-5 text-right">
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex items-center justify-end gap-1.5">
+          {order.orderStatus === 'PENDING' && onQuickConfirm && (
+            <button
+              onClick={() => onQuickConfirm(String(order.id), order.orderCode)}
+              className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-xl transition-all border border-emerald-200/80 flex items-center gap-1 cursor-pointer shadow-2xs"
+              title="Xác nhận đơn hàng ngay"
+            >
+              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span className="hidden xl:inline">Xác nhận</span>
+            </button>
+          )}
+
           <QuickStatusDropdown
             currentStatus={order.orderStatus}
             onSelectStatus={(newStatus) => onUpdateStatus(String(order.id), newStatus)}

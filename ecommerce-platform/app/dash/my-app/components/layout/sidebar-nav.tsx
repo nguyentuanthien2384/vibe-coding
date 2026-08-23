@@ -1,36 +1,32 @@
 'use client';
 
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { NavGroup, NavItem } from '../../types/nav.types';
 import { AdminRole } from '../../types/admin-user.types';
 import { useAdminAuthStore } from '../../store/admin-auth.store';
+import { useOrderStatsStore } from '../../store/order-stats.store';
 import SidebarNavGroup from './sidebar-nav-group';
 
 const NAV_GROUPS: NavGroup[] = [
   {
     id: 'main',
+    title: 'QUẢN LÝ KINH DOANH',
     items: [
       { id: 'dashboard', label: 'Dashboard', href: '/dashboard', iconName: 'LayoutGrid' },
-      { id: 'categories', label: 'Categories', href: '/categories', iconName: 'FolderTree', permissionRequired: 'category.manage' },
-      { id: 'products', label: 'Products', href: '/products', iconName: 'Box', permissionRequired: 'product.view' },
-      { id: 'favorites', label: 'Favorites', href: '/favorites', iconName: 'Heart', rolesAllowed: ['ADMIN'] },
-      { id: 'inbox', label: 'Inbox', href: '/inbox', iconName: 'Mail', rolesAllowed: ['ADMIN'] },
-      { id: 'orders', label: 'Order Lists', href: '/orders', iconName: 'ListOrdered', badgeCount: 5, permissionRequired: 'order.view' },
-      { id: 'customers', label: 'Customers', href: '/customers', iconName: 'Users', permissionRequired: 'customer.view' },
-      { id: 'staffs', label: 'Staffs', href: '/staffs', iconName: 'ShieldCheck', rolesAllowed: ['ADMIN'] },
-      { id: 'stock', label: 'Product Stock', href: '/stock', iconName: 'Package', permissionRequired: 'product.view' },
-      { id: 'settings', label: 'Settings', href: '/settings', iconName: 'Settings', permissionsRequired: ['setting.manage', 'banner.manage'] },
+      { id: 'orders', label: 'Đơn hàng', href: '/orders', iconName: 'ListOrdered', permissionRequired: 'order.view' },
+      { id: 'products', label: 'Sản phẩm', href: '/products', iconName: 'Box', permissionRequired: 'product.view' },
+      { id: 'categories', label: 'Danh mục', href: '/categories', iconName: 'FolderTree', permissionRequired: 'category.manage' },
+      { id: 'customers', label: 'Khách hàng', href: '/customers', iconName: 'Users', permissionRequired: 'customer.view' },
     ],
   },
   {
-    id: 'pages',
-    title: 'PAGES',
+    id: 'system',
+    title: 'HỆ THỐNG & CÀI ĐẶT',
     items: [
-      { id: 'pricing', label: 'Pricing', href: '/dashboard/pricing', iconName: 'Tag', rolesAllowed: ['ADMIN'] },
-      { id: 'calendar', label: 'Calendar', href: '/dashboard/calendar', iconName: 'Calendar' },
-      { id: 'todo', label: 'To-Do', href: '/dashboard/todo', iconName: 'CheckSquare' },
-      { id: 'team', label: 'Team', href: '/dashboard/team', iconName: 'Users', rolesAllowed: ['ADMIN'] },
-      { id: 'ui-elements', label: 'UI Elements', href: '/dashboard/ui', iconName: 'FileText', rolesAllowed: ['ADMIN'] },
+      { id: 'staffs', label: 'Nhân sự & Phân quyền', href: '/staffs', iconName: 'ShieldCheck', rolesAllowed: ['ADMIN'] },
+      { id: 'settings', label: 'Cài đặt hệ thống', href: '/settings', iconName: 'Settings', permissionsRequired: ['setting.manage', 'banner.manage'] },
+      { id: 'profile', label: 'Hồ sơ cá nhân', href: '/profile', iconName: 'UserCheck' },
     ],
   },
 ];
@@ -45,6 +41,19 @@ const SidebarNav = ({ isCollapsed }: SidebarNavProps) => {
   const user = useAdminAuthStore((s) => s.user);
   const userRole = user?.role;
   const userPermissions = user?.permissions || [];
+
+  const { pendingCount, fetchPendingCount } = useOrderStatsStore();
+
+  // Tự động tải số lượng đơn hàng chờ xử lý và làm mới định kỳ mỗi 30s
+  useEffect(() => {
+    if (user) {
+      fetchPendingCount();
+      const timer = setInterval(() => {
+        fetchPendingCount();
+      }, 30000);
+      return () => clearInterval(timer);
+    }
+  }, [user, fetchPendingCount]);
 
   const isItemAllowed = (item: NavItem): boolean => {
     // 1. Quản trị viên (ADMIN) luôn luôn có toàn quyền truy cập tất cả chức năng
@@ -70,10 +79,20 @@ const SidebarNav = ({ isCollapsed }: SidebarNavProps) => {
     return true;
   };
 
-
   const filteredGroups = NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter(isItemAllowed),
+    items: group.items
+      .filter(isItemAllowed)
+      .map((item) => {
+        // Gắn số lượng đơn hàng chưa xử lý động vào menu "Đơn hàng"
+        if (item.id === 'orders') {
+          return {
+            ...item,
+            badgeCount: pendingCount,
+          };
+        }
+        return item;
+      }),
   })).filter((group) => group.items.length > 0);
 
   return (
@@ -91,3 +110,4 @@ const SidebarNav = ({ isCollapsed }: SidebarNavProps) => {
 };
 
 export default SidebarNav;
+

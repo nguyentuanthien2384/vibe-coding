@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ProductDetailData } from "@/types/product-detail";
+import { tiptapToHtml } from "@/lib/tiptap-to-html";
 
 interface ProductTabsProps {
   product: ProductDetailData;
@@ -68,13 +69,29 @@ export const ProductTabs = ({ product }: ProductTabsProps) => {
       <div className="p-6 sm:p-8">
         {activeTab === "description" ? (
           <div className="max-w-4xl space-y-6">
-            <h3 className="text-xl font-bold text-slate-900 leading-snug">
-              Đỉnh cao ẩm thực đêm - Tiếp năng lượng vượt deadline
-            </h3>
-            <p className="text-slate-600 leading-relaxed text-sm sm:text-base">
-              {product.description ||
-                "Không chỉ là món ăn nhanh đơn thuần, sản phẩm của TechBite là sự kết hợp hoàn hảo giữa nguyên liệu thượng hạng và kỹ thuật chế biến tỉ mỉ. Đảm bảo mang tới cho bạn trải nghiệm tuyệt vời nhất."}
-            </p>
+            {(() => {
+              const longHtml = tiptapToHtml(product.longDescription);
+              if (longHtml) {
+                return (
+                  <div
+                    className="prose"
+                    dangerouslySetInnerHTML={{ __html: longHtml }}
+                  />
+                );
+              }
+              // Fallback: heading + plain text description
+              return (
+                <>
+                  <h3 className="text-xl font-bold text-slate-900 leading-snug">
+                    Đỉnh cao ẩm thực đêm - Tiếp năng lượng vượt deadline
+                  </h3>
+                  <p className="text-slate-600 leading-relaxed text-sm sm:text-base">
+                    {product.description ||
+                      "Không chỉ là món ăn nhanh đơn thuần, sản phẩm của TechBite là sự kết hợp hoàn hảo giữa nguyên liệu thượng hạng và kỹ thuật chế biến tỉ mỉ. Đảm bảo mang tới cho bạn trải nghiệm tuyệt vời nhất."}
+                  </p>
+                </>
+              );
+            })()}
 
             {/* Highlights Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 bg-orange-50/60 p-5 sm:p-6 rounded-xl border border-orange-100">

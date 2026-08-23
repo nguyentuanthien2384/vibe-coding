@@ -28,7 +28,9 @@ export interface CustomerListItem {
   totalSpent: number;
   createdAt: string;
   lastOrderAt?: string | null;
+  notes?: string | null;
 }
+
 
 export interface CustomerDetail extends CustomerListItem {
   averageOrderValue: number;

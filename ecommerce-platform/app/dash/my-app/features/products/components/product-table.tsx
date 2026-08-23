@@ -33,13 +33,13 @@ export default function ProductTable({
         <table className="w-full text-left border-collapse">
           <thead className="bg-gray-50/80 text-xs font-extrabold text-gray-500 uppercase tracking-widest border-b border-gray-100">
             <tr>
-              <th className="px-6 py-4">Ảnh</th>
-              <th className="px-6 py-4">Tên sản phẩm & Slug</th>
-              <th className="px-6 py-4">Chuyên mục</th>
-              <th className="px-6 py-4">Giá bán</th>
-              <th className="px-6 py-4 text-center">Tồn kho</th>
-              <th className="px-6 py-4">Trạng thái</th>
-              <th className="px-6 py-4 text-right">Thao tác</th>
+              <th className="px-6 py-4 whitespace-nowrap">Ảnh</th>
+              <th className="px-6 py-4 whitespace-nowrap">Tên sản phẩm & Slug</th>
+              <th className="px-6 py-4 whitespace-nowrap">Chuyên mục</th>
+              <th className="px-6 py-4 whitespace-nowrap">Giá bán</th>
+              <th className="px-6 py-4 text-center whitespace-nowrap">Tồn kho</th>
+              <th className="px-6 py-4 whitespace-nowrap">Trạng thái</th>
+              <th className="px-6 py-4 text-right whitespace-nowrap">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">

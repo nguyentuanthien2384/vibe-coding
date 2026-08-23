@@ -81,6 +81,7 @@ export class AdminCustomersService {
         phone: true,
         avatarUrl: true,
         isActive: true,
+        notes: true,
         createdAt: true,
       },
     });
@@ -122,6 +123,7 @@ export class AdminCustomersService {
           lastOrderAt: orderAgg._max.createdAt
             ? orderAgg._max.createdAt.toISOString()
             : null,
+          notes: user.notes || null,
         };
       }),
     );
@@ -637,6 +639,7 @@ export class AdminCustomersService {
     if (rawId.startsWith('guest:')) {
       const targetIdentifier = rawId.replace('guest:', '').trim().toLowerCase();
 
+      // 1. Lưu ghi chú nội bộ của khách vãng lai vào Redis
       if (dto.notes !== undefined) {
         await this.redisService.setEx(
           `customer:notes:guest:${targetIdentifier}`,
@@ -644,6 +647,53 @@ export class AdminCustomersService {
           dto.notes,
         );
       }
+
+      // 2. Cập nhật thông tin trong các đơn hàng của khách vãng lai nếu có thay đổi
+      const orderUpdateData: { customerName?: string; customerEmail?: string; customerPhone?: string } = {};
+      if (dto.fullName && dto.fullName.trim()) {
+        orderUpdateData.customerName = dto.fullName.trim().replace(/\s*\(Khách vãng lai\)$/i, '');
+      }
+      if (dto.email && dto.email.trim()) {
+        orderUpdateData.customerEmail = dto.email.trim().toLowerCase();
+      }
+      if (dto.phone && dto.phone.trim()) {
+        orderUpdateData.customerPhone = dto.phone.trim();
+      }
+
+      if (Object.keys(orderUpdateData).length > 0) {
+        if (targetIdentifier.startsWith('order-')) {
+          const orderId = parseInt(targetIdentifier.replace('order-', ''), 10);
+          if (!isNaN(orderId)) {
+            await this.prisma.order.update({
+              where: { id: orderId },
+              data: orderUpdateData,
+            });
+          }
+        } else {
+          await this.prisma.order.updateMany({
+            where: {
+              OR: [
+                { customerEmail: { equals: targetIdentifier } },
+                { customerPhone: { equals: targetIdentifier } },
+              ],
+            },
+            data: orderUpdateData,
+          });
+        }
+
+        // Nếu email hoặc SĐT thay đổi, di chuyển notes sang key mới nếu cần
+        const newIdentifier = (orderUpdateData.customerEmail || orderUpdateData.customerPhone || targetIdentifier).toLowerCase();
+        if (newIdentifier !== targetIdentifier) {
+          const existingNotes = dto.notes !== undefined
+            ? dto.notes
+            : await this.redisService.get(`customer:notes:guest:${targetIdentifier}`);
+          if (existingNotes) {
+            await this.redisService.setEx(`customer:notes:guest:${newIdentifier}`, 86400 * 365, existingNotes);
+          }
+        }
+      }
+
+      await this.redisService.del('cache:v1:admin:customers:stats');
 
       return {
         statusCode: 200,
@@ -681,15 +731,26 @@ export class AdminCustomersService {
       }
     }
 
+    const updateData: any = {};
+    if (dto.fullName) updateData.fullName = dto.fullName.trim();
+    if (dto.phone) updateData.phone = dto.phone.trim();
+    if (dto.email) updateData.email = dto.email.trim().toLowerCase();
+    if (dto.notes !== undefined) updateData.notes = dto.notes.trim();
+    if (dto.status !== undefined) {
+      updateData.isActive = dto.status === CustomerAccountStatus.ACTIVE;
+    }
+
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
-      data: {
-        ...(dto.fullName && { fullName: dto.fullName.trim() }),
-        ...(dto.phone && { phone: dto.phone.trim() }),
-        ...(dto.email && { email: dto.email.trim().toLowerCase() }),
-        ...(dto.notes !== undefined && { notes: dto.notes.trim() }),
-      },
+      data: updateData,
     });
+
+    if (dto.status === CustomerAccountStatus.BLOCKED) {
+      await this.redisService.delByPattern(`auth:refresh:${userId}:*`);
+      await this.redisService.setEx(`auth:user_blocked:${userId}`, 900, 'true');
+    }
+
+    await this.redisService.del('cache:v1:admin:customers:stats');
 
     return {
       statusCode: 200,
@@ -699,6 +760,8 @@ export class AdminCustomersService {
         fullName: updatedUser.fullName,
         email: updatedUser.email,
         phone: updatedUser.phone,
+        status: updatedUser.isActive ? 'ACTIVE' : 'BLOCKED',
+        isActive: updatedUser.isActive,
         notes: updatedUser.notes,
         updatedAt: updatedUser.updatedAt.toISOString(),
       },

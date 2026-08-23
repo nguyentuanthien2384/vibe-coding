@@ -12,6 +12,7 @@ import { OrderListItem, OrderStatus, PaymentStatus } from '../types/order.types'
 import { useDebounce } from '@/hooks/use-debounce';
 import { useToast } from '@/components/ui/toast';
 import { ordersApi, AdminOrderSummaryStats } from '@/lib/orders-api';
+import { useOrderStatsStore } from '../../../store/order-stats.store';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export const OrderListPageClient: React.FC = () => {
@@ -92,6 +93,9 @@ export const OrderListPageClient: React.FC = () => {
       setTotalPages(res.pagination?.totalPages || 1);
       setTotalItems(res.pagination?.total || 0);
       setSummaryStats(res.summaryStats || null);
+      if (res.summaryStats?.pendingCount !== undefined) {
+        useOrderStatsStore.getState().setPendingCount(res.summaryStats.pendingCount);
+      }
     } catch (err: any) {
       const errMsg = err?.message || 'Không thể tải danh sách đơn hàng từ máy chủ';
       setError(errMsg);
@@ -155,22 +159,65 @@ export const OrderListPageClient: React.FC = () => {
   const handleConfirmUpdateStatus = async () => {
     if (!statusModal) return;
 
+    const targetId = statusModal.orderId;
+    const newStatus = statusModal.targetStatus;
+    const orderCode = statusModal.orderCode;
+    const previousStatus = statusModal.currentStatus;
+
+    // 1. Optimistic update: Cập nhật ngay trên UI để phản hồi tức thì không cần F5
+    setOrders((prev) =>
+      prev.map((ord) =>
+        String(ord.id) === String(targetId) ? { ...ord, orderStatus: newStatus } : ord
+      )
+    );
+    setStatusModal(null);
     setIsUpdatingStatus(true);
+
     try {
-      await ordersApi.updateStatus(statusModal.orderId, {
-        orderStatus: statusModal.targetStatus,
+      await ordersApi.updateStatus(targetId, {
+        orderStatus: newStatus,
       });
 
       showToast(
         'success',
-        `Đã chuyển đơn hàng ${statusModal.orderCode} sang trạng thái ${statusModal.targetStatus} thành công!`
+        `Đã chuyển đơn hàng ${orderCode} sang trạng thái ${newStatus} thành công!`
       );
-      setStatusModal(null);
       await fetchOrders();
+      await useOrderStatsStore.getState().fetchPendingCount();
     } catch (err: any) {
+      // Rollback
+      setOrders((prev) =>
+        prev.map((ord) =>
+          String(ord.id) === String(targetId) ? { ...ord, orderStatus: previousStatus } : ord
+        )
+      );
       showToast('error', err?.message || 'Lỗi khi cập nhật trạng thái đơn hàng');
+      await fetchOrders();
     } finally {
       setIsUpdatingStatus(false);
+    }
+  };
+
+  // Xác nhận đơn hàng nhanh (1-click) ngay từ bảng đơn hàng
+  const handleQuickConfirmOrder = async (id: string | number, orderCode: string) => {
+    // 1. Optimistic update
+    setOrders((prev) =>
+      prev.map((ord) =>
+        String(ord.id) === String(id) ? { ...ord, orderStatus: 'CONFIRMED' } : ord
+      )
+    );
+
+    try {
+      await ordersApi.updateStatus(id, {
+        orderStatus: 'CONFIRMED',
+      });
+
+      showToast('success', `Đã xác nhận đơn hàng ${orderCode} thành công!`);
+      await fetchOrders();
+      await useOrderStatsStore.getState().fetchPendingCount();
+    } catch (err: any) {
+      showToast('error', err?.message || 'Lỗi khi xác nhận đơn hàng');
+      await fetchOrders();
     }
   };
 
@@ -190,20 +237,39 @@ export const OrderListPageClient: React.FC = () => {
   const handleConfirmUpdatePaymentStatus = async () => {
     if (!paymentStatusModal) return;
 
+    const targetId = paymentStatusModal.orderId;
+    const newStatus = paymentStatusModal.targetStatus;
+    const orderCode = paymentStatusModal.orderCode;
+    const previousPaymentStatus = paymentStatusModal.currentStatus;
+
+    // 1. Optimistic update
+    setOrders((prev) =>
+      prev.map((ord) =>
+        String(ord.id) === String(targetId) ? { ...ord, paymentStatus: newStatus } : ord
+      )
+    );
+    setPaymentStatusModal(null);
     setIsUpdatingPaymentStatus(true);
+
     try {
-      await ordersApi.updateStatus(paymentStatusModal.orderId, {
-        paymentStatus: paymentStatusModal.targetStatus,
+      await ordersApi.updateStatus(targetId, {
+        paymentStatus: newStatus,
       });
 
       showToast(
         'success',
-        `Đã cập nhật trạng thái thanh toán đơn hàng ${paymentStatusModal.orderCode} thành công!`
+        `Đã cập nhật trạng thái thanh toán đơn hàng ${orderCode} thành công!`
       );
-      setPaymentStatusModal(null);
       await fetchOrders();
+      await useOrderStatsStore.getState().fetchPendingCount();
     } catch (err: any) {
+      setOrders((prev) =>
+        prev.map((ord) =>
+          String(ord.id) === String(targetId) ? { ...ord, paymentStatus: previousPaymentStatus } : ord
+        )
+      );
       showToast('error', err?.message || 'Lỗi khi cập nhật trạng thái thanh toán');
+      await fetchOrders();
     } finally {
       setIsUpdatingPaymentStatus(false);
     }
@@ -271,6 +337,7 @@ export const OrderListPageClient: React.FC = () => {
         isLoading={isLoading}
         onUpdateStatus={(id, st) => handleTriggerUpdateStatus(id, st)}
         onUpdatePaymentStatus={(id, st) => handleTriggerUpdatePaymentStatus(id, st)}
+        onQuickConfirm={handleQuickConfirmOrder}
       />
 
       {/* Pagination */}

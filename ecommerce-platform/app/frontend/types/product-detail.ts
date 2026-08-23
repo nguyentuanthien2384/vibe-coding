@@ -1,10 +1,17 @@
 // types/product-detail.ts
 
+export type TipTapDoc = {
+  type: 'doc';
+  content?: unknown[];
+} | Record<string, unknown>;
+
 export interface ProductDetailData {
   id: string;
   name: string;
   slug: string;
   description: string | null;
+  shortDescription: TipTapDoc | null;
+  longDescription: TipTapDoc | null;
   price: number;
   originalPrice?: number;
   discountPercentage?: number;

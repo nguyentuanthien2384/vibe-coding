@@ -10,6 +10,8 @@ export interface RawProductDetail {
   name: string;
   slug: string;
   description: string | null;
+  shortDescription: Record<string, unknown> | null;
+  longDescription: Record<string, unknown> | null;
   price: number;
   salePrice: number | null;
   stock: number;
@@ -60,6 +62,8 @@ export async function getProductBySlug(slug: string): Promise<FetchProductDetail
       name: data.name,
       slug: data.slug,
       description: data.description,
+      shortDescription: data.shortDescription || null,
+      longDescription: data.longDescription || null,
       price,
       originalPrice,
       discountPercentage,

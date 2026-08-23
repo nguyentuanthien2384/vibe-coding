@@ -20,11 +20,11 @@ const SidebarNavItem = ({ item, isActive, isCollapsed, onNavigate }: SidebarNavI
     <Link
       href={item.href}
       onClick={onNavigate}
-      title={isCollapsed ? item.label : undefined}
+      title={isCollapsed ? (item.badgeCount ? `${item.label} (${item.badgeCount} đơn chưa xử lý)` : item.label) : undefined}
       className={`
-        flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200
+        relative flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200
         ${isActive
-          ? 'bg-[#4880FF] text-white'
+          ? 'bg-[#4880FF] text-white shadow-sm shadow-blue-500/20'
           : 'text-[#202224] opacity-70 hover:bg-[#F1F4F9] hover:opacity-100'
         }
         ${isCollapsed ? 'justify-center px-0 mx-auto w-10' : ''}
@@ -39,9 +39,18 @@ const SidebarNavItem = ({ item, isActive, isCollapsed, onNavigate }: SidebarNavI
         <span className="text-sm font-semibold truncate">{item.label}</span>
       )}
       {!isCollapsed && item.badgeCount !== undefined && item.badgeCount > 0 && (
-        <span className="ml-auto flex-shrink-0 px-1.5 py-0.5 text-xs font-bold bg-orange-500 text-white rounded-full">
-          {item.badgeCount}
+        <span
+          className={`ml-auto flex-shrink-0 min-w-[20px] h-5 px-1.5 text-[11px] font-extrabold rounded-full inline-flex items-center justify-center transition-all ${
+            isActive
+              ? 'bg-white text-[#4880FF] shadow-xs'
+              : 'bg-amber-500 text-white shadow-xs'
+          }`}
+        >
+          {item.badgeCount > 99 ? '99+' : item.badgeCount}
         </span>
+      )}
+      {isCollapsed && item.badgeCount !== undefined && item.badgeCount > 0 && (
+        <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-white" />
       )}
     </Link>
   );

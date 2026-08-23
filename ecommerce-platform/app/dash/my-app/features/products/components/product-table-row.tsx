@@ -106,7 +106,7 @@ export default function ProductTableRow({
       </td>
 
       {/* 6. Status */}
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 whitespace-nowrap">
         <ProductStatusBadge status={product.status || (product.isActive ? 'ACTIVE' : 'INACTIVE')} />
       </td>
 

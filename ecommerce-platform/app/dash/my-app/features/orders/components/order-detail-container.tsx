@@ -10,6 +10,7 @@ import { UpdatePaymentStatusModal } from './update-payment-status-modal';
 import { OrderDetail, OrderStatus, PaymentStatus } from '../types/order.types';
 import { useToast } from '@/components/ui/toast';
 import { ordersApi } from '@/lib/orders-api';
+import { useOrderStatsStore } from '../../../store/order-stats.store';
 import { AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 
 export interface OrderDetailContainerProps {
@@ -98,7 +99,13 @@ export const OrderDetailContainer: React.FC<OrderDetailContainerProps> = ({
   const handleConfirmStatusChange = async () => {
     if (!order) return;
 
+    const previousStatus = order.orderStatus;
+
+    // 1. Optimistic update trạng thái đơn ngay lập tức trên UI
+    setOrder((prev) => (prev ? { ...prev, orderStatus: targetStatus } : null));
+    setIsModalOpen(false);
     setIsUpdatingStatus(true);
+
     try {
       await ordersApi.updateStatus(order.id, {
         orderStatus: targetStatus,
@@ -108,10 +115,38 @@ export const OrderDetailContainer: React.FC<OrderDetailContainerProps> = ({
         'success',
         `Đã chuyển đơn hàng ${order.orderCode} sang trạng thái ${targetStatus} thành công!`
       );
-      setIsModalOpen(false);
       await fetchOrderDetail();
+      await useOrderStatsStore.getState().fetchPendingCount();
     } catch (err: any) {
+      // Rollback trạng thái nếu API gặp sự cố
+      setOrder((prev) => (prev ? { ...prev, orderStatus: previousStatus } : null));
       showToast('error', err?.message || 'Lỗi khi cập nhật trạng thái đơn hàng');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  // Xác nhận đơn hàng nhanh (1-click) từ PENDING -> CONFIRMED
+  const handleQuickConfirmOrder = async () => {
+    if (!order) return;
+
+    const previousStatus = order.orderStatus;
+
+    // 1. Optimistic update
+    setOrder((prev) => (prev ? { ...prev, orderStatus: 'CONFIRMED' } : null));
+    setIsUpdatingStatus(true);
+
+    try {
+      await ordersApi.updateStatus(order.id, {
+        orderStatus: 'CONFIRMED',
+      });
+
+      showToast('success', `Đã xác nhận đơn hàng ${order.orderCode} thành công!`);
+      await fetchOrderDetail();
+      await useOrderStatsStore.getState().fetchPendingCount();
+    } catch (err: any) {
+      setOrder((prev) => (prev ? { ...prev, orderStatus: previousStatus } : null));
+      showToast('error', err?.message || 'Lỗi khi xác nhận đơn hàng');
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -128,7 +163,13 @@ export const OrderDetailContainer: React.FC<OrderDetailContainerProps> = ({
   const handleConfirmPaymentStatusChange = async () => {
     if (!order || !paymentModal) return;
 
+    const previousPaymentStatus = order.paymentStatus;
+
+    // 1. Optimistic update
+    setOrder((prev) => (prev ? { ...prev, paymentStatus: paymentModal.targetStatus } : null));
+    setPaymentModal(null);
     setIsUpdatingPaymentStatus(true);
+
     try {
       await ordersApi.updateStatus(order.id, {
         paymentStatus: paymentModal.targetStatus,
@@ -138,9 +179,10 @@ export const OrderDetailContainer: React.FC<OrderDetailContainerProps> = ({
         'success',
         `Đã cập nhật trạng thái thanh toán đơn hàng ${order.orderCode} thành ${paymentModal.targetStatus}!`
       );
-      setPaymentModal(null);
       await fetchOrderDetail();
+      await useOrderStatsStore.getState().fetchPendingCount();
     } catch (err: any) {
+      setOrder((prev) => (prev ? { ...prev, paymentStatus: previousPaymentStatus } : null));
       showToast('error', err?.message || 'Lỗi khi cập nhật trạng thái thanh toán');
     } finally {
       setIsUpdatingPaymentStatus(false);
@@ -204,6 +246,8 @@ export const OrderDetailContainer: React.FC<OrderDetailContainerProps> = ({
         orderStatus={order.orderStatus}
         paymentStatus={order.paymentStatus}
         onChangeStatusClick={handleOpenStatusModal}
+        onQuickConfirmClick={handleQuickConfirmOrder}
+        isUpdatingStatus={isUpdatingStatus}
       />
 
       {/* Progress Stepper */}

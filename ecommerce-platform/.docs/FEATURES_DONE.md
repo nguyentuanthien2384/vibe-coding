@@ -285,9 +285,46 @@
   - Lưu và quản lý lịch sử tìm kiếm gần đây trong `localStorage`.
   - Xử lý trọn vẹn 3 trạng thái Loading (Spinner), Error và Empty state. Build thành công 100%, 0 lỗi TypeScript trên cả Backend và Frontend (`npx tsc --noEmit`).
 
+## [2026-08-23] Hoàn thành Trang Tìm kiếm Toàn diện & Nâng cấp Tìm kiếm Linh hoạt (Full-stack Search)
+- **Quy hoạch & Endpoint API:** Xuất bản Backend Plan ([07-global-search-plan.md](file:///d:/vibe_coding/ecommerce-platform/.docs/backend-plans/dashboard/07-global-search-plan.md)) và tài liệu endpoint ([.docs/endpoint-apis/07-global-search-plan.md](file:///d:/vibe_coding/ecommerce-platform/.docs/endpoint-apis/07-global-search-plan.md)).
+- **Database & Chỉ mục:** Thêm các Index `idx_category_name`, `idx_user_role_fullname`, `idx_order_customer_name` vào Prisma Schema ([schema.prisma](file:///d:/vibe_coding/ecommerce-platform/app/backend/prisma/schema.prisma)) và nạp bộ sản phẩm công nghệ ([seed-tech.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/prisma/seed-tech.ts)).
+- **Thuật toán Backend:** Nâng cấp tìm kiếm Tiếng Việt không dấu (`removeVietnameseTones`), đa từ khóa rời rạc và chuẩn hóa URL chi tiết chính xác (`/products/:id/edit`, `/orders/:id`, `/customers/:id`, `/staffs/:id`).
+- **Trang Tìm kiếm Chuyên sâu ([/search](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/app/%28dashboard%29/search/page.tsx)):** Xây dựng trang kết quả tìm kiếm với bộ lọc tab phân loại (Tất cả, Đơn hàng, Sản phẩm, Khách hàng, Danh mục, Nhân sự, Tác vụ nhanh), đồng bộ URL search params, xử lý riêng biệt Empty state theo từng tab và highlight từ khóa. 0 lỗi TypeScript trên cả 3 dự án (`npx tsc --noEmit`).
 
+## [2026-08-23] Hoàn thành Tính năng Chỉnh Sửa Nhanh Khách Hàng (Quick Edit Customer) Ngoài Listing Full-stack
+- **Backend API & Data Sync ([update-customer.dto.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/src/customers/dto/update-customer.dto.ts), [admin-customers.service.ts](file:///d:/vibe_coding/ecommerce-platform/app/backend/src/customers/admin-customers.service.ts)):**
+  - Bổ sung trường `status` (`ACTIVE`, `BLOCKED`, `INACTIVE`) vào `UpdateCustomerDto`.
+  - Cập nhật hàm `update`: Hỗ trợ lưu đồng thời `fullName`, `email`, `phone`, `status`, `notes` cho Khách thành viên (`REGISTERED`) và tự động thu hồi token trên Redis nếu bị khóa (`BLOCKED`).
+  - Hỗ trợ Khách hàng vãng lai (`GUEST`): Cập nhật đồng bộ thông tin `customerName`, `customerEmail`, `customerPhone` trong tất cả các đơn hàng thuộc về định danh khách vãng lai trong MySQL và lưu `notes` vào Redis (`customer:notes:guest:${identifier}`). Tự động xóa cache Redis thống kê.
+- **Frontend Admin Dashboard ([edit-customer-modal.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/customers/components/edit-customer-modal.tsx), [customers-api.ts](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/customers/api/customers-api.ts), [customer-table-row.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/customers/components/customer-table-row.tsx)):**
+  - Tối ưu modal Chỉnh sửa nhanh: Tự động tải `notes` và dữ liệu mới nhất từ backend khi mở modal.
+  - Hỗ trợ đổi nhanh trạng thái tài khoản (Đang hoạt động / Tạm khóa), phân biệt rõ badge khách đăng ký vs khách vãng lai.
+  - Gửi trọn vẹn payload `{ fullName, email, phone, status, notes }` qua `adminFetch`, tự động làm mới bảng danh sách và hiển thị Toast phản hồi. 0 lỗi TypeScript (`npx tsc --noEmit`).
 
-
-
-
-
+## [2026-08-23] Hoàn thành Quản lý Hồ sơ Cá nhân, Đổi mật khẩu & Hiển thị Rich Text HTML Sản phẩm
+- **Quản lý Hồ sơ cá nhân & Đổi mật khẩu ([ProfilePageClient](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/profile/components/profile-page-client.tsx), [ProfileInfoForm](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/profile/components/profile-info-form.tsx), [ChangePasswordForm](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/profile/components/change-password-form.tsx)):**
+  - Tạo trang `/profile` và `/dashboard/profile` với giao diện 2 tab trực quan.
+  - Tab 1: Cập nhật Avatar (hỗ trợ upload ảnh/file), Họ và tên, Số điện thoại, xem Email và danh sách Quyền hạn (Permissions). Đồng bộ tức thì lên Header và Dropdown.
+  - Tab 2: Đổi mật khẩu bảo mật (kiểm tra độ mạnh mật khẩu, checklist quy chuẩn an toàn). Khi đổi thành công, tự động thu hồi toàn bộ token trên Redis và điều hướng về `/login`.
+- **Render Rich Text HTML cho Mô tả Sản phẩm Frontend ([tiptap-to-html.ts](file:///d:/vibe_coding/ecommerce-platform/app/frontend/lib/tiptap-to-html.ts), [product-info.tsx](file:///d:/vibe_coding/ecommerce-platform/app/frontend/components/product-detail/product-info.tsx), [product-tabs.tsx](file:///d:/vibe_coding/ecommerce-platform/app/frontend/components/product-detail/product-tabs.tsx)):**
+  - Chuyển đổi dữ liệu TipTap/ProseMirror JSON (`shortDescription`, `longDescription`) sang định dạng HTML chuẩn.
+  - Thêm CSS layer `.prose` và `.prose-sm` trong `globals.css` để khắc phục triệt để Tailwind CSS v4 reset làm mất định dạng (headings, lists, bold, em, blockquote...).
+- **Tối ưu Badge Trạng thái Sản phẩm & Danh mục ([product-status-badge.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/products/components/product-status-badge.tsx), [status-badge.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/categories/components/status-badge.tsx)):**
+  - Thiết kế lại Badge trạng thái theo chuẩn hiện đại: viền mềm, màu pastel thanh thoát, tích hợp hiệu ứng pulsing dot (chấm phát sáng động cho trạng thái Active).
+  - Thêm `whitespace-nowrap` chống hiện tượng vỡ/gãy dòng chữ ("Đang bán"). 0 lỗi TypeScript trên cả 3 dự án.
+- **Rà soát & Tinh gọn Sidebar Admin Dashboard ([sidebar-nav.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/components/layout/sidebar-nav.tsx)):**
+  - Loại bỏ toàn bộ các menu giả/template Figma không tồn tại trong hệ thống: `Favorites`, `Inbox`, `Product Stock` (đã nằm trong Sản phẩm), `Pricing`, `Calendar`, `To-Do`, `Team`, `UI Elements`.
+  - Cấu trúc lại 2 nhóm menu chuẩn Enterprise:
+    - **Quản lý kinh doanh:** `Dashboard`, `Đơn hàng` (/orders), `Sản phẩm` (/products), `Danh mục` (/categories), `Khách hàng` (/customers).
+    - **Hệ thống & Cài đặt:** `Nhân sự & Phân quyền` (/staffs), `Cài đặt hệ thống` (/settings), `Hồ sơ cá nhân` (/profile).
+- **Hiển Thị Số Lượng Đơn Hàng Chưa Xử Lý Thời Gian Thực ([sidebar-nav.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/components/layout/sidebar-nav.tsx), [sidebar-nav-item.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/components/layout/sidebar-nav-item.tsx), [order-stats.store.ts](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/store/order-stats.store.ts)):**
+  - Xây dựng `useOrderStatsStore` kết nối trực tiếp với backend summary stats (`pendingCount`).
+  - Gắn badge số lượng đơn hàng chưa xử lý (`PENDING`) trực tiếp vào menu "Đơn hàng" trên Sidebar:
+    - Khi Sidebar mở rộng: Hiển thị pill badge số lượng nổi bật (`bg-amber-500 text-white`).
+    - Khi Sidebar thu gọn: Hiển thị notification dot ở góc icon.
+  - Tự động đồng bộ số lượng tức thì mỗi khi nhân viên/admin cập nhật trạng thái đơn hàng và tự động làm mới định kỳ mỗi 30s. 0 lỗi TypeScript trên cả 3 dự án (`npx tsc --noEmit`).
+- **Đồng Bộ Trạng Thái Đơn Hàng & Xác Nhận Nhanh Không Cần F5 ([order-list-page-client.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/orders/components/order-list-page-client.tsx), [order-detail-container.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/orders/components/order-detail-container.tsx), [order-detail-header.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/orders/components/order-detail-header.tsx), [order-table-row.tsx](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/features/orders/components/order-table-row.tsx), [admin-api.ts](file:///d:/vibe_coding/ecommerce-platform/app/dash/my-app/lib/admin-api.ts)):**
+  - Cấu hình `cache: 'no-store'` trong `adminFetchResponse` ngăn trình duyệt giữ cache dữ liệu API cũ.
+  - Tích hợp **Optimistic UI Updates** trên cả danh sách đơn hàng và trang chi tiết đơn: Khi bấm "Xác nhận", trạng thái đơn hàng và badge lập tức đổi sang `CONFIRMED` ngay trên màn hình mà không cần tải lại trang.
+  - Bổ sung nút **Xác nhận đơn hàng nhanh (1-click)** trực tiếp tại hàng bảng đơn và trên thanh tiêu đề chi tiết đơn khi đơn ở trạng thái `PENDING`.
+  - Tự động gọi đồng bộ `useOrderStatsStore.getState().fetchPendingCount()` giảm ngay số lượng đơn chưa xử lý trên Sidebar.

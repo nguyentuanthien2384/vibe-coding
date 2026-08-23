@@ -23,20 +23,20 @@ const UserMenuPopover = ({ user, onClose, onLogout }: UserMenuPopoverProps) => {
       {/* Menu Items */}
       <div className="py-1">
         <Link
-          href="/dashboard/profile"
+          href="/profile"
           onClick={onClose}
           className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#202224] opacity-70 hover:bg-[#F1F4F9] hover:opacity-100 transition-all"
         >
-          <User className="w-4 h-4" />
-          Hồ sơ cá nhân
+          <User className="w-4 h-4 text-[#4880FF]" />
+          <span>Hồ sơ cá nhân & Bảo mật</span>
         </Link>
         <Link
-          href="/dashboard/settings"
+          href="/settings"
           onClick={onClose}
           className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#202224] opacity-70 hover:bg-[#F1F4F9] hover:opacity-100 transition-all"
         >
-          <Settings className="w-4 h-4" />
-          Cài đặt
+          <Settings className="w-4 h-4 text-slate-500" />
+          <span>Cài đặt hệ thống</span>
         </Link>
       </div>
 

@@ -87,25 +87,27 @@ const CustomerTableRow = ({ customer, onStatusClick, onEditClick }: CustomerTabl
           {/* Xem Chi Tiết */}
           <Link
             href={detailUrl}
-            className="p-1.5 text-slate-600 hover:text-[#4880FF] hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition-colors"
-            title="Xem chi tiết khách hàng"
+            className="p-1.5 text-slate-500 hover:text-[#4880FF] hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-xl transition-all"
+            title="Xem chi tiết hồ sơ & lịch sử đơn"
           >
             <Eye className="w-4 h-4" />
           </Link>
 
-          {/* Sửa Thông Tin */}
+          {/* Chỉnh Sửa Nhanh */}
           <button
+            type="button"
             onClick={() => onEditClick(customer)}
-            className="p-1.5 text-slate-600 hover:text-[#4880FF] hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition-colors"
-            title="Sửa thông tin khách hàng"
+            className="p-1.5 text-slate-500 hover:text-[#4880FF] hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-xl transition-all"
+            title="Chỉnh sửa nhanh khách hàng"
           >
             <Edit3 className="w-4 h-4" />
           </button>
 
           {/* Đổi Trạng Thái */}
           <button
+            type="button"
             onClick={() => onStatusClick(customer)}
-            className="p-1.5 text-slate-600 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-colors"
+            className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl transition-all"
             title="Cập nhật trạng thái tài khoản"
           >
             <ShieldAlert className="w-4 h-4" />

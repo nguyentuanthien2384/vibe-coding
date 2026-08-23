@@ -77,7 +77,7 @@ const CategoryTableRow = ({ category, onEdit, onDelete }: CategoryTableRowProps)
       </td>
 
       {/* Trạng thái */}
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 whitespace-nowrap">
         <StatusBadge isActive={category.isActive} />
       </td>
 

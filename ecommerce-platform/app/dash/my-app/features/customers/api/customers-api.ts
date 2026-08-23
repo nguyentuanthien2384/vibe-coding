@@ -142,20 +142,30 @@ export async function updateCustomerStatus(
 }
 
 /**
- * Cập nhật thông tin cá nhân cơ bản của khách hàng
+ * Cập nhật thông tin cá nhân cơ bản của khách hàng (Hỗ trợ Quick Edit)
  */
 export async function updateCustomerInfo(
   input: UpdateCustomerInfoInput
 ): Promise<CustomerDetail> {
+  const payload: any = {
+    fullName: input.fullName,
+    email: input.email,
+    phone: input.phone,
+  };
+
+  if (input.status !== undefined) {
+    payload.status = input.status;
+  }
+
+  if (input.notes !== undefined) {
+    payload.notes = input.notes;
+  }
+
   const res = await adminFetch<any>(
     `/admin/customers/${encodeURIComponent(input.customerId)}`,
     {
       method: 'PATCH',
-      body: JSON.stringify({
-        fullName: input.fullName,
-        email: input.email,
-        phone: input.phone,
-      }),
+      body: JSON.stringify(payload),
     }
   );
 

@@ -10,6 +10,7 @@ export interface OrderTableProps {
   orders: OrderListItem[];
   onUpdateStatus: (id: string, newStatus: OrderStatus) => void;
   onUpdatePaymentStatus?: (id: string, newStatus: PaymentStatus) => void;
+  onQuickConfirm?: (id: string, orderCode: string) => void;
   isLoading?: boolean;
 }
 
@@ -17,6 +18,7 @@ export const OrderTable: React.FC<OrderTableProps> = ({
   orders,
   onUpdateStatus,
   onUpdatePaymentStatus,
+  onQuickConfirm,
   isLoading = false,
 }) => {
   if (isLoading) {
@@ -58,6 +60,7 @@ export const OrderTable: React.FC<OrderTableProps> = ({
                 order={order}
                 onUpdateStatus={onUpdateStatus}
                 onUpdatePaymentStatus={onUpdatePaymentStatus}
+                onQuickConfirm={onQuickConfirm}
               />
             ))}
           </tbody>

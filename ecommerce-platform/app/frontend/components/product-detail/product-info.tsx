@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ProductDetailData } from "@/types/product-detail";
 import { QuantityCounter } from "@/components/ui/quantity-counter";
 import { useCartStore } from "@/store/use-cart-store";
+import { tiptapToHtml } from "@/lib/tiptap-to-html";
 
 interface ProductInfoProps {
   product: ProductDetailData;
@@ -164,10 +165,24 @@ export const ProductInfo = ({ product }: ProductInfoProps) => {
       </div>
 
       {/* Short Description */}
-      <p className="text-slate-600 leading-relaxed text-sm sm:text-base">
-        {product.description ||
-          "Trải nghiệm bùng nổ vị giác với nguyên liệu tươi chọn lọc kỹ lưỡng, nướng chín tới chuẩn bị, hòa quyện cùng công thức sốt độc quyền đậm đà đặc trưng của TechBite."}
-      </p>
+      {(() => {
+        const shortHtml = tiptapToHtml(product.shortDescription);
+        if (shortHtml) {
+          return (
+            <div
+              className="prose prose-sm"
+              dangerouslySetInnerHTML={{ __html: shortHtml }}
+            />
+          );
+        }
+        // Fallback: plain text description
+        return (
+          <p className="text-slate-600 leading-relaxed text-sm sm:text-base">
+            {product.description ||
+              "Trải nghiệm bùng nổ vị giác với nguyên liệu tươi chọn lọc kỹ lưỡng, nướng chín tới chuẩn bị, hòa quyện cùng công thức sốt độc quyền đậm đà đặc trưng của TechBite."}
+          </p>
+        );
+      })()}
 
       {/* Quantity & Actions */}
       <div className="space-y-4 pt-2">

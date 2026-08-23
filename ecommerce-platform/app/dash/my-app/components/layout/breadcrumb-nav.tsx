@@ -10,10 +10,11 @@ const BREADCRUMB_LABELS: Record<string, string> = {
   products: 'Sản phẩm',
   categories: 'Danh mục',
   customers: 'Khách hàng',
-  analytics: 'Thống kê',
+  staffs: 'Nhân sự & Phân quyền',
   staff: 'Nhân viên',
   settings: 'Cài đặt',
-  profile: 'Hồ sơ',
+  profile: 'Hồ sơ cá nhân',
+  search: 'Tìm kiếm',
 };
 
 const BreadcrumbNav = () => {
