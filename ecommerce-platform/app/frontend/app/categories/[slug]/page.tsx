@@ -1,4 +1,3 @@
-// app/categories/[slug]/page.tsx
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import {
@@ -6,10 +5,13 @@ import {
   getProductsList,
   getPromotionBanners,
 } from '@/lib/product-list';
+import { apiFetch, ApiResponse } from '@/lib/api';
 import ProductListHeroBanner from '@/components/product-list/product-list-hero-banner';
 import ProductListSection from '@/components/product-list/product-list-section';
 import { StorefrontShell } from '@/components/layout/storefront-shell';
 import { ProductsPageSearchParams, ProductSortOption } from '@/types/product-list';
+
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ slug: string }> | { slug: string };
@@ -20,7 +22,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
   const filterMeta = await getFilterMeta();
-  const category = filterMeta.categories.find((c) => c.slug === slug);
+  let category = filterMeta.categories.find((c) => c.slug === slug);
+
+  if (!category && slug !== 'all') {
+    try {
+      const directCatRes = await apiFetch<ApiResponse<{ id: number; name: string; slug: string }>>(
+        `/api/v1/categories/${slug}`,
+        { cache: 'no-store' },
+      );
+      if (directCatRes?.data) {
+        category = {
+          id: String(directCatRes.data.id),
+          name: directCatRes.data.name,
+          slug: directCatRes.data.slug,
+          count: 0,
+        };
+      }
+    } catch {
+      // Ignored
+    }
+  }
 
   if (!category || slug === 'all') {
     return {
@@ -47,10 +68,33 @@ export default async function CategoryProductsPage({ params, searchParams }: Pag
   const search = resolvedSearchParams.q || resolvedSearchParams.search;
 
   // Fetch filter metadata first to build category slug -> ID mapping
-  const filterMeta = await getFilterMeta();
+  let filterMeta = await getFilterMeta();
 
-  // Validate category existence (if slug is invalid or 'all', trigger notFound)
-  const currentCategory = filterMeta.categories.find((c) => c.slug === slug);
+  // Validate category existence (nếu chưa có trong filter-meta do cache, tra cứu trực tiếp từ /api/v1/categories/:slug)
+  let currentCategory = filterMeta.categories.find((c) => c.slug === slug);
+  if (!currentCategory && slug !== 'all') {
+    try {
+      const directCatRes = await apiFetch<ApiResponse<{ id: number; name: string; slug: string }>>(
+        `/api/v1/categories/${slug}`,
+        { cache: 'no-store' },
+      );
+      if (directCatRes?.data) {
+        currentCategory = {
+          id: String(directCatRes.data.id),
+          name: directCatRes.data.name,
+          slug: directCatRes.data.slug,
+          count: 0,
+        };
+        filterMeta = {
+          ...filterMeta,
+          categories: [...filterMeta.categories, currentCategory],
+        };
+      }
+    } catch {
+      // Ignored
+    }
+  }
+
   if (!currentCategory || slug === 'all') {
     notFound();
   }

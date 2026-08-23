@@ -24,6 +24,7 @@ export const OrderDetailContainer: React.FC<OrderDetailContainerProps> = ({
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const reorderOrder = useCartStore((state) => state.reorderOrder);
 
   const [order, setOrder] = useState<OrderDetailData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -122,10 +123,10 @@ export const OrderDetailContainer: React.FC<OrderDetailContainerProps> = ({
               Thử lại
             </button>
             <Link
-              href="/profile"
+              href={user ? "/profile" : "/"}
               className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors"
             >
-              Quay lại Hồ sơ
+              {user ? "Quay lại Hồ sơ" : "Quay lại Trang chủ"}
             </Link>
           </div>
         </div>
@@ -149,8 +150,6 @@ export const OrderDetailContainer: React.FC<OrderDetailContainerProps> = ({
 
   const isPaid = order.paymentStatus === "PAID";
   const isCancelled = order.orderStatus === "CANCELLED";
-
-  const reorderOrder = useCartStore((state) => state.reorderOrder);
 
   const handleReorder = async () => {
     if (!order || !order.orderItems || order.orderItems.length === 0) return;

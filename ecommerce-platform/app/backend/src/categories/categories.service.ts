@@ -84,6 +84,34 @@ export class CategoriesService {
   }
 
   /**
+   * Tìm chuyên mục theo slug (active)
+   */
+  async findBySlug(slug: string): Promise<CategoryResponseItem | null> {
+    const category = await this.prisma.category.findUnique({
+      where: { slug, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        iconUrl: true,
+        parentId: true,
+        position: true,
+      },
+    });
+
+    if (!category) return null;
+
+    return {
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      iconUrl: category.iconUrl,
+      position: category.position,
+      children: [],
+    };
+  }
+
+  /**
    * Invalidates category cache. Called when admin updates category data.
    */
   invalidateCache(): void {

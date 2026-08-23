@@ -86,7 +86,7 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <Backdrop isOpen={isOpen} onClick={onClose} />
-      <div className="relative bg-white rounded-2xl max-w-lg w-full p-6 md:p-8 shadow-2xl z-10 border border-slate-100 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
+      <div className="relative bg-white rounded-2xl max-w-lg w-full p-6 md:p-8 shadow-2xl z-50 border border-slate-100 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
         <div className="flex justify-between items-center pb-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <span className="text-xl">📱</span>
@@ -96,7 +96,7 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 p-1 rounded-lg transition-colors"
+            className="text-slate-400 hover:text-slate-700 p-1 rounded-lg transition-colors cursor-pointer"
           >
             ✕
           </button>
@@ -121,6 +121,8 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
                 alt="VietQR Code Payment"
                 width={216}
                 height={216}
+                unoptimized
+                priority
                 className="object-contain rounded-lg"
               />
             ) : (

@@ -23,6 +23,7 @@ import {
   AdminCategoryDeleteResponse,
 } from './interfaces/admin-category.interface';
 import { Prisma } from '@prisma/client';
+import { CategoriesService } from './categories.service';
 
 @Injectable()
 export class AdminCategoriesService {
@@ -32,6 +33,7 @@ export class AdminCategoriesService {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly uploadService: UploadService,
+    private readonly categoriesService: CategoriesService,
   ) {}
 
   // ============================================================
@@ -398,15 +400,19 @@ export class AdminCategoriesService {
   }
 
   /**
-   * Xóa toàn bộ cache public của Categories.
+   * Xóa toàn bộ cache public của Categories & Products Filter-Meta.
    * Bắt buộc gọi sau mỗi thao tác ghi dữ liệu.
    */
   private async invalidatePublicCache(): Promise<void> {
     try {
+      this.categoriesService.invalidateCache();
       await this.redis.delByPattern(CACHE_CONFIG.CATEGORIES.PREFIXES.ALL + '*');
-      this.logger.log('✅ Đã xóa cache public categories sau thao tác admin');
+      await this.redis.delByPattern('cache:v1:products:*');
+      await this.redis.del(CACHE_CONFIG.PRODUCTS.KEYS.FILTER_META);
+      this.logger.log('✅ Đã xóa cache public categories và products filter-meta sau thao tác admin');
     } catch (error) {
-      this.logger.warn(`⚠️ Không thể xóa cache categories: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`⚠️ Không thể xóa cache categories: ${message}`);
     }
   }
 }

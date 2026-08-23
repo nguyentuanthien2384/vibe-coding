@@ -78,14 +78,20 @@ export class MailService {
       let fromAddress: string;
       let replyToAddress: string = '';
 
-      if (config && config.smtpHost && config.smtpUser) {
+      if (
+        config &&
+        config.smtpHost &&
+        config.smtpUser &&
+        config.smtpPassword &&
+        config.smtpPassword.trim() !== ''
+      ) {
         transporter = nodemailer.createTransport({
           host: config.smtpHost,
           port: config.smtpPort || 587,
           secure: config.smtpEncryption === 'ssl' || config.smtpPort === 465,
           auth: {
             user: config.smtpUser,
-            pass: config.smtpPassword || '',
+            pass: config.smtpPassword,
           },
           ...(config.smtpEncryption === 'tls' ? { requireTLS: true } : {}),
           connectionTimeout: 10000,
@@ -95,13 +101,13 @@ export class MailService {
         fromAddress = `"${config.fromName || 'TechBite Platform'}" <${config.fromEmail || config.smtpUser}>`;
         replyToAddress = config.replyToEmail || config.fromEmail || '';
       } else {
-        // Fallback về biến môi trường .env
+        // Fallback về biến môi trường .env hoặc jsonTransport mô phỏng nếu chưa cấu hình mật khẩu SMTP
         const host = process.env.MAIL_HOST || 'smtp.ethereal.email';
         const port = parseInt(process.env.MAIL_PORT || '587', 10);
         const user = process.env.MAIL_USER || '';
         const pass = process.env.MAIL_PASS || '';
 
-        if (user && pass) {
+        if (user && pass && pass.trim() !== '') {
           transporter = nodemailer.createTransport({
             host,
             port,
@@ -114,7 +120,10 @@ export class MailService {
           });
         }
 
-        fromAddress = process.env.MAIL_FROM || '"TechBite Platform" <noreply@techbite.vn>';
+        fromAddress = config?.fromEmail
+          ? `"${config.fromName || 'TechBite Platform'}" <${config.fromEmail}>`
+          : (process.env.MAIL_FROM || '"TechBite Platform" <noreply@techbite.vn>');
+        replyToAddress = config?.replyToEmail || config?.fromEmail || '';
       }
 
       // Lưu cache

@@ -64,6 +64,7 @@ export const CheckoutContainer: React.FC = () => {
   // Errors & Modals
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCompletingCheckout, setIsCompletingCheckout] = useState(false);
   const [activeModal, setActiveModal] = useState<
     "NONE" | "COD_CONFIRM" | "QR_PAYMENT"
   >("NONE");
@@ -151,16 +152,29 @@ export const CheckoutContainer: React.FC = () => {
     }
   };
 
-  // Redirect nếu giỏ hàng trống — chỉ sau khi đã fetch xong VÀ không còn loading
+  // Redirect nếu giỏ hàng trống — chỉ sau khi đã fetch xong VÀ không còn loading VÀ không phải đang hoàn tất checkout
   useEffect(() => {
-    if (mounted && cartStore.isFetched && !cartStore.isLoading && cartStore.items.length === 0) {
+    if (
+      mounted &&
+      !isCompletingCheckout &&
+      cartStore.isFetched &&
+      !cartStore.isLoading &&
+      cartStore.items.length === 0
+    ) {
       showToast({
         message: "Giỏ hàng của bạn đang trống! Vui lòng chọn sản phẩm trước khi thanh toán.",
         type: "error",
       });
       router.replace("/");
     }
-  }, [mounted, cartStore.isFetched, cartStore.isLoading, cartStore.items.length, router]);
+  }, [
+    mounted,
+    isCompletingCheckout,
+    cartStore.isFetched,
+    cartStore.isLoading,
+    cartStore.items.length,
+    router,
+  ]);
 
   // Compute Items - strictly from cartStore without mock fallback
   const items: MiniCartItemData[] = cartStore.items.map((it) => ({
@@ -301,14 +315,22 @@ export const CheckoutContainer: React.FC = () => {
     }
   };
 
-  const handleFinishSuccess = () => {
-    // Clear cart if user had items in Zustand
+  const handleFinishSuccess = (finalCode?: string) => {
+    setIsCompletingCheckout(true);
+    setActiveModal("NONE");
+
+    const orderCodeToUse = finalCode || currentOrderCode;
+
+    // Clear cart in Zustand
     if (cartStore.items.length > 0) {
       cartStore.clearCart();
     }
-    router.push(
-      `/checkout/success?orderCode=${currentOrderCode}&total=${total}&payment=${paymentMethod}`
-    );
+
+    const successUrl = `/checkout/success?orderCode=${encodeURIComponent(
+      orderCodeToUse
+    )}&total=${total}&payment=${paymentMethod}`;
+
+    window.location.href = successUrl;
   };
 
   return (
@@ -358,7 +380,7 @@ export const CheckoutContainer: React.FC = () => {
         isOpen={activeModal === "COD_CONFIRM"}
         orderCode={currentOrderCode}
         totalAmount={total}
-        onConfirm={handleFinishSuccess}
+        onConfirm={() => handleFinishSuccess(currentOrderCode)}
         onClose={() => setActiveModal("NONE")}
       />
 
@@ -368,7 +390,7 @@ export const CheckoutContainer: React.FC = () => {
           orderCode={currentOrderCode}
           qrInfo={qrInfo}
           onClose={() => setActiveModal("NONE")}
-          onPaymentSuccess={handleFinishSuccess}
+          onPaymentSuccess={() => handleFinishSuccess(currentOrderCode)}
         />
       )}
     </>

@@ -272,8 +272,8 @@ export class SettingsService {
         config = await this.loadKey<EmailSettings>('email', {} as EmailSettings);
       }
 
-      if (!config.smtpHost || !config.smtpUser) {
-        throw new BadRequestException('Cấu hình SMTP chưa đầy đủ. Vui lòng điền đầy đủ Host, User và Port.');
+      if (!config.smtpHost || !config.smtpUser || !config.smtpPassword || config.smtpPassword.trim() === '') {
+        throw new BadRequestException('Cấu hình SMTP chưa đầy đủ. Vui lòng điền đầy đủ Host, User, Port và Mật khẩu ứng dụng (App Password).');
       }
 
       const transporter = nodemailer.createTransport({
@@ -282,7 +282,7 @@ export class SettingsService {
         secure: config.smtpEncryption === 'ssl',
         auth: {
           user: config.smtpUser,
-          pass: config.smtpPassword || '',
+          pass: config.smtpPassword,
         },
         ...(config.smtpEncryption === 'tls' ? { requireTLS: true } : {}),
         connectionTimeout: 10000,

@@ -91,16 +91,18 @@ export default async function CheckoutSuccessPage({
           {/* Action CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 pt-2">
             <Link
-              href="/profile"
-              className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-6 rounded-xl transition-all text-sm text-center"
+              href={`/orders/${orderCode}`}
+              className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-6 rounded-xl transition-all text-sm text-center flex items-center justify-center gap-2 cursor-pointer shadow-sm hover:shadow-md"
             >
-              Theo dõi đơn hàng
+              <span>🚚</span>
+              <span>Theo dõi đơn hàng</span>
             </Link>
             <Link
               href="/"
-              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-extrabold py-3.5 px-6 rounded-xl shadow-md shadow-orange-600/25 transition-all text-sm text-center"
+              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-extrabold py-3.5 px-6 rounded-xl shadow-md shadow-orange-600/25 transition-all text-sm text-center flex items-center justify-center gap-2 cursor-pointer"
             >
-              Tiếp tục mua sắm
+              <span>🛒</span>
+              <span>Tiếp tục mua sắm</span>
             </Link>
           </div>
         </div>

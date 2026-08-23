@@ -19,7 +19,7 @@ export const CODConfirmationModal: React.FC<CODConfirmationModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <Backdrop isOpen={isOpen} onClick={onClose} />
-      <div className="relative bg-white rounded-2xl max-w-md w-full p-6 md:p-8 shadow-2xl z-10 border border-slate-100 text-center animate-in fade-in zoom-in duration-200">
+      <div className="relative bg-white rounded-2xl max-w-md w-full p-6 md:p-8 shadow-2xl z-50 border border-slate-100 text-center animate-in fade-in zoom-in duration-200">
         <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
           🚚
         </div>

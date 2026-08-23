@@ -24,9 +24,8 @@ async function apiFetch<T>(
 ): Promise<T> {
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, {
-    ...options,
-    // Next.js: revalidate mỗi 60 giây (ISR)
     next: { revalidate: 60 },
+    ...options,
   });
 
   if (!res.ok) {
