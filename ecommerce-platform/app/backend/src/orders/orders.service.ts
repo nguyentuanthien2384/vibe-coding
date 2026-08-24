@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
@@ -19,6 +20,7 @@ import {
   NotificationType,
   ShippingMethod,
 } from '@prisma/client';
+import { PointsService } from '../points/points.service';
 
 @Injectable()
 export class OrdersService {
@@ -28,6 +30,7 @@ export class OrdersService {
     private readonly vouchersService: VouchersService,
     private readonly eventEmitter: EventEmitter2,
     private readonly notificationsService: NotificationsService,
+    private readonly pointsService: PointsService,
   ) {}
 
   /**
@@ -154,8 +157,6 @@ export class OrdersService {
         });
       }
 
-      const totalAmount = Math.max(0, subtotal + shippingFee - discountAmount);
-
       // Sinh orderCode duy nhất
       let orderCode = `TB-${Math.floor(100000 + Math.random() * 900000)}`;
       let isCodeUnique = false;
@@ -167,6 +168,29 @@ export class OrdersService {
           orderCode = `TB-${Math.floor(100000 + Math.random() * 900000)}`;
         }
       }
+
+      // Khấu trừ Điểm thưởng TechBite (nếu có)
+      let pointsUsed = 0;
+      let pointsDiscount = 0;
+      const payableBeforePoints = Math.max(0, subtotal + shippingFee - discountAmount);
+
+      if (dto.pointsToUse && dto.pointsToUse > 0) {
+        if (!userId) {
+          throw new UnauthorizedException('Vui lòng đăng nhập để sử dụng điểm tích lũy');
+        }
+        const pointsRes = await this.pointsService.redeemPointsForOrder(
+          tx,
+          userId,
+          orderCode,
+          dto.pointsToUse,
+          payableBeforePoints,
+        );
+        pointsUsed = pointsRes.pointsUsed;
+        pointsDiscount = pointsRes.pointsDiscount;
+      }
+
+      const totalAmount = Math.max(0, payableBeforePoints - pointsDiscount);
+      const isZeroTotal = totalAmount === 0;
 
       // Tạo Đơn hàng
       const order = await tx.order.create({
@@ -185,12 +209,15 @@ export class OrdersService {
           shippingFee,
           subtotal,
           discountAmount,
+          pointsUsed,
+          pointsDiscount,
           totalAmount,
           voucherCode: appliedVoucherCode,
           orderNote: dto.orderNote || null,
-          paymentMethod: dto.paymentMethod,
-          paymentStatus: PaymentStatus.PENDING,
-          orderStatus: OrderStatus.PENDING,
+          paymentMethod: isZeroTotal ? PaymentMethod.COD : dto.paymentMethod,
+          paymentStatus: isZeroTotal ? PaymentStatus.PAID : PaymentStatus.PENDING,
+          orderStatus: isZeroTotal ? OrderStatus.CONFIRMED : OrderStatus.PENDING,
+          paidAt: isZeroTotal ? new Date() : null,
           orderItems: {
             create: orderItemDataList.map((it) => ({
               productId: it.productId,
@@ -323,6 +350,65 @@ export class OrdersService {
       orderStatus: order.orderStatus,
       paidAt: order.paidAt,
       totalAmount: Number(order.totalAmount),
+    };
+  }
+
+  /**
+   * Khách hàng hủy đơn hàng đang chờ xử lý (PENDING)
+   * Tự động hoàn tồn kho và hoàn 100% điểm tích lũy đã dùng
+   */
+  async cancelOrder(orderCode: string, userId: number, reason?: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { orderCode },
+      include: { orderItems: true },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Không tìm thấy đơn hàng');
+    }
+
+    if (order.userId !== userId) {
+      throw new ForbiddenException('Bạn không có quyền thao tác trên đơn hàng này');
+    }
+
+    if (order.orderStatus !== OrderStatus.PENDING) {
+      throw new BadRequestException(
+        'Chỉ có thể hủy đơn hàng đang ở trạng thái Chờ xử lý (PENDING)',
+      );
+    }
+
+    // Thực thi transaction hoàn kho và cập nhật CANCELLED
+    const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.order.update({
+        where: { id: order.id },
+        data: {
+          orderStatus: OrderStatus.CANCELLED,
+          cancelledAt: new Date(),
+          cancelReason: reason || 'Khách hàng tự hủy đơn',
+        },
+      });
+
+      // Hoàn trả stock
+      for (const item of order.orderItems) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { increment: item.quantity } },
+        });
+      }
+
+      return updated;
+    });
+
+    // Tự động hoàn lại 100% điểm tích lũy nếu đơn có dùng điểm
+    if (order.pointsUsed > 0) {
+      void this.pointsService.refundPointsFromOrder(order.id);
+    }
+
+    return {
+      success: true,
+      message: 'Hủy đơn hàng thành công và đã hoàn lại điểm tích lũy (nếu có)',
+      orderCode: updatedOrder.orderCode,
+      orderStatus: updatedOrder.orderStatus,
     };
   }
 
@@ -536,9 +622,14 @@ export class OrdersService {
         id: ord.id,
         orderCode: ord.orderCode,
         customerName: ord.customerName,
+        subtotal: Number(ord.subtotal),
         totalAmount: Number(ord.totalAmount),
         shippingFee: Number(ord.shippingFee),
         discountAmount: Number(ord.discountAmount),
+        pointsUsed: ord.pointsUsed || 0,
+        pointsDiscount: Number(ord.pointsDiscount || 0),
+        pointsEarned: ord.pointsEarned || 0,
+        voucherCode: ord.voucherCode,
         paymentMethod: ord.paymentMethod,
         paymentStatus: ord.paymentStatus,
         orderStatus: ord.orderStatus,
@@ -614,7 +705,12 @@ export class OrdersService {
       shippingAddress: `${order.detailAddress}, ${order.wardName}, ${order.districtName}, ${order.provinceName}`,
       shippingMethod: order.shippingMethod,
       shippingFee: Number(order.shippingFee),
+      subtotal: Number(order.subtotal),
       discountAmount: Number(order.discountAmount),
+      pointsUsed: order.pointsUsed || 0,
+      pointsDiscount: Number(order.pointsDiscount || 0),
+      pointsEarned: order.pointsEarned || 0,
+      voucherCode: order.voucherCode,
       totalAmount: Number(order.totalAmount),
       paymentMethod: order.paymentMethod,
       paymentStatus: order.paymentStatus,

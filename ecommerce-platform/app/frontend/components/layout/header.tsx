@@ -158,6 +158,18 @@ export const Header = () => {
               )}
             </button>
 
+            {/* Points Pill (Desktop) */}
+            {mounted && isAuthenticated && (
+              <Link
+                href="/profile?tab=points"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition-all shadow-2xs"
+                title="Điểm tích lũy TechBite"
+              >
+                <span className="text-sm">⭐️</span>
+                <span>{user?.loyaltyPoints ?? 150} đ</span>
+              </Link>
+            )}
+
             {/* User Button */}
             {mounted && isAuthenticated ? (
               <Link
@@ -294,15 +306,30 @@ export const Header = () => {
             </div>
 
             {/* Footer inside Drawer */}
-            <div className="p-4 border-t border-slate-100 bg-slate-50">
+            <div className="p-4 border-t border-slate-100 bg-slate-50 space-y-2">
               {mounted && isAuthenticated ? (
-                <Link
-                  href="/profile"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block w-full text-center bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm py-3 rounded-xl shadow-md transition-colors"
-                >
-                  Trang cá nhân
-                </Link>
+                <>
+                  <Link
+                    href="/profile?tab=points"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-between px-4 py-2.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-bold transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>⭐️</span>
+                      <span>Điểm tích lũy</span>
+                    </div>
+                    <span className="bg-amber-200/80 px-2 py-0.5 rounded-full text-amber-950 font-extrabold">
+                      {user?.loyaltyPoints ?? 150} đ
+                    </span>
+                  </Link>
+                  <Link
+                    href="/profile"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block w-full text-center bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm py-2.5 rounded-xl shadow-md transition-colors"
+                  >
+                    Trang cá nhân
+                  </Link>
+                </>
               ) : (
                 <Link
                   href="/login"

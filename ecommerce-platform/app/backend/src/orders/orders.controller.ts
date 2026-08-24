@@ -121,6 +121,27 @@ export class OrdersController {
   }
 
   /**
+   * POST /api/v1/orders/:orderCode/cancel
+   * Khách hàng hủy đơn hàng đang ở trạng thái PENDING
+   */
+  @Post(':orderCode/cancel')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async cancelOrder(
+    @Param('orderCode') orderCode: string,
+    @CurrentUser('sub') userId: number,
+    @Body('reason') reason?: string,
+  ) {
+    const data = await this.ordersService.cancelOrder(orderCode, userId, reason);
+    return {
+      statusCode: HttpStatus.OK,
+      message: data.message,
+      data,
+    };
+  }
+
+  /**
    * POST /api/v1/orders/webhook/payment
    * Cổng tiếp nhận Webhook chuyển khoản tự động từ ngân hàng
    */

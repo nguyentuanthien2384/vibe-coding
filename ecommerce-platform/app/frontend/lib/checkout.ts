@@ -21,6 +21,7 @@ export interface CreateOrderApiPayload {
   shippingMethod: ShippingMethodType;
   paymentMethod: PaymentMethodType;
   voucherCode?: string;
+  pointsToUse?: number;
   orderNote?: string;
 }
 

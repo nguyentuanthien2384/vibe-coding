@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { UserProfile } from '../../types/auth.types';
 
-export type ProfileTab = 'info' | 'orders' | 'addresses' | 'favorites' | 'notifications';
+export type ProfileTab = 'info' | 'orders' | 'points' | 'addresses' | 'favorites' | 'notifications';
 
 interface ProfileSidebarProps {
   user: UserProfile;
@@ -27,6 +27,8 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     .substring(0, 2)
     .toUpperCase();
 
+  const userPoints = user.loyaltyPoints ?? 150;
+
   return (
     <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 sticky top-28 space-y-6 w-full min-w-0">
       {/* Profile Header */}
@@ -38,7 +40,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
           {displayName}
         </h2>
         <span className="text-[11px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full mt-1.5 inline-block tracking-wide">
-          Premium Member
+          {user.membershipTier ? `Hạng ${user.membershipTier}` : 'Premium Member'}
         </span>
         <p className="text-xs text-slate-500 mt-1.5 truncate w-full px-2">
           {user.email}
@@ -75,6 +77,24 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
           </svg>
           <span className="whitespace-nowrap truncate">Lịch sử đơn hàng</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onTabChange('points')}
+          className={`flex items-center justify-between px-4 py-3 text-sm transition-all text-left w-full cursor-pointer min-w-0 ${
+            activeTab === 'points'
+              ? 'bg-orange-50 text-orange-600 font-bold border-l-4 border-orange-600 rounded-r-xl shadow-xs'
+              : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900 rounded-xl font-medium border-l-4 border-transparent'
+          }`}
+        >
+          <div className="flex items-center gap-3 truncate">
+            <span className="text-base shrink-0">⭐️</span>
+            <span className="whitespace-nowrap truncate">Điểm tích lũy</span>
+          </div>
+          <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
+            {userPoints} đ
+          </span>
         </button>
 
         <button

@@ -10,9 +10,18 @@ import { AuthModule } from '../auth/auth.module';
 
 import { MailModule } from '../mail/mail.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { PointsModule } from '../points/points.module';
 
 @Module({
-  imports: [PrismaModule, RedisModule, VouchersModule, AuthModule, MailModule, NotificationsModule],
+  imports: [
+    PrismaModule,
+    RedisModule,
+    VouchersModule,
+    AuthModule,
+    MailModule,
+    NotificationsModule,
+    PointsModule,
+  ],
   controllers: [OrdersController, AdminOrdersController],
   providers: [OrdersService, AdminOrdersService],
   exports: [OrdersService, AdminOrdersService],

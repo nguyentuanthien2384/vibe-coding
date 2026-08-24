@@ -61,6 +61,12 @@ export const CheckoutContainer: React.FC = () => {
   const [appliedVoucher, setAppliedVoucher] =
     useState<AppliedVoucherData | null>(null);
 
+  // Loyalty Points State
+  const [isUsingPoints, setIsUsingPoints] = useState(false);
+  const [pointsToUse, setPointsToUse] = useState(0);
+  const conversionRate = 1000;
+  const availablePoints = authStore.user?.loyaltyPoints ?? 0;
+
   // Errors & Modals
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -199,7 +205,17 @@ export const CheckoutContainer: React.FC = () => {
     0
   );
   const discountAmount = appliedVoucher ? appliedVoucher.calculatedDiscount : 0;
-  const total = Math.max(0, subtotal + currentShippingFee - discountAmount);
+
+  // Points Calculations
+  const payableBeforePoints = Math.max(0, subtotal + currentShippingFee - discountAmount);
+  const maxPointsCanUse = Math.min(
+    availablePoints,
+    Math.floor(payableBeforePoints / conversionRate)
+  );
+  const actualPointsToUse = isUsingPoints ? Math.min(maxPointsCanUse, pointsToUse) : 0;
+  const pointsDiscount = actualPointsToUse * conversionRate;
+  const total = Math.max(0, payableBeforePoints - pointsDiscount);
+  const estimatedPointsEarn = Math.max(0, Math.floor(subtotal * 0.01 / conversionRate * 10));
 
   const handleFieldChange = (
     field: keyof ShippingAddressForm,
@@ -266,6 +282,7 @@ export const CheckoutContainer: React.FC = () => {
         shippingMethod,
         paymentMethod,
         voucherCode: appliedVoucher?.voucherCode,
+        pointsToUse: actualPointsToUse > 0 ? actualPointsToUse : undefined,
         orderNote: orderNote || undefined,
       });
 
@@ -367,6 +384,16 @@ export const CheckoutContainer: React.FC = () => {
             total={total}
             appliedVoucher={appliedVoucher}
             onApplyVoucher={setAppliedVoucher}
+            isAuthenticated={!!authStore.user}
+            availablePoints={availablePoints}
+            maxPointsCanUse={maxPointsCanUse}
+            pointsToUse={actualPointsToUse}
+            pointsDiscount={pointsDiscount}
+            isUsingPoints={isUsingPoints}
+            onToggleUsePoints={setIsUsingPoints}
+            onPointsChange={setPointsToUse}
+            estimatedPointsEarn={estimatedPointsEarn}
+            conversionRate={conversionRate}
             paymentMethod={paymentMethod}
             onPaymentMethodChange={setPaymentMethod}
             onSubmitOrder={handleSubmitOrder}

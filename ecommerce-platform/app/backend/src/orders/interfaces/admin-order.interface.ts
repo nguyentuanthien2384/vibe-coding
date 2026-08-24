@@ -73,6 +73,9 @@ export interface AdminOrderDetailData {
     subtotal: number;
     shippingFee: number;
     discountAmount: number;
+    pointsUsed?: number;
+    pointsDiscount?: number;
+    pointsEarned?: number;
     voucherCode: string | null;
     totalAmount: number;
   };

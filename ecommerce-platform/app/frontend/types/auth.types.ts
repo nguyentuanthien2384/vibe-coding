@@ -12,6 +12,8 @@ export interface UserProfile {
   phone?: string | null;
   role: UserRole;
   avatarUrl?: string | null;
+  loyaltyPoints?: number;
+  membershipTier?: 'BRONZE' | 'SILVER' | 'GOLD' | 'DIAMOND';
   createdAt: string | Date;
 }
 
@@ -61,9 +63,14 @@ export interface OrderSummaryItem {
   customerName?: string;
   createdAt: string;
   paidAt?: string | Date;
+  subtotal?: number;
   totalAmount: number;
   shippingFee?: number;
   discountAmount?: number;
+  pointsUsed?: number;
+  pointsDiscount?: number;
+  pointsEarned?: number;
+  voucherCode?: string;
   paymentMethod?: string;
   paymentStatus?: string;
   orderStatus?: string;
@@ -101,8 +108,13 @@ export interface OrderDetailData {
   customerPhone: string;
   shippingAddress: string;
   shippingMethod: 'STANDARD' | 'EXPRESS';
+  subtotal?: number;
   shippingFee: number;
   discountAmount: number;
+  pointsUsed?: number;
+  pointsDiscount?: number;
+  pointsEarned?: number;
+  voucherCode?: string;
   totalAmount: number;
   paymentMethod: 'COD' | 'QR_CODE';
   paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED';

@@ -77,6 +77,8 @@ export const InvoicePrintable: React.FC<InvoicePrintableProps> = ({
 
   const subtotalAmount = order.summary?.subtotal ?? order.totalAmount ?? 0;
   const discountAmount = order.summary?.discountAmount ?? 0;
+  const pointsDiscount = order.summary?.pointsDiscount ?? 0;
+  const pointsUsed = order.summary?.pointsUsed ?? 0;
   const shippingFee = order.summary?.shippingFee ?? 0;
   const totalAmount = order.summary?.totalAmount ?? order.totalAmount ?? 0;
 
@@ -219,10 +221,16 @@ export const InvoicePrintable: React.FC<InvoicePrintableProps> = ({
                 <span className="font-bold">-{discountAmount.toLocaleString('vi-VN')}đ</span>
               </div>
             )}
+            {pointsDiscount > 0 && (
+              <div className="flex justify-between text-amber-700 font-medium">
+                <span>Trừ điểm ({pointsUsed} điểm):</span>
+                <span className="font-bold">-{pointsDiscount.toLocaleString('vi-VN')}đ</span>
+              </div>
+            )}
             <div className="flex justify-between text-slate-600 font-medium">
               <span>Phí vận chuyển:</span>
               <span className="font-bold text-slate-900">
-                {shippingFee > 0 ? `${shippingFee.toLocaleString('vi-VN')}đ` : 'Miễn phí'}
+                {shippingFee > 0 ? `+${shippingFee.toLocaleString('vi-VN')}đ` : 'Miễn phí'}
               </span>
             </div>
             <div className="flex justify-between border-t border-slate-200 pt-2 font-extrabold text-sm text-slate-900">

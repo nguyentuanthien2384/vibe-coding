@@ -24,6 +24,7 @@ export interface CheckoutFormInput extends ShippingAddressForm {
   paymentMethod: PaymentMethodType;
   termsAgreed: boolean;
   voucherCode?: string;
+  pointsToUse?: number;
 }
 
 export interface MiniCartItemData {
@@ -60,6 +61,9 @@ export interface OrderCreatedData {
   totalAmount: number;
   shippingFee: number;
   discountAmount: number;
+  pointsUsed?: number;
+  pointsDiscount?: number;
+  pointsEarned?: number;
   paymentMethod: PaymentMethodType;
   status: "PENDING" | "PAID";
   qrInfo?: QRPaymentInfo;
@@ -111,6 +115,7 @@ export interface CheckoutPriceBreakdownProps {
   subtotal: number;
   shippingFee: number;
   discountAmount: number;
+  pointsDiscountAmount?: number;
   total: number;
 }
 

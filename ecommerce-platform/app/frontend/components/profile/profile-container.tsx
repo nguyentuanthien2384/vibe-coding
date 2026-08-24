@@ -16,14 +16,18 @@ import { useCartStore } from '../../store/use-cart-store';
 import { logoutApi, getMeApi } from '../../lib/auth';
 import { getMyOrdersApi, getOrderDetailApi } from '../../lib/orders';
 import { QRPaymentModal } from '../checkout/modals/qr-payment-modal';
+import { PointsTabContainer } from './loyalty-points/points-tab-container';
+import { useSearchParams } from 'next/navigation';
 
 export const ProfileContainer: React.FC = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
 
-  const [activeTab, setActiveTab] = useState<ProfileTab>('info');
+  const initialTab = (searchParams.get('tab') as ProfileTab) || 'info';
+  const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab);
   const [isLoading, setIsLoading] = useState(!user);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -276,6 +280,10 @@ export const ProfileContainer: React.FC = () => {
               onPageChange: handlePageChange,
             }}
           />
+        )}
+
+        {activeTab === 'points' && (
+          <PointsTabContainer />
         )}
 
         {activeTab === 'addresses' && (

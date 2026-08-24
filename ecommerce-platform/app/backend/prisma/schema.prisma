@@ -64,6 +64,21 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum MembershipTier {
+  BRONZE
+  SILVER
+  GOLD
+  DIAMOND
+}
+
+enum PointsTransactionType {
+  EARN
+  REDEEM
+  REFUND
+  EXPIRE
+  ADJUST
+}
+
 enum VoucherDiscountType {
   FIXED_AMOUNT
   PERCENTAGE
@@ -76,6 +91,8 @@ enum EmailType {
   PAYMENT_CONFIRMED
   PASSWORD_CHANGED
   SECURITY_ALERT
+  POINTS_EARNED
+  TIER_UPGRADED
 }
 
 enum EmailStatus {
@@ -139,10 +156,10 @@ model Product {
   id               Int      @id @default(autoincrement())
   name             String   @db.VarChar(255)
   slug             String   @unique @db.VarChar(255)
-  shortDescription Json?    // Dữ liệu Rich Text Editor dạng JSON
-  longDescription  Json?    // Dữ liệu Rich Text Editor dạng JSON
+  shortDescription Json? // Dữ liệu Rich Text Editor dạng JSON
+  longDescription  Json? // Dữ liệu Rich Text Editor dạng JSON
   description      String?  @db.Text
-  images           Json?    // Thư viện hình ảnh phụ đính kèm dạng JSON [{ url: string, position: number }]
+  images           Json? // Thư viện hình ảnh phụ đính kèm dạng JSON [{ url: string, position: number }]
   price            Decimal  @db.Decimal(10, 2)
   salePrice        Decimal? @db.Decimal(10, 2)
   stock            Int      @default(0)
@@ -179,7 +196,7 @@ model RoleGroup {
   slug        String   @unique @db.VarChar(100)
   description String?  @db.Text
   isSystem    Boolean  @default(false)
-  permissions Json     // Mảng JSON chứa danh sách permission IDs: ["product.view", "order.view", ...]
+  permissions Json // Mảng JSON chứa danh sách permission IDs: ["product.view", "order.view", ...]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -192,30 +209,36 @@ model RoleGroup {
 
 /// Bảng quản lý người dùng hệ thống (Khách hàng, Nhân viên, Quản trị viên)
 model User {
-  id                Int        @id @default(autoincrement())
-  email             String     @unique @db.VarChar(255)
-  password          String     @db.VarChar(255)
-  fullName          String     @db.VarChar(100)
-  phone             String?    @db.VarChar(20)
-  avatarUrl         String?    @db.VarChar(500)
-  notes             String?    @db.Text
-  role              Role       @default(CUSTOMER)
-  isActive          Boolean    @default(true)
-  lastLoginAt       DateTime?
-  
+  id          Int       @id @default(autoincrement())
+  email       String    @unique @db.VarChar(255)
+  password    String    @db.VarChar(255)
+  fullName    String    @db.VarChar(100)
+  phone       String?   @db.VarChar(20)
+  avatarUrl   String?   @db.VarChar(500)
+  notes       String?   @db.Text
+  role        Role      @default(CUSTOMER)
+  isActive    Boolean   @default(true)
+  lastLoginAt DateTime?
+
+  // Loyalty Points Fields
+  loyaltyPoints   Int            @default(0)
+  membershipTier  MembershipTier @default(BRONZE)
+  totalSpentAccum Decimal        @default(0) @db.Decimal(12, 2)
+
   // Quan hệ Nhóm quyền & Đặc quyền bổ sung
   roleGroupId       Int?
   roleGroup         RoleGroup? @relation(fields: [roleGroupId], references: [id], onDelete: SetNull)
-  customPermissions Json?      // Mảng JSON chứa các đặc quyền cấp riêng: ["banner.manage"]
+  customPermissions Json? // Mảng JSON chứa các đặc quyền cấp riêng: ["banner.manage"]
 
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  cart              Cart?
-  orders            Order[]
-  addresses         Address[]
-  emailLogs         EmailLog[]
-  notifications     Notification[]
+  cart          Cart?
+  orders        Order[]
+  addresses     Address[]
+  emailLogs     EmailLog[]
+  notifications Notification[]
+  pointsLedgers PointsLedger[]
 
   @@index([email], name: "idx_user_email")
   @@index([role, isActive], name: "idx_user_role_active")
@@ -223,6 +246,8 @@ model User {
   @@index([roleGroupId], name: "idx_user_role_group")
   @@index([role, isActive, createdAt(sort: Desc)], name: "idx_user_admin_staff_filter")
   @@index([fullName, email, phone], name: "idx_user_search")
+  @@index([membershipTier], name: "idx_user_membership_tier")
+  @@index([loyaltyPoints], name: "idx_user_loyalty_points")
   @@map("users")
 }
 
@@ -309,21 +334,29 @@ model Order {
   shippingFee    Decimal        @db.Decimal(10, 2)
   subtotal       Decimal        @db.Decimal(10, 2)
   discountAmount Decimal        @default(0) @db.Decimal(10, 2)
-  totalAmount    Decimal        @db.Decimal(10, 2)
-  voucherCode    String?        @db.VarChar(50)
-  orderNote      String?        @db.VarChar(500)
-  cancelReason   String?        @db.VarChar(500)
-  paymentMethod  PaymentMethod  @default(QR_CODE)
-  paymentStatus  PaymentStatus  @default(PENDING)
-  orderStatus    OrderStatus    @default(PENDING)
-  paidAt         DateTime?
-  completedAt    DateTime?
-  cancelledAt    DateTime?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
 
-  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  orderItems OrderItem[]
+  // Loyalty Points Tracking
+  pointsUsed     Int     @default(0)
+  pointsDiscount Decimal @default(0) @db.Decimal(10, 2)
+  pointsEarned   Int     @default(0)
+  isPointsEarned Boolean @default(false)
+
+  totalAmount   Decimal       @db.Decimal(10, 2)
+  voucherCode   String?       @db.VarChar(50)
+  orderNote     String?       @db.VarChar(500)
+  cancelReason  String?       @db.VarChar(500)
+  paymentMethod PaymentMethod @default(QR_CODE)
+  paymentStatus PaymentStatus @default(PENDING)
+  orderStatus   OrderStatus   @default(PENDING)
+  paidAt        DateTime?
+  completedAt   DateTime?
+  cancelledAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  orderItems    OrderItem[]
+  pointsLedgers PointsLedger[]
 
   @@index([orderCode], name: "idx_order_code")
   @@index([customerName], name: "idx_order_customer_name")
@@ -335,6 +368,35 @@ model Order {
   @@index([customerEmail], name: "idx_order_customer_email")
   @@index([customerEmail, customerPhone], name: "idx_order_guest_contact")
   @@map("orders")
+}
+
+// =============================================================================
+// MODULE: LOYALTY POINTS SYSTEM
+// Source: .docs/backend-plans/points-plan.md
+// =============================================================================
+
+/// Bảng lưu vết lịch sử biến động điểm bất biến (Immutable Points Ledger)
+model PointsLedger {
+  id            Int                   @id @default(autoincrement())
+  userId        Int
+  orderId       Int?
+  orderCode     String?               @db.VarChar(50)
+  type          PointsTransactionType
+  points        Int // Số điểm biến động (+ hoặc -)
+  balanceBefore Int // Số dư điểm trước giao dịch
+  balanceAfter  Int // Số dư điểm sau giao dịch
+  description   String                @db.VarChar(255)
+  metadata      Json? // Dữ liệu chi tiết bổ sung (tỷ lệ, chiết khấu...)
+  createdAt     DateTime              @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)], name: "idx_points_ledger_user_created")
+  @@index([userId, type], name: "idx_points_ledger_user_type")
+  @@index([orderId], name: "idx_points_ledger_order")
+  @@index([orderCode], name: "idx_points_ledger_order_code")
+  @@map("points_ledgers")
 }
 
 /// Bảng lưu Chi tiết từng sản phẩm trong Đơn hàng (Bất biến tại thời điểm mua)
@@ -418,6 +480,8 @@ enum NotificationType {
   NEW_ORDER
   NEW_CUSTOMER
   PAYMENT_SUBMITTED
+  POINTS_EARNED
+  TIER_UPGRADED
 }
 
 /// Bảng lưu thông báo đẩy In-App của người dùng & Quản trị viên
@@ -448,7 +512,7 @@ model Notification {
 model SystemSetting {
   id        Int      @id @default(autoincrement())
   key       String   @unique @db.VarChar(100)
-  value     Json     // Dữ liệu cấu hình dạng JSON cấu trúc chặt chẽ
+  value     Json // Dữ liệu cấu hình dạng JSON cấu trúc chặt chẽ
   updatedAt DateTime @updatedAt
 
   @@index([key], name: "idx_setting_key")

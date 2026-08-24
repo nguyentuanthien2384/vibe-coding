@@ -380,15 +380,23 @@ export const OrderDetailContainer: React.FC<OrderDetailContainerProps> = ({
               </div>
 
               {/* Price Breakdown */}
-              <div className="border-t border-slate-100 pt-4 space-y-2 text-xs sm:text-sm text-slate-600">
+              <div className="border-t border-slate-100 pt-4 space-y-2.5 text-xs sm:text-sm text-slate-600">
                 <div className="flex justify-between">
-                  <span>Tạm tính</span>
+                  <span>Tạm tính tiền hàng</span>
                   <span className="font-bold text-slate-900">
                     {formatPrice(
-                      order.totalAmount + order.discountAmount - order.shippingFee
+                      order.subtotal ??
+                        Math.max(
+                          0,
+                          order.totalAmount +
+                            order.discountAmount +
+                            (order.pointsDiscount || 0) -
+                            order.shippingFee
+                        )
                     )}
                   </span>
                 </div>
+
                 <div className="flex justify-between">
                   <span>
                     Phí vận chuyển (
@@ -397,19 +405,59 @@ export const OrderDetailContainer: React.FC<OrderDetailContainerProps> = ({
                   <span className="font-bold text-slate-900">
                     {order.shippingFee === 0
                       ? "Miễn phí"
-                      : formatPrice(order.shippingFee)}
+                      : `+${formatPrice(order.shippingFee)}`}
                   </span>
                 </div>
+
                 {order.discountAmount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Giảm giá Voucher</span>
-                    <span className="font-bold">
+                  <div className="flex justify-between text-emerald-600 font-medium">
+                    <span className="flex items-center gap-1">
+                      <span>🏷️</span>
+                      <span>
+                        Mã giảm giá {order.voucherCode ? `(${order.voucherCode})` : ""}
+                      </span>
+                    </span>
+                    <span className="font-extrabold">
                       -{formatPrice(order.discountAmount)}
                     </span>
                   </div>
                 )}
+
+                {((order.pointsDiscount || 0) > 0 || (order.pointsUsed || 0) > 0) && (
+                  <div className="flex justify-between text-amber-700 font-medium bg-amber-50/70 px-2.5 py-1.5 rounded-lg border border-amber-200/60">
+                    <span className="flex items-center gap-1">
+                      <span>⭐️</span>
+                      <span>
+                        Trừ điểm tích lũy {order.pointsUsed ? `(${order.pointsUsed} điểm)` : ""}
+                      </span>
+                    </span>
+                    <span className="font-extrabold text-amber-800">
+                      -{formatPrice(order.pointsDiscount || 0)}
+                    </span>
+                  </div>
+                )}
+
+                {(order.pointsEarned || 0) > 0 && (
+                  <div className="flex justify-between text-indigo-600 text-xs font-medium bg-indigo-50/60 px-2.5 py-1.5 rounded-lg border border-indigo-100">
+                    <span className="flex items-center gap-1">
+                      <span>✨</span>
+                      <span>Tích lũy từ đơn này:</span>
+                    </span>
+                    <span className="font-bold text-indigo-700">
+                      +{order.pointsEarned} điểm
+                    </span>
+                  </div>
+                )}
+
                 <div className="border-t border-dashed border-slate-200 pt-3 flex justify-between items-center text-base font-extrabold text-slate-900">
-                  <span>Tổng tiền thanh toán</span>
+                  <div>
+                    <span>Tổng tiền thanh toán</span>
+                    {order.totalAmount === 0 && (
+                      <span className="block text-[11px] font-bold text-emerald-600 mt-0.5">
+                        (Đã thanh toán 100% bằng điểm thưởng)
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xl text-red-600 font-extrabold">
                     {formatPrice(order.totalAmount)}
                   </span>

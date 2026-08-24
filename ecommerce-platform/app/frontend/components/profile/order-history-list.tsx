@@ -640,6 +640,56 @@ export const OrderHistoryList: React.FC<OrderHistoryListProps> = ({
                             </div>
                           ))}
                         </div>
+
+                        {/* Financial Breakdown */}
+                        <div className="mt-3 pt-3 border-t border-gray-200/60 space-y-1.5 text-xs text-slate-600">
+                          {order.shippingFee !== undefined && (
+                            <div className="flex justify-between">
+                              <span>Phí vận chuyển:</span>
+                              <span className="font-semibold text-slate-800">
+                                {order.shippingFee === 0
+                                  ? "Miễn phí"
+                                  : `+${formatPrice(order.shippingFee)}`}
+                              </span>
+                            </div>
+                          )}
+
+                          {order.discountAmount !== undefined && order.discountAmount > 0 && (
+                            <div className="flex justify-between text-emerald-600 font-medium">
+                              <span>
+                                Mã giảm giá {order.voucherCode ? `(${order.voucherCode})` : ""}:
+                              </span>
+                              <span className="font-bold">
+                                -{formatPrice(order.discountAmount)}
+                              </span>
+                            </div>
+                          )}
+
+                          {((order.pointsDiscount || 0) > 0 || (order.pointsUsed || 0) > 0) && (
+                            <div className="flex justify-between text-amber-700 font-medium bg-amber-50/70 px-2 py-1 rounded-md border border-amber-200/50">
+                              <span>
+                                ⭐️ Trừ điểm {order.pointsUsed ? `(${order.pointsUsed} điểm)` : ""}:
+                              </span>
+                              <span className="font-bold text-amber-800">
+                                -{formatPrice(order.pointsDiscount || 0)}
+                              </span>
+                            </div>
+                          )}
+
+                          {(order.pointsEarned || 0) > 0 && (
+                            <div className="flex justify-between text-indigo-600 text-[11px] font-medium">
+                              <span>✨ Tích lũy từ đơn:</span>
+                              <span className="font-bold">+{order.pointsEarned} điểm</span>
+                            </div>
+                          )}
+
+                          <div className="flex justify-between items-center pt-2 border-t border-dashed border-gray-200 font-bold text-slate-900 text-sm">
+                            <span>Tổng thanh toán:</span>
+                            <span className="text-red-600 text-base font-extrabold">
+                              {formatPrice(order.totalAmount)}
+                            </span>
+                          </div>
+                        </div>
                       </>
                     )}
                   </div>

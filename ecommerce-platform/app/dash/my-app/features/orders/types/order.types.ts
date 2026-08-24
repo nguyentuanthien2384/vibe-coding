@@ -55,6 +55,9 @@ export interface OrderSummary {
   subtotal: number;
   shippingFee: number;
   discountAmount: number;
+  pointsUsed?: number;
+  pointsDiscount?: number;
+  pointsEarned?: number;
   couponCode?: string | null;
   voucherCode?: string | null;
   totalAmount: number;

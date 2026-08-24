@@ -18,6 +18,7 @@ import { OrderStatus, PaymentStatus, NotificationType, Prisma } from '@prisma/cl
 
 import { MailService } from '../mail/mail.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PointsService } from '../points/points.service';
 import * as ExcelJS from 'exceljs';
 
 @Injectable()
@@ -29,6 +30,7 @@ export class AdminOrdersService {
     private readonly redisService: RedisService,
     private readonly mailService: MailService,
     private readonly notificationsService: NotificationsService,
+    private readonly pointsService: PointsService,
   ) {}
 
   /**
@@ -233,6 +235,9 @@ export class AdminOrdersService {
           subtotal: Number(order.subtotal),
           shippingFee: Number(order.shippingFee),
           discountAmount: Number(order.discountAmount),
+          pointsUsed: order.pointsUsed || 0,
+          pointsDiscount: Number(order.pointsDiscount || 0),
+          pointsEarned: order.pointsEarned || 0,
           voucherCode: order.voucherCode,
           totalAmount: Number(order.totalAmount),
         },
@@ -438,7 +443,27 @@ export class AdminOrdersService {
         }
       } catch (notifErr: any) {
         this.logger.error(
-          `Lỗi khi phát thông báo đẩy In-App cho đơn hàng ${order.orderCode}: ${notifErr.message}`,
+          `Lỗi khi phát Realtime In-App Notification cho đơn hàng ${order.orderCode}: ${notifErr.message}`,
+        );
+      }
+
+      // 7. Xử lý Tích điểm & Hoàn điểm tự động (Loyalty Points Lifecycle)
+      try {
+        // 7.1. Tích điểm khi đơn hàng hoàn tất DELIVERED
+        if (
+          hasOrderStatusChanged &&
+          updatedOrder.orderStatus === OrderStatus.DELIVERED
+        ) {
+          void this.pointsService.earnPointsFromOrder(order.id);
+        }
+
+        // 7.2. Hoàn trả điểm khi đơn hàng bị HỦY (CANCELLED)
+        if (isCancelling) {
+          void this.pointsService.refundPointsFromOrder(order.id);
+        }
+      } catch (pointsErr: any) {
+        this.logger.error(
+          `Lỗi khi kích hoạt xử lý điểm thưởng cho đơn hàng #${order.orderCode}: ${pointsErr.message}`,
         );
       }
     }

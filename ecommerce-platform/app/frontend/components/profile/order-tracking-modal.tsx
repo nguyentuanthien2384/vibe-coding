@@ -374,11 +374,42 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                   ))}
                 </div>
 
-                <div className="flex justify-between items-center pt-2 text-sm font-extrabold text-slate-900 border-t border-slate-100">
-                  <span>Tổng tiền thanh toán:</span>
-                  <span className="text-base text-red-600">
-                    {formatPrice(order.totalAmount)}
-                  </span>
+                <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs text-slate-600">
+                  {order.shippingFee !== undefined && (
+                    <div className="flex justify-between">
+                      <span>Phí vận chuyển:</span>
+                      <span className="font-semibold text-slate-800">
+                        {order.shippingFee === 0
+                          ? "Miễn phí"
+                          : `+${formatPrice(order.shippingFee)}`}
+                      </span>
+                    </div>
+                  )}
+
+                  {order.discountAmount !== undefined && order.discountAmount > 0 && (
+                    <div className="flex justify-between text-emerald-600 font-medium">
+                      <span>Mã giảm giá:</span>
+                      <span className="font-bold">
+                        -{formatPrice(order.discountAmount)}
+                      </span>
+                    </div>
+                  )}
+
+                  {((order.pointsDiscount || 0) > 0 || (order.pointsUsed || 0) > 0) && (
+                    <div className="flex justify-between text-amber-700 font-medium bg-amber-50/70 px-2 py-1 rounded-md border border-amber-200/50">
+                      <span>⭐️ Trừ điểm ({order.pointsUsed || 0} điểm):</span>
+                      <span className="font-bold text-amber-800">
+                        -{formatPrice(order.pointsDiscount || 0)}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center pt-2 text-sm font-extrabold text-slate-900 border-t border-dashed border-slate-200">
+                    <span>Tổng tiền thanh toán:</span>
+                    <span className="text-base text-red-600">
+                      {formatPrice(order.totalAmount)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </>
