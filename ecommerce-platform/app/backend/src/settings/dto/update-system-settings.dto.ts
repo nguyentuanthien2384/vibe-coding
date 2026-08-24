@@ -13,6 +13,9 @@ export { EmailSettingsDto } from './email-settings.dto';
 
 export class PaymentSettingsDto {
   @IsOptional()
+  bankId?: string;
+
+  @IsOptional()
   bankName?: string;
 
   @IsOptional()

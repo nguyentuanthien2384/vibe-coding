@@ -26,7 +26,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'HỆ THỐNG & CÀI ĐẶT',
     items: [
       { id: 'staffs', label: 'Nhân sự & Phân quyền', href: '/staffs', iconName: 'ShieldCheck', rolesAllowed: ['ADMIN'] },
-      { id: 'settings', label: 'Cài đặt hệ thống', href: '/settings', iconName: 'Settings', permissionsRequired: ['setting.manage', 'banner.manage'] },
+      { id: 'settings', label: 'Cài đặt hệ thống', href: '/settings', iconName: 'Settings', permissionsRequired: ['setting.manage', 'banner.manage', 'point.manage'] },
       { id: 'profile', label: 'Hồ sơ cá nhân', href: '/profile', iconName: 'UserCheck' },
     ],
   },

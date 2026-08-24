@@ -1,4 +1,4 @@
-export type SettingsTab = 'general' | 'payment' | 'shipping' | 'banners' | 'menus' | 'seo' | 'email';
+export type SettingsTab = 'general' | 'payment' | 'shipping' | 'banners' | 'menus' | 'seo' | 'email' | 'points';
 
 export type BannerCategory = 'HOME' | 'PRODUCT';
 
@@ -22,10 +22,11 @@ export interface GeneralSettings {
 }
 
 export interface PaymentSettings {
+  bankId?: string;
   bankName: string;
   bankAccountNo: string;
   bankAccountHolder: string;
-  vietQrTemplate: 'compact' | 'qr_only' | 'print';
+  vietQrTemplate: 'compact' | 'compact2' | 'qr_only' | 'print' | string;
   enableCod: boolean;
   paymentNote?: string;
 }
@@ -111,6 +112,26 @@ export interface EmailSettings {
   enableWelcomeMail?: boolean;
 }
 
+export interface PointsConfig {
+  earnRatePercentage: number;
+  redeemRateVnd: number;
+  minPointsToRedeem: number;
+  maxRedeemPercentage: number;
+  pointsExpiryDays: number;
+  tierMultipliers: {
+    BRONZE: number;
+    SILVER: number;
+    GOLD: number;
+    DIAMOND: number;
+  };
+  tierThresholds: {
+    BRONZE: number;
+    SILVER: number;
+    GOLD: number;
+    DIAMOND: number;
+  };
+}
+
 export interface SystemSettingsPayload {
   general: GeneralSettings;
   payment: PaymentSettings;
@@ -119,4 +140,5 @@ export interface SystemSettingsPayload {
   menus: MenuSettingItem[];
   seo: SeoSocialSettings;
   email?: EmailSettings;
+  points?: PointsConfig;
 }

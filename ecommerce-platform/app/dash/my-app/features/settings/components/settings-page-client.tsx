@@ -7,15 +7,15 @@ import SettingsHeader from './settings-header';
 import SettingsNavTabs from './settings-nav-tabs';
 import SettingsTabContent from './settings-tab-content';
 import { useToast } from '../../../components/ui/toast';
-import { getAdminSettings, patchGroupSettings } from '../api/settings-api';
+import { getAdminSettings, patchGroupSettings, patchPointsConfig } from '../api/settings-api';
 import { Loader2, AlertTriangle, RefreshCw, CheckCircle, Save } from 'lucide-react';
 
 /**
  * Các tab "form" — auto-save theo debounce 800ms sau khi user thay đổi.
  * Các tab "repeater" (banners, menus) — tự quản lý save bên trong component.
  */
-const AUTO_SAVE_TABS: SettingsTab[] = ['general', 'payment', 'shipping', 'seo', 'email'];
-const VALID_TABS: SettingsTab[] = ['general', 'payment', 'shipping', 'banners', 'menus', 'seo', 'email'];
+const AUTO_SAVE_TABS: SettingsTab[] = ['general', 'payment', 'shipping', 'points', 'seo', 'email'];
+const VALID_TABS: SettingsTab[] = ['general', 'payment', 'shipping', 'points', 'banners', 'menus', 'seo', 'email'];
 const DEBOUNCE_MS = 800;
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
@@ -102,6 +102,22 @@ const SettingsPageClient = () => {
   const saveGroup = useCallback(
     async (tab: SettingsTab, data: SystemSettingsPayload) => {
       if (!AUTO_SAVE_TABS.includes(tab)) return;
+
+      if (tab === 'points') {
+        if (!data.points) return;
+        setSaveStatus('saving');
+        try {
+          await patchPointsConfig(data.points);
+          setSaveStatus('saved');
+          setTimeout(() => setSaveStatus('idle'), 2500);
+        } catch (err: unknown) {
+          const e = err as { message?: string };
+          setSaveStatus('error');
+          showToast('error', e?.message || 'Lỗi khi lưu cấu hình tích điểm');
+          setTimeout(() => setSaveStatus('idle'), 3000);
+        }
+        return;
+      }
 
       const groupMap: Record<string, unknown> = {
         general: data.general,

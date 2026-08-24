@@ -17,6 +17,7 @@ export interface GeneralSettings {
 }
 
 export interface PaymentSettings {
+  bankId?: string;
   bankName: string;
   bankAccountNo: string;
   bankAccountHolder: string;

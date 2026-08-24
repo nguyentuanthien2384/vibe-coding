@@ -16,6 +16,7 @@ export const SYSTEM_PERMISSIONS: PermissionItem[] = [
   { id: 'customer.manage', label: 'Quản lý thông tin khách hàng', category: 'CUSTOMER' },
   { id: 'banner.manage', label: 'Quản lý Banner/Quảng cáo', category: 'SYSTEM' },
   { id: 'setting.manage', label: 'Cấu hình hệ thống', category: 'SYSTEM' },
+  { id: 'point.manage', label: 'Quản lý & Cấu hình tích điểm', category: 'SYSTEM' },
 ];
 
 

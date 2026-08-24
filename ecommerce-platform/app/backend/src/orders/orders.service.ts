@@ -251,22 +251,13 @@ export class OrdersService {
       return order;
     });
 
-    // 4. Nếu phương thức thanh toán là QR Code -> Tạo thông tin VietQR
+    // 4. Nếu phương thức thanh toán là QR Code -> Tạo thông tin VietQR từ cấu hình hệ thống
     let qrInfo: any = null;
     if (result.paymentMethod === PaymentMethod.QR_CODE) {
-      const qrUrl = `https://api.vietqr.io/image/970422-0987654321-compact2.png?amount=${Number(
-        result.totalAmount,
-      )}&addInfo=${result.orderCode}&accountName=TECHBITE%20STORE`;
-
-      qrInfo = {
-        qrCodeUrl: qrUrl,
-        bankName: 'MBBank (Ngân hàng Quân Đội)',
-        accountNo: '0987654321',
-        accountName: 'CÔNG TY TNHH TECHBITE ECOMMERCE',
-        amount: Number(result.totalAmount),
-        transferContent: result.orderCode,
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-      };
+      qrInfo = await this.getVietQrPaymentInfo(
+        result.orderCode,
+        Number(result.totalAmount),
+      );
 
       // Đặt Redis key hết hạn 15 phút
       await this.redis.setEx(
@@ -681,19 +672,10 @@ export class OrdersService {
       order.paymentMethod === PaymentMethod.QR_CODE &&
       order.paymentStatus === PaymentStatus.PENDING
     ) {
-      const qrUrl = `https://img.vietqr.io/image/MB-0987654321-compact2.png?amount=${Number(
-        order.totalAmount,
-      )}&addInfo=${order.orderCode}&accountName=CONG%20TY%20TECHBITE`;
-
-      qrInfo = {
-        qrCodeUrl: qrUrl,
-        bankName: 'MBBank (Ngân hàng Quân Đội)',
-        accountNo: '0987654321',
-        accountName: 'CÔNG TY TNHH TECHBITE ECOMMERCE',
-        amount: Number(order.totalAmount),
-        transferContent: order.orderCode,
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-      };
+      qrInfo = await this.getVietQrPaymentInfo(
+        order.orderCode,
+        Number(order.totalAmount),
+      );
     }
 
     return {
@@ -729,6 +711,38 @@ export class OrdersService {
         quantity: item.quantity,
         itemTotal: Number(item.itemTotal),
       })),
+    };
+  }
+
+  /**
+   * Tạo thông tin thanh toán VietQR động từ cấu hình hệ thống (Settings)
+   */
+  private async getVietQrPaymentInfo(orderCode: string, totalAmount: number) {
+    const paymentSetting = await this.prisma.systemSetting.findUnique({
+      where: { key: 'payment' },
+    });
+
+    const paymentConfig = (paymentSetting?.value as any) || {};
+    const bankId = (paymentConfig.bankId || 'MB').trim();
+    const bankName = (paymentConfig.bankName || 'MB Bank').trim();
+    const accountNo = (paymentConfig.bankAccountNo || '9999888899').trim();
+    const accountName = (paymentConfig.bankAccountHolder || 'CTY TNHH TECHBITE VIETNAM').trim();
+    const template = (paymentConfig.vietQrTemplate || 'compact').trim();
+
+    const encodedAccountName = encodeURIComponent(accountName);
+    const encodedOrderCode = encodeURIComponent(orderCode);
+    const amountNumber = Math.round(Number(totalAmount));
+
+    const qrCodeUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-${template}.png?amount=${amountNumber}&addInfo=${encodedOrderCode}&accountName=${encodedAccountName}`;
+
+    return {
+      qrCodeUrl,
+      bankName,
+      accountNo,
+      accountName,
+      amount: amountNumber,
+      transferContent: orderCode,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     };
   }
 }

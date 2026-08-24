@@ -44,6 +44,7 @@ const DEFAULT_GENERAL: GeneralSettings = {
 };
 
 const DEFAULT_PAYMENT: PaymentSettings = {
+  bankId: 'MB',
   bankName: 'MB Bank',
   bankAccountNo: '9999888899',
   bankAccountHolder: 'CTY TNHH TECHBITE VIETNAM',

@@ -1,6 +1,6 @@
 'use client';
 
-import { SettingsTab, SystemSettingsPayload, EmailSettings } from '../types/settings.types';
+import { SettingsTab, SystemSettingsPayload, EmailSettings, PointsConfig } from '../types/settings.types';
 import GeneralSettingsForm from './forms/general-settings-form';
 import PaymentSettingsForm from './forms/payment-settings-form';
 import ShippingSettingsForm from './forms/shipping-settings-form';
@@ -8,6 +8,7 @@ import BannerRepeaterManager from './repeaters/banner-repeater-manager';
 import MenuRepeaterManager from './repeaters/menu-repeater-manager';
 import SeoSocialSettingsForm from './forms/seo-social-settings-form';
 import EmailSettingsForm from './forms/email-settings-form';
+import PointsSettingsForm from './forms/points-settings-form';
 
 interface SettingsTabContentProps {
   activeTab: SettingsTab;
@@ -22,6 +23,26 @@ const DEFAULT_EMAIL: EmailSettings = {
   smtpUser: '',
   fromName: '',
   fromEmail: '',
+};
+
+const DEFAULT_POINTS_CONFIG: PointsConfig = {
+  earnRatePercentage: 1.0,
+  redeemRateVnd: 1000,
+  minPointsToRedeem: 10,
+  maxRedeemPercentage: 100,
+  pointsExpiryDays: 0,
+  tierMultipliers: {
+    BRONZE: 1.0,
+    SILVER: 1.1,
+    GOLD: 1.25,
+    DIAMOND: 1.5,
+  },
+  tierThresholds: {
+    BRONZE: 0,
+    SILVER: 2000000,
+    GOLD: 5000000,
+    DIAMOND: 10000000,
+  },
 };
 
 const SettingsTabContent = ({ activeTab, data, onChange }: SettingsTabContentProps) => {
@@ -73,6 +94,13 @@ const SettingsTabContent = ({ activeTab, data, onChange }: SettingsTabContentPro
         <EmailSettingsForm
           data={data.email ?? DEFAULT_EMAIL}
           onChange={(updated) => onChange({ ...data, email: updated })}
+        />
+      );
+    case 'points':
+      return (
+        <PointsSettingsForm
+          data={data.points ?? DEFAULT_POINTS_CONFIG}
+          onChange={(updated) => onChange({ ...data, points: updated })}
         />
       );
     default:

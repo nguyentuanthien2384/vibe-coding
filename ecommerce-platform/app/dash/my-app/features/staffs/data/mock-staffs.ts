@@ -29,6 +29,7 @@ export const PERMISSION_GROUPS: {
     title: 'NGƯỜI DÙNG & KHÁCH HÀNG',
     permissions: [
       { id: 'customer.view', label: 'Xem thông tin khách hàng', category: 'CUSTOMER' },
+      { id: 'customer.manage', label: 'Quản lý thông tin khách hàng', category: 'CUSTOMER' },
     ],
   },
   {
@@ -36,6 +37,8 @@ export const PERMISSION_GROUPS: {
     title: 'CẤU HÌNH HỆ THỐNG',
     permissions: [
       { id: 'banner.manage', label: 'Quản lý Banner/Quảng cáo', category: 'SYSTEM' },
+      { id: 'setting.manage', label: 'Cấu hình hệ thống', category: 'SYSTEM' },
+      { id: 'point.manage', label: 'Quản lý & Cấu hình tích điểm', category: 'SYSTEM' },
     ],
   },
 ];

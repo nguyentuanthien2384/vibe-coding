@@ -1,11 +1,48 @@
 import { adminFetch } from '../../../lib/admin-api';
-import { BannerSettingItem, EmailSettings, SystemSettingsPayload } from '../types/settings.types';
+import {
+  BannerSettingItem,
+  EmailSettings,
+  PointsConfig,
+  SystemSettingsPayload,
+} from '../types/settings.types';
 
 /**
- * Lấy toàn bộ cấu hình hệ thống từ NestJS Backend API
+ * Lấy toàn bộ cấu hình hệ thống từ NestJS Backend API (bao gồm cấu hình điểm)
  */
 export async function getAdminSettings(): Promise<SystemSettingsPayload> {
-  const res = await adminFetch<{ data: SystemSettingsPayload }>('/admin/settings');
+  const [res, pointsRes] = await Promise.allSettled([
+    adminFetch<{ data: SystemSettingsPayload }>('/admin/settings'),
+    getPointsConfig(),
+  ]);
+
+  if (res.status === 'rejected') {
+    throw res.reason;
+  }
+
+  const payload = res.value.data;
+  if (pointsRes.status === 'fulfilled') {
+    payload.points = pointsRes.value;
+  }
+
+  return payload;
+}
+
+/**
+ * Lấy cấu hình hệ thống điểm (GET /api/v1/admin/points/config)
+ */
+export async function getPointsConfig(): Promise<PointsConfig> {
+  const res = await adminFetch<{ data: PointsConfig }>('/points/config');
+  return res.data;
+}
+
+/**
+ * Cập nhật cấu hình hệ thống điểm (PATCH /api/v1/admin/points/config)
+ */
+export async function patchPointsConfig(dto: Partial<PointsConfig>): Promise<PointsConfig> {
+  const res = await adminFetch<{ data: PointsConfig }>('/points/config', {
+    method: 'PATCH',
+    body: JSON.stringify(dto),
+  });
   return res.data;
 }
 

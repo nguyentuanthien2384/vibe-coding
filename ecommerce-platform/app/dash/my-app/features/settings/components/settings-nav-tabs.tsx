@@ -1,7 +1,7 @@
 'use client';
 
 import { SettingsTab } from '../types/settings.types';
-import { Store, CreditCard, Truck, Image, Menu, Globe, Mail } from 'lucide-react';
+import { Store, CreditCard, Truck, Image, Menu, Globe, Mail, Coins } from 'lucide-react';
 
 interface SettingsNavTabsProps {
   activeTab: SettingsTab;
@@ -14,6 +14,7 @@ const TABS: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
   { id: 'general', label: 'Cấu hình chung', icon: Store },
   { id: 'payment', label: 'Thanh toán & VietQR', icon: CreditCard },
   { id: 'shipping', label: 'Vận chuyển & Phí', icon: Truck },
+  { id: 'points', label: 'Cấu hình Tích điểm', icon: Coins },
   { id: 'banners', label: 'Quản lý Banners', icon: Image },
   { id: 'menus', label: 'Navigation Menus', icon: Menu },
   { id: 'seo', label: 'SEO & Social Links', icon: Globe },

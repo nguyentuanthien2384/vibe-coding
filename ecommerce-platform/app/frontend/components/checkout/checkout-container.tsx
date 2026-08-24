@@ -309,12 +309,12 @@ export const CheckoutContainer: React.FC = () => {
         if (orderRes.qrInfo) {
           setQrInfo(orderRes.qrInfo);
         } else {
-          const fallbackQrUrl = `https://img.vietqr.io/image/MB-0987654321-compact2.png?amount=${orderRes.totalAmount}&addInfo=${orderRes.orderCode}&accountName=CONG%20TY%20TECHBITE`;
+          const fallbackQrUrl = `https://img.vietqr.io/image/MB-9999888899-compact2.png?amount=${orderRes.totalAmount}&addInfo=${encodeURIComponent(orderRes.orderCode)}&accountName=${encodeURIComponent("CTY TNHH TECHBITE VIETNAM")}`;
           setQrInfo({
             qrCodeUrl: fallbackQrUrl,
-            bankName: "MBBank (Ngân hàng Quân Đội)",
-            accountNo: "0987654321",
-            accountName: "CÔNG TY TNHH TECHBITE ECOMMERCE",
+            bankName: "MB Bank",
+            accountNo: "9999888899",
+            accountName: "CTY TNHH TECHBITE VIETNAM",
             amount: orderRes.totalAmount,
             transferContent: orderRes.orderCode,
             expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
