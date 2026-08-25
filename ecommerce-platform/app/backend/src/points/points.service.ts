@@ -284,8 +284,12 @@ export class PointsService {
 
     // Dự kiến điểm nhận được
     const tierMultiplier = config.tierMultipliers[user.membershipTier] || 1.0;
-    const estimatedPointsEarn = Math.floor(
-      remainingPayableAmount * (config.earnRatePercentage / 100) * tierMultiplier / conversionRate * 10,
+    const estimatedPointsEarn = Math.max(
+      0,
+      Math.floor(
+        (remainingPayableAmount * (config.earnRatePercentage / 100) * tierMultiplier) /
+          conversionRate,
+      ),
     );
 
     return {
@@ -410,7 +414,10 @@ export class PointsService {
     const tierMultiplier = config.tierMultipliers[user.membershipTier] || 1.0;
     const earnedPoints = Math.max(
       1,
-      Math.floor(netAmount * (config.earnRatePercentage / 100) * tierMultiplier / config.redeemRateVnd * 10),
+      Math.floor(
+        (netAmount * (config.earnRatePercentage / 100) * tierMultiplier) /
+          config.redeemRateVnd,
+      ),
     );
 
     const balanceBefore = user.loyaltyPoints;

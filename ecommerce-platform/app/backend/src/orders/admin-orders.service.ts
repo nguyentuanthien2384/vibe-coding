@@ -454,12 +454,12 @@ export class AdminOrdersService {
           hasOrderStatusChanged &&
           updatedOrder.orderStatus === OrderStatus.DELIVERED
         ) {
-          void this.pointsService.earnPointsFromOrder(order.id);
+          await this.pointsService.earnPointsFromOrder(order.id);
         }
 
         // 7.2. Hoàn trả điểm khi đơn hàng bị HỦY (CANCELLED)
         if (isCancelling) {
-          void this.pointsService.refundPointsFromOrder(order.id);
+          await this.pointsService.refundPointsFromOrder(order.id);
         }
       } catch (pointsErr: any) {
         this.logger.error(

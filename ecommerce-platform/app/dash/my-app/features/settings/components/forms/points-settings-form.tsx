@@ -91,7 +91,8 @@ const PointsSettingsForm = ({ data, onChange }: PointsSettingsFormProps) => {
 
   // Tính thử nghiệm
   const earnRate = currentConfig.earnRatePercentage || 0;
-  const baseEarn = Math.floor(testOrderAmount * (earnRate / 100));
+  const redeemRate = currentConfig.redeemRateVnd || 1000;
+  const baseEarnValueVnd = testOrderAmount * (earnRate / 100);
 
   return (
     <div className="space-y-6">
@@ -333,8 +334,8 @@ const PointsSettingsForm = ({ data, onChange }: PointsSettingsFormProps) => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {(['BRONZE', 'SILVER', 'GOLD', 'DIAMOND'] as const).map((tier) => {
             const mult = currentConfig.tierMultipliers[tier] || 1;
-            const pointsEarned = Math.floor(baseEarn * mult);
-            const discountValue = pointsEarned * (currentConfig.redeemRateVnd || 1000);
+            const pointsEarned = Math.floor((baseEarnValueVnd * mult) / redeemRate);
+            const discountValue = pointsEarned * redeemRate;
             return (
               <div
                 key={tier}

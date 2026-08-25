@@ -27,7 +27,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     .substring(0, 2)
     .toUpperCase();
 
-  const userPoints = user.loyaltyPoints ?? 150;
+  const userPoints = user.loyaltyPoints ?? 0;
 
   return (
     <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 sticky top-28 space-y-6 w-full min-w-0">
@@ -93,7 +93,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             <span className="whitespace-nowrap truncate">Điểm tích lũy</span>
           </div>
           <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
-            {userPoints} đ
+            {userPoints.toLocaleString('vi-VN')} điểm
           </span>
         </button>
 

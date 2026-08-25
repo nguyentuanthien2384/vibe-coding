@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import {
   getFilterMeta,
   getProductsList,
@@ -21,6 +21,13 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
+
+  if (slug === 'khuyen-mai' || slug === 'promotions') {
+    return {
+      title: 'Khuyến Mãi Hot - TechBite | Nạp năng lượng cho lập trình viên',
+    };
+  }
+
   const filterMeta = await getFilterMeta();
   let category = filterMeta.categories.find((c) => c.slug === slug);
 
@@ -58,6 +65,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function CategoryProductsPage({ params, searchParams }: PageProps) {
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
+
+  if (slug === 'khuyen-mai' || slug === 'promotions') {
+    redirect('/products?sort=featured');
+  }
   const resolvedSearchParams = await searchParams;
 
   const minPrice = resolvedSearchParams.minPrice ? parseFloat(resolvedSearchParams.minPrice) : undefined;

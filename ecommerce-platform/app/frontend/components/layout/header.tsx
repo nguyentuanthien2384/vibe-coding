@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCartStore } from "../../store/use-cart-store";
 import { useAuthStore } from "../../store/use-auth-store";
 import { useAuthInit } from "../../hooks/use-auth-init";
@@ -11,8 +11,11 @@ import { MobileSearchModal } from "../search/mobile-search-modal";
 
 import { NotificationBell } from "../notifications/notification-bell";
 
-export const Header = () => {
+const HeaderInner = () => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const sortParam = searchParams.get('sort');
+
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -43,6 +46,15 @@ export const Header = () => {
   const displayFirstName = displayName.trim()
     ? displayName.trim().split(' ').filter(Boolean).pop()
     : 'Tài khoản';
+
+  const isHome = pathname === '/';
+  const isKhuyenMai = (pathname === '/products' && sortParam === 'featured') || pathname === '/categories/khuyen-mai';
+  const isComboDeadline = pathname === '/categories/combo-deadline';
+  const isThucDon =
+    !isKhuyenMai &&
+    !isComboDeadline &&
+    (pathname === '/products' || (pathname.startsWith('/products/') && !pathname.includes('combo-deadline')));
+  const isEmailLogs = pathname.startsWith('/admin/email-logs');
 
   return (
     <>
@@ -81,23 +93,55 @@ export const Header = () => {
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-700 ml-4">
-            <Link href="/" className="text-orange-600">
+          <nav className="hidden lg:flex items-center gap-6 text-sm font-semibold ml-4">
+            <Link
+              href="/"
+              className={
+                isHome
+                  ? 'text-orange-600 font-bold'
+                  : 'text-slate-700 hover:text-orange-600 transition-colors'
+              }
+            >
               Trang chủ
             </Link>
-            <Link href="/products" className="hover:text-orange-600 transition-colors">
+            <Link
+              href="/products"
+              className={
+                isThucDon
+                  ? 'text-orange-600 font-bold'
+                  : 'text-slate-700 hover:text-orange-600 transition-colors'
+              }
+            >
               Thực đơn
             </Link>
-            <Link href="/categories/combo-deadline" className="hover:text-orange-600 transition-colors">
+            <Link
+              href="/categories/combo-deadline"
+              className={
+                isComboDeadline
+                  ? 'text-orange-600 font-bold'
+                  : 'text-slate-700 hover:text-orange-600 transition-colors'
+              }
+            >
               Combo Deadline 💻
             </Link>
-            <Link href="/products" className="hover:text-orange-600 transition-colors">
+            <Link
+              href="/products?sort=featured"
+              className={
+                isKhuyenMai
+                  ? 'text-orange-600 font-bold'
+                  : 'text-slate-700 hover:text-orange-600 transition-colors'
+              }
+            >
               Khuyến mãi 🔥
             </Link>
             {mounted && user?.role === 'ADMIN' && (
               <Link
                 href="/admin/email-logs"
-                className="text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+                className={
+                  isEmailLogs
+                    ? 'text-amber-800 bg-amber-100 border-amber-300 px-2.5 py-1 rounded-lg text-xs font-extrabold shadow-2xs flex items-center gap-1 border'
+                    : 'text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1'
+                }
               >
                 <span>⚡</span> Email Logs
               </Link>
@@ -166,7 +210,7 @@ export const Header = () => {
                 title="Điểm tích lũy TechBite"
               >
                 <span className="text-sm">⭐️</span>
-                <span>{user?.loyaltyPoints ?? 150} đ</span>
+                <span>{(user?.loyaltyPoints ?? 0).toLocaleString('vi-VN')} điểm</span>
               </Link>
             )}
 
@@ -248,28 +292,44 @@ export const Header = () => {
                 <Link
                   href="/"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-orange-50 text-orange-600 font-semibold text-sm"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-colors ${
+                    isHome
+                      ? 'bg-orange-50 text-orange-600 font-bold'
+                      : 'hover:bg-slate-50 text-slate-700 font-medium'
+                  }`}
                 >
                   <span>🏠</span> Trang chủ
                 </Link>
                 <Link
                   href="/products"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm transition-colors"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-colors ${
+                    isThucDon
+                      ? 'bg-orange-50 text-orange-600 font-bold'
+                      : 'hover:bg-slate-50 text-slate-700 font-medium'
+                  }`}
                 >
                   <span>🍱</span> Tất cả thực đơn
                 </Link>
                 <Link
                   href="/categories/combo-deadline"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm transition-colors"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-colors ${
+                    isComboDeadline
+                      ? 'bg-orange-50 text-orange-600 font-bold'
+                      : 'hover:bg-slate-50 text-slate-700 font-medium'
+                  }`}
                 >
                   <span>💻</span> Combo Deadline
                 </Link>
                 <Link
-                  href="/products"
+                  href="/products?sort=featured"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm transition-colors"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-colors ${
+                    isKhuyenMai
+                      ? 'bg-orange-50 text-orange-600 font-bold'
+                      : 'hover:bg-slate-50 text-slate-700 font-medium'
+                  }`}
                 >
                   <span>🔥</span> Khuyến mãi Hot
                 </Link>
@@ -284,21 +344,33 @@ export const Header = () => {
                 <Link
                   href="/categories/do-an-vat"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 text-sm hover:bg-slate-50"
+                  className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${
+                    pathname === '/categories/do-an-vat'
+                      ? 'bg-orange-50 text-orange-600 font-bold'
+                      : 'text-slate-600 hover:bg-slate-50'
+                  }`}
                 >
                   <span>🍟</span> Đồ ăn vặt
                 </Link>
                 <Link
                   href="/categories/nuoc-uong"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 text-sm hover:bg-slate-50"
+                  className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${
+                    pathname === '/categories/nuoc-uong'
+                      ? 'bg-orange-50 text-orange-600 font-bold'
+                      : 'text-slate-600 hover:bg-slate-50'
+                  }`}
                 >
                   <span>🧃</span> Nước uống
                 </Link>
                 <Link
                   href="/categories/trai-cay-to"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 text-sm hover:bg-slate-50"
+                  className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${
+                    pathname === '/categories/trai-cay-to'
+                      ? 'bg-orange-50 text-orange-600 font-bold'
+                      : 'text-slate-600 hover:bg-slate-50'
+                  }`}
                 >
                   <span>🍓</span> Trái cây tô
                 </Link>
@@ -319,7 +391,7 @@ export const Header = () => {
                       <span>Điểm tích lũy</span>
                     </div>
                     <span className="bg-amber-200/80 px-2 py-0.5 rounded-full text-amber-950 font-extrabold">
-                      {user?.loyaltyPoints ?? 150} đ
+                      {(user?.loyaltyPoints ?? 0).toLocaleString('vi-VN')} điểm
                     </span>
                   </Link>
                   <Link
@@ -346,13 +418,23 @@ export const Header = () => {
 
       {/* Floating Bottom Navigation Bar for Mobile */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex items-center justify-around shadow-lg">
-        <Link href="/" className="flex flex-col items-center gap-0.5 text-orange-600">
+        <Link
+          href="/"
+          className={`flex flex-col items-center gap-0.5 ${
+            isHome ? 'text-orange-600 font-bold' : 'text-slate-500 hover:text-slate-900'
+          }`}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
           <span className="text-[10px] font-medium">Trang chủ</span>
         </Link>
-        <button onClick={() => setIsMobileMenuOpen(true)} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-900">
+        <button
+          onClick={() => setIsMobileMenuOpen(true)}
+          className={`flex flex-col items-center gap-0.5 ${
+            pathname.startsWith('/categories') || isMobileMenuOpen ? 'text-orange-600 font-bold' : 'text-slate-500 hover:text-slate-900'
+          }`}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
           </svg>
@@ -372,7 +454,12 @@ export const Header = () => {
             </span>
           )}
         </button>
-        <Link href="/profile" className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-900">
+        <Link
+          href="/profile"
+          className={`flex flex-col items-center gap-0.5 ${
+            pathname.startsWith('/profile') ? 'text-orange-600 font-bold' : 'text-slate-500 hover:text-slate-900'
+          }`}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
@@ -380,5 +467,19 @@ export const Header = () => {
         </Link>
       </div>
     </>
+  );
+};
+
+export const Header: React.FC = () => {
+  return (
+    <Suspense
+      fallback={
+        <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3" />
+        </header>
+      }
+    >
+      <HeaderInner />
+    </Suspense>
   );
 };

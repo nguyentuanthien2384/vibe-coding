@@ -137,6 +137,9 @@ export class AuthService {
       phone: newUser.phone,
       avatarUrl: newUser.avatarUrl,
       role: newUser.role,
+      loyaltyPoints: newUser.loyaltyPoints ?? 0,
+      membershipTier: newUser.membershipTier,
+      totalSpentAccum: Number(newUser.totalSpentAccum ?? 0),
       createdAt: newUser.createdAt,
       lastLoginAt: newUser.lastLoginAt,
     };
@@ -231,6 +234,9 @@ export class AuthService {
       roleGroupId: user.roleGroupId,
       roleGroupName: user.roleGroup?.name || (user.role === Role.ADMIN ? 'Super Admin' : undefined),
       permissions,
+      loyaltyPoints: user.loyaltyPoints ?? 0,
+      membershipTier: user.membershipTier,
+      totalSpentAccum: Number(user.totalSpentAccum ?? 0),
       createdAt: user.createdAt,
       lastLoginAt,
     };
@@ -440,6 +446,9 @@ export class AuthService {
       roleGroupId: user.roleGroupId,
       roleGroupName: user.roleGroup?.name || (user.role === Role.ADMIN ? 'Super Admin' : undefined),
       permissions,
+      loyaltyPoints: user.loyaltyPoints ?? 0,
+      membershipTier: user.membershipTier,
+      totalSpentAccum: Number(user.totalSpentAccum ?? 0),
       createdAt: user.createdAt,
       lastLoginAt: user.lastLoginAt,
     };
@@ -483,6 +492,9 @@ export class AuthService {
       phone: updatedUser.phone,
       avatarUrl: updatedUser.avatarUrl,
       role: updatedUser.role,
+      loyaltyPoints: updatedUser.loyaltyPoints ?? 0,
+      membershipTier: updatedUser.membershipTier,
+      totalSpentAccum: Number(updatedUser.totalSpentAccum ?? 0),
       createdAt: updatedUser.createdAt,
       lastLoginAt: updatedUser.lastLoginAt,
     };

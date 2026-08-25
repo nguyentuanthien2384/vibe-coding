@@ -31,7 +31,7 @@ export async function getAdminSettings(): Promise<SystemSettingsPayload> {
  * Lấy cấu hình hệ thống điểm (GET /api/v1/admin/points/config)
  */
 export async function getPointsConfig(): Promise<PointsConfig> {
-  const res = await adminFetch<{ data: PointsConfig }>('/points/config');
+  const res = await adminFetch<{ data: PointsConfig }>('/admin/points/config');
   return res.data;
 }
 
@@ -39,7 +39,7 @@ export async function getPointsConfig(): Promise<PointsConfig> {
  * Cập nhật cấu hình hệ thống điểm (PATCH /api/v1/admin/points/config)
  */
 export async function patchPointsConfig(dto: Partial<PointsConfig>): Promise<PointsConfig> {
-  const res = await adminFetch<{ data: PointsConfig }>('/points/config', {
+  const res = await adminFetch<{ data: PointsConfig }>('/admin/points/config', {
     method: 'PATCH',
     body: JSON.stringify(dto),
   });

@@ -1,4 +1,4 @@
-import { Role } from '@prisma/client';
+import { Role, MembershipTier } from '@prisma/client';
 
 export interface AuthUserResponse {
   id: number;
@@ -10,6 +10,9 @@ export interface AuthUserResponse {
   roleGroupId?: number | null;
   roleGroupName?: string;
   permissions?: string[];
+  loyaltyPoints?: number;
+  membershipTier?: MembershipTier;
+  totalSpentAccum?: number;
   createdAt: Date;
   lastLoginAt?: Date | null;
 }

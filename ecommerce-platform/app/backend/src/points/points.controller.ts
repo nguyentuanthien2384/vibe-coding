@@ -5,14 +5,14 @@ import {
   Body,
   Query,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { PointsService } from './points.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PreviewPointsCheckoutDto } from './dto/preview-points-checkout.dto';
 import { PointsHistoryQueryDto } from './dto/points-history-query.dto';
 
-@Controller('api/v1/points')
+@Controller('points')
 export class PointsController {
   constructor(private readonly pointsService: PointsService) {}
 
@@ -22,8 +22,7 @@ export class PointsController {
    */
   @Get('summary')
   @UseGuards(JwtAuthGuard)
-  async getSummary(@Req() req: any) {
-    const userId = Number(req.user.id);
+  async getSummary(@CurrentUser('sub') userId: number) {
     const summary = await this.pointsService.getUserPointsSummary(userId);
     return {
       statusCode: 200,
@@ -38,8 +37,10 @@ export class PointsController {
    */
   @Get('history')
   @UseGuards(JwtAuthGuard)
-  async getHistory(@Req() req: any, @Query() query: PointsHistoryQueryDto) {
-    const userId = Number(req.user.id);
+  async getHistory(
+    @CurrentUser('sub') userId: number,
+    @Query() query: PointsHistoryQueryDto,
+  ) {
     const history = await this.pointsService.getUserPointsHistory(userId, query);
     return {
       statusCode: 200,
@@ -68,8 +69,10 @@ export class PointsController {
    */
   @Post('preview-checkout')
   @UseGuards(JwtAuthGuard)
-  async previewCheckout(@Req() req: any, @Body() dto: PreviewPointsCheckoutDto) {
-    const userId = Number(req.user.id);
+  async previewCheckout(
+    @CurrentUser('sub') userId: number,
+    @Body() dto: PreviewPointsCheckoutDto,
+  ) {
     const calculation = await this.pointsService.previewCheckoutPoints(userId, dto);
     return {
       statusCode: 200,

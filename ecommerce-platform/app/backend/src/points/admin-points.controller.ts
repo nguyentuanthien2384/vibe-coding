@@ -20,7 +20,7 @@ import { AdjustPointsDto } from './dto/adjust-points.dto';
 import { UpdatePointsConfigDto } from './dto/update-points-config.dto';
 import { PointsHistoryQueryDto } from './dto/points-history-query.dto';
 
-@Controller('api/v1/admin/points')
+@Controller('admin/points')
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 export class AdminPointsController {
   constructor(private readonly pointsService: PointsService) {}

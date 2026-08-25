@@ -17,6 +17,7 @@ import {
   getPointsHistoryApi,
   getPointsConfigApi,
 } from "../../../lib/points";
+import { useAuthStore } from "../../../store/use-auth-store";
 
 const DEFAULT_CONFIG: PointsConfig = {
   earnRatePercentage: 1,
@@ -60,6 +61,14 @@ export const PointsTabContainer: React.FC = () => {
 
       if (summaryRes.status === "fulfilled") {
         setSummary(summaryRes.value);
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser) {
+          useAuthStore.getState().setUser({
+            ...currentUser,
+            loyaltyPoints: summaryRes.value.currentPoints,
+            membershipTier: summaryRes.value.membershipTier,
+          });
+        }
       } else {
         throw new Error(summaryRes.reason?.message || "Không thể tải tổng quan điểm");
       }
