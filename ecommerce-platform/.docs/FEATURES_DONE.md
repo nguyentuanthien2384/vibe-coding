@@ -391,3 +391,11 @@
   - Tích hợp API vào `BlogCategoriesPageClient` (Hiển thị danh sách chuyên mục thật kèm số lượng bài viết `postCount`, tạo mới, cập nhật, đổi trạng thái active thời gian thực, xóa chuyên mục có chặn an toàn nếu còn bài viết).
 - **Kiểm tra chất lượng:** 0 lỗi TypeScript trên cả 3 ứng dụng `app/backend`, `app/dash/my-app`, `app/frontend` (`npx tsc --noEmit`).
 
+## [2026-08-27] Hoàn thành Tích hợp Phân quyền & Kiểm soát Nút Thao tác Blog (Permission Gates)
+- **Cấu hình Menu & Quyền:** Gắn menu Blog & Bài viết (`sidebar-nav.tsx`) với `permissionRequired: 'blog.view'`.
+- **Hệ thống Phân quyền:** Bổ sung nhóm quyền `BLOG` (`blog.view`, `blog.manage`, `blog.category_manage`) vào `SYSTEM_PERMISSIONS` (Backend) và `mock-staffs.ts` / `staff.types.ts` (Dashboard).
+- **Permission Gates:** Tự động ẩn các nút "Viết bài mới", "Chuyên mục", "Sửa bài", "Xóa bài", "Lưu nháp / Xuất bản", "Thêm / Sửa / Xóa chuyên mục" và chuyển toggle active sang read-only khi tài khoản không có quyền tương ứng.
+
+## [2026-08-27] Hoàn thành Thiết lập Skill Registry & Ánh xạ Extension Skills vào Workflows
+- Tổng hợp toàn bộ 8 Extension Skills vào [`.agent/skill-registry.md`](file:///d:/vibe_coding/ecommerce-platform/.agent/skill-registry.md) kèm ma trận vai trò, quy chuẩn và điều kiện kích hoạt.
+- Tích hợp tham chiếu đường dẫn `skill-registry.md` vào 2 workflows cốt lõi: [`execute-ui.md`](file:///d:/vibe_coding/ecommerce-platform/.agent/workflows/execute-ui.md) và [`execute-backend.md`](file:///d:/vibe_coding/ecommerce-platform/.agent/workflows/execute-backend.md).
