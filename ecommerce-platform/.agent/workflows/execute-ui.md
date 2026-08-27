@@ -23,16 +23,16 @@ Kiểm tra xem trong `$ARGUMENTS` có chứa từ khóa `--stitch` hoặc ngư�
 - **Nếu KHÔNG có:** Chuyển qua Bước 2. Thợ thi công sẽ tự thiết kế UI dựa trên Design Brief.
 - **Nếu CÓ thiết kế Stitch:** BẮT BUỘC nạp file mã nguồn HTML/React do Stitch tạo ra. Đánh dấu đây là **NGUỒN CHÂN LÝ VỀ GIAO DIỆN (UI SOURCE OF TRUTH)**. 
 
+## 🛠️ THAM CHIẾU SKILL REGISTRY
+Khi thực hiện workflow này, bắt buộc tham chiếu và áp dụng các kỹ năng mở rộng được khai báo tại:
+- [`.agent/skill-registry.md`](file:///d:/vibe_coding/ecommerce-platform/.agent/skill-registry.md)
+
 ## 🚀 2. GIAO VIỆC CHO THỢ THI CÔNG (EXECUTION)
-Mở và đọc file kỹ năng tại `.agent/skills/code-ui/SKILL.md`.
+Mở và đọc file kỹ năng tại [`.agent/skills/code-ui/SKILL.md`](file:///d:/vibe_coding/ecommerce-platform/.agent/skills/code-ui/SKILL.md).
 
 Chuyển giao toàn bộ dữ liệu vừa thu thập cho kỹ năng `code-ui` kèm theo CHỈ THỊ ÉP BUỘC sau:
 - Tự động triển khai mã nguồn Component tuân thủ quy tắc "Mockup Data" của `code-ui`.
 - **Nếu có Stitch Source hoặc mockup tĩnh:** Cấm thợ thi công tự sáng tạo layout mới. Chỉ được phép tái cấu trúc (refactor) code Stitch hoặc mockup tĩnh, chia nhỏ thành các React Components (`Header`, `Form`, `Card`...), và lắp Mockup Data vào.
-
-## 🛠️ THAM CHIẾU SKILL REGISTRY
-Khi thực hiện workflow này, có thể áp dụng các kỹ năng bổ trợ được khai báo tại:
-- `.agent/skill-registry.md`
 
 ## ✅ 3. NGHIỆM THU
 Sau khi thợ `code-ui` lưu file xong, in ra báo cáo:
