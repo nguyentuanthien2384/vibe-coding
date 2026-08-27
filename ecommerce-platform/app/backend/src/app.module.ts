@@ -23,6 +23,7 @@ import { SettingsModule } from './settings/settings.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { StaffsModule } from './staffs/staffs.module';
 import { PointsModule } from './points/points.module';
+import { BlogModule } from './blog/blog.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { PointsModule } from './points/points.module';
     DashboardModule,
     StaffsModule,
     PointsModule,
+    BlogModule,
   ],
   controllers: [AppController],
   providers: [

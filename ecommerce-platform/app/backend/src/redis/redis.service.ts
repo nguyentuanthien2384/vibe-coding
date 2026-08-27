@@ -87,6 +87,58 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Lưu key vào Redis với TTL (seconds) - alias ngắn của setEx
+   */
+  async set(key: string, value: string, seconds?: number): Promise<void> {
+    if (seconds) {
+      return this.setEx(key, seconds, value);
+    }
+    if (this.isConnected) {
+      try {
+        await this.client.set(key, value);
+        return;
+      } catch (error) {
+        this.logger.error(`Redis set failed for key ${key}: ${error.message}`);
+      }
+    }
+    this.inMemoryFallback.set(key, { value });
+  }
+
+  /**
+   * Tăng giá trị số nguyên tại key (Atomic increment)
+   */
+  async incr(key: string): Promise<number> {
+    if (this.isConnected) {
+      try {
+        return await this.client.incr(key);
+      } catch (error) {
+        this.logger.error(`Redis incr failed for key ${key}: ${error.message}`);
+      }
+    }
+    const cached = this.inMemoryFallback.get(key);
+    const newVal = (parseInt(cached?.value ?? '0', 10) || 0) + 1;
+    this.inMemoryFallback.set(key, { value: String(newVal) });
+    return newVal;
+  }
+
+  /**
+   * Lấy và xóa key (atomic GET + DEL) - dùng cho view sync
+   */
+  async getdel(key: string): Promise<string | null> {
+    if (this.isConnected) {
+      try {
+        return await this.client.getdel(key);
+      } catch (error) {
+        this.logger.error(`Redis getdel failed for key ${key}: ${error.message}`);
+      }
+    }
+    const cached = this.inMemoryFallback.get(key);
+    if (!cached) return null;
+    this.inMemoryFallback.delete(key);
+    return cached.value;
+  }
+
+  /**
    * Xóa key khỏi Redis
    */
   async del(key: string): Promise<void> {

@@ -357,3 +357,14 @@
   - Thanh điều khiển nổi khi chọn ảnh: Đổi kích thước nhanh (`25%`, `50%`, `75%`, `100%`), Căn lề (`Trái`, `Giữa`, `Phải`), Di chuyển nhanh Lên/Xuống (`Move Up/Down`), Cắt (`Ctrl+X`), Sao chép (`Ctrl+C`), Dán ảnh (`Ctrl+V`), Xóa ảnh.
   - Nhấp 1 lần (Single Click) chọn ảnh và hiển thị viền xanh outline riêng biệt; Nhấp đúp chuột (Double Click) mở Modal Cài đặt Chi tiết (Alt, Title, Link).
   - Đồng bộ hai chiều TipTap JSON Schema (`domToTipTap` & `tiptapToEditorHTML`), hiển thị tương thích hoàn toàn sang Storefront (`tiptap-to-html.ts`). 0 lỗi TypeScript trên cả 3 dự án (`npx tsc --noEmit`).
+
+## [2026-08-27] Hoàn thành Module Blog & Tin Tức Full-stack & Database Seeding
+- **Prisma Schema & Database:** Thêm enum `PostStatus`, các models `PostCategory`, `Post`, `Tag`, `PostTag`, `PostProduct`, cập nhật quan hệ với `User` và `Product`, đồng bộ thành công MySQL DB qua `npx prisma db push`.
+- **Backend APIs & Schedulers (`apps/backend/src/blog`):**
+  - Public Storefront Endpoints: `GET /api/v1/blog/categories` (cache Redis 30p), `GET /api/v1/blog/posts` (phân trang, search, filter), `GET /api/v1/blog/posts/:slug`, `POST /api/v1/blog/posts/:slug/view` (atomic Redis counter + rate limiter).
+  - Admin Dashboard Endpoints: Quản trị CRUD bài viết, chuyên mục, hỗ trợ lên lịch xuất bản và tự động xóa cache Redis.
+  - Schedulers: Batch sync views từ Redis về MySQL mỗi 5 phút và tự động xuất bản bài viết theo lịch mỗi 1 phút.
+- **Frontend Integration (`apps/frontend`):**
+  - Tạo `lib/blog.ts` kết nối trực tiếp API Backend, cập nhật `app/blog/page.tsx` và `app/blog/[slug]/page.tsx` với dynamic metadata SEO, schema JSON-LD, trích xuất mục lục (TOC) tự động từ TipTap doc và component `PostViewTracker` ghi nhận lượt xem.
+- **Database Seeding (`prisma/seed.ts`):**
+  - Seed thành công 4 Blog Categories, 7 Hashtags, 5 Bài viết mẫu chất lượng cao kèm TipTap JSON blocks, SEO metadata và liên kết Cross-selling sản phẩm vào MySQL database. 0 lỗi TypeScript trên toàn bộ hệ thống (`npx tsc --noEmit`).

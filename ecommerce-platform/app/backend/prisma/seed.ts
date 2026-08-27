@@ -3,7 +3,7 @@
 // Chạy: npm run db:seed
 
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
-import { PrismaClient, BannerType, Role } from '@prisma/client';
+import { PrismaClient, BannerType, Role, PostStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -30,6 +30,11 @@ async function main() {
   console.log('🌱 Bắt đầu seeding...');
 
   // ─── CLEAN UP (idempotent) ─────────────────────────────────────────────────
+  await prisma.postProduct.deleteMany();
+  await prisma.postTag.deleteMany();
+  await prisma.post.deleteMany();
+  await prisma.postCategory.deleteMany();
+  await prisma.tag.deleteMany();
   await prisma.cartItem.deleteMany();
   await prisma.orderItem.deleteMany();
   await prisma.product.deleteMany();
@@ -613,38 +618,46 @@ async function main() {
   const adminPassword = await bcrypt.hash('Admin123@', 12);
 
   // Admin Account
-  await prisma.user.upsert({
+  const adminUser = await prisma.user.upsert({
     where: { email: 'admin@techbite.com' },
     create: {
       email: 'admin@techbite.com',
       password: adminPassword,
-      fullName: 'Nguyễn Văn A',
+      fullName: 'Hoàng Nam Dev',
       phone: '0901234567',
       role: Role.ADMIN,
       roleGroupId: superAdminRole.id,
+      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&h=120&fit=crop',
       isActive: true,
-      notes: 'Quản trị viên sáng lập hệ thống TechBite.',
+      notes: 'Senior Fullstack Engineer & Lead Tech Writer tại TechBite.',
     },
     update: {
       roleGroupId: superAdminRole.id,
+      fullName: 'Hoàng Nam Dev',
+      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&h=120&fit=crop',
+      notes: 'Senior Fullstack Engineer & Lead Tech Writer tại TechBite.',
     },
   });
 
   // Staff 1
-  await prisma.user.upsert({
+  const staffUser1 = await prisma.user.upsert({
     where: { email: 'staff.01@techbite.com' },
     create: {
       email: 'staff.01@techbite.com',
       password: staffPassword,
-      fullName: 'Trần Thị B',
+      fullName: 'Minh Thư Nutrition',
       phone: '0908765432',
       role: Role.STAFF,
       roleGroupId: storeManagerRole.id,
+      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
       isActive: true,
-      notes: 'Quản lý bán lẻ và đơn hàng ca sáng.',
+      notes: 'Chuyên gia dinh dưỡng và biên tập viên chuyên mục Mẹo Sinh Tồn.',
     },
     update: {
       roleGroupId: storeManagerRole.id,
+      fullName: 'Minh Thư Nutrition',
+      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
+      notes: 'Chuyên gia dinh dưỡng và biên tập viên chuyên mục Mẹo Sinh Tồn.',
     },
   });
 
@@ -668,25 +681,329 @@ async function main() {
   });
 
   // Staff 3 (With custom permissions)
-  await prisma.user.upsert({
+  const staffUser3 = await prisma.user.upsert({
     where: { email: 'staff.03@techbite.com' },
     create: {
       email: 'staff.03@techbite.com',
       password: staffPassword,
-      fullName: 'Phạm Minh D',
+      fullName: 'Tuấn Anh Food Review',
       phone: '0987654321',
       role: Role.STAFF,
       roleGroupId: cskhRole.id,
+      avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=120&h=120&fit=crop',
       customPermissions: ['product.view'],
       isActive: true,
-      notes: 'CSKH và quản lý nội dung banner khuyến mãi.',
+      notes: 'Food Reviewer & Tech Snacker đam mê khám phá các món ăn đêm.',
     },
     update: {
       roleGroupId: cskhRole.id,
+      fullName: 'Tuấn Anh Food Review',
+      avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=120&h=120&fit=crop',
       customPermissions: ['product.view'],
     },
   });
   console.log('✅ Đã tạo 4 tài khoản quản trị & nhân viên mẫu');
+
+  // ─── BLOG MODULE SEEDING ──────────────────────────────────────────────────
+  const blogCatCoder = await prisma.postCategory.create({
+    data: {
+      name: 'Góc Coder Thức Khuya',
+      slug: 'goc-coder-thuc-khuya',
+      description: 'Bí quyết nạp năng lượng, giữ tỉnh táo 100% khi thức đêm làm việc từ TechBite.',
+      icon: '💻',
+      orderIndex: 1,
+      isActive: true,
+    },
+  });
+
+  const blogCatReview = await prisma.postCategory.create({
+    data: {
+      name: 'Review Đồ Ăn Vặt',
+      slug: 'review-do-an-vat',
+      description: 'Đánh giá chân thực các món ăn vặt ngon, sạch, tiện lợi không dính tay lên phím.',
+      icon: '🍿',
+      orderIndex: 2,
+      isActive: true,
+    },
+  });
+
+  const blogCatDrinks = await prisma.postCategory.create({
+    data: {
+      name: 'Nước Tăng Lực & Cà Phê',
+      slug: 'nuoc-tang-luc-ca-phe',
+      description: 'Phân tích các dòng đồ uống tỉnh táo không đường, không gây mệt mỏi sau cữ dùng.',
+      icon: '⚡',
+      orderIndex: 3,
+      isActive: true,
+    },
+  });
+
+  const blogCatTips = await prisma.postCategory.create({
+    data: {
+      name: 'Mẹo Năng Lượng Đỉnh Cao',
+      slug: 'meo-nang-luong',
+      description: 'Cẩm nang dinh dưỡng khoa học giúp duy trì nhịp độ làm việc bền bỉ 12 tiếng.',
+      icon: '🔥',
+      orderIndex: 4,
+      isActive: true,
+    },
+  });
+  console.log('✅ Đã tạo 4 Blog Categories');
+
+  // Tags
+  const tagDeadline = await prisma.tag.create({ data: { name: 'chay-deadline', slug: 'chay-deadline' } });
+  const tagCoder = await prisma.tag.create({ data: { name: 'coder-thuc-khuya', slug: 'coder-thuc-khuya' } });
+  const tagAnVat = await prisma.tag.create({ data: { name: 'an-vat-it', slug: 'an-vat-it' } });
+  const tagEnergy = await prisma.tag.create({ data: { name: 'energy-drinks', slug: 'energy-drinks' } });
+  const tagKhoGa = await prisma.tag.create({ data: { name: 'kho-ga', slug: 'kho-ga' } });
+  const tagHealth = await prisma.tag.create({ data: { name: 'suc-khoe-lap-trinh', slug: 'suc-khoe-lap-trinh' } });
+  const tagHat = await prisma.tag.create({ data: { name: 'hat-dinh-duong', slug: 'hat-dinh-duong' } });
+
+  // Lấy danh sách sản phẩm để liên kết Cross-selling
+  const dbProducts = await prisma.product.findMany();
+  const khoGaProduct = dbProducts.find((p) => p.slug === 'kho-ga-la-chanh-xe-cay') || dbProducts[0];
+  const celsiusProduct = dbProducts.find((p) => p.slug === 'nuoc-tang-luc-celsius-dua-hau') || dbProducts[1];
+  const maccaProduct = dbProducts.find((p) => p.slug === 'hat-macca-rang-muoi-uc') || dbProducts[2];
+
+  // Post 1: Hero Post
+  const post1 = await prisma.post.create({
+    data: {
+      title: "Top 7 Món Ăn Vặt 'Cứu Cánh' Đêm Chạy Deadline Cho Anh Em Lập Trình Viên",
+      slug: 'top-7-mon-an-vat-cuu-canh-dem-chay-deadline',
+      summary: 'Tổng hợp các món ăn nhanh vừa tiện lợi, vừa giàu protein giúp giữ tỉnh táo 100% suốt đêm trắng fix bug mà không sợ nặng bụng hay buồn ngủ.',
+      thumbnail: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&h=675&fit=crop',
+      status: PostStatus.PUBLISHED,
+      views: 1845,
+      readTimeMinutes: 6,
+      authorId: adminUser.id,
+      categoryId: blogCatCoder.id,
+      publishedAt: new Date('2026-08-25T14:30:00.000Z'),
+      metaTitle: "Top 7 Món Ăn Vặt Cứu Cánh Đêm Chạy Deadline Cho Lập Trình Viên | TechBite",
+      metaDescription: "Tổng hợp các món ăn nhanh tiện lợi, giàu đạm và không đường giúp lập trình viên giữ tỉnh táo 100% khi chạy deadline xuyên đêm.",
+      canonicalUrl: 'https://techbite.vn/blog/top-7-mon-an-vat-cuu-canh-dem-chay-deadline',
+      ogImage: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&h=675&fit=crop',
+      content: {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: 'Trong những đêm trắng chạy nước rút cho kịp hạn chót release tính năng hay giải quyết các sự cố production nghiêm trọng, năng lượng và sự tỉnh táo là hai tài sản quý giá nhất của một kỹ sư phần mềm. Tuy nhiên, việc liên tục nạp các loại đồ uống nhiều đường hay thức ăn nhanh nhiều dầu mỡ thường dẫn đến cảm giác uể oải, nặng bụng và hội chứng "sugar crash" chỉ sau vài giờ ngắn ngủi.',
+              },
+            ],
+          },
+          {
+            type: 'heading',
+            attrs: { level: 2 },
+            content: [{ type: 'text', text: '1. Cơn ác mộng buồn ngủ lúc 2h sáng' }],
+          },
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: 'Đồng hồ điểm 02:00 AM, bug vẫn chưa fix xong mà hai mí mắt đã bắt đầu dính chặt vào nhau. Lúc này, phản xạ tự nhiên của đa số anh em là pha một ly cà phê đậm đặc hoặc mở một lon nước ngọt có ga. Nhưng bạn có biết rằng lượng đường fructose tinh luyện cao sẽ khiến đường huyết tăng vọt rồi tụt dốc không phanh, khiến não bộ rơi vào trạng thái mệt mỏi gấp bội?',
+              },
+            ],
+          },
+          {
+            type: 'blockquote',
+            content: [
+              {
+                type: 'paragraph',
+                content: [
+                  { type: 'text', marks: [{ type: 'bold' }], text: 'Bí quyết của các Senior Dev: ' },
+                  { type: 'text', text: 'Ưu tiên thức ăn giàu protein và chất béo lành mạnh, kết hợp các hoạt chất tự nhiên giúp giải phóng năng lượng từ từ trong suốt 4-6 tiếng liên tục.' },
+                ],
+              },
+            ],
+          },
+          {
+            type: 'heading',
+            attrs: { level: 3 },
+            content: [{ type: 'text', text: 'Tiêu chí chọn món ăn vặt cho dân lập trình' }],
+          },
+          {
+            type: 'bulletList',
+            content: [
+              {
+                type: 'listItem',
+                content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Không dính tay lên bàn phím: ' }, { type: 'text', text: 'Món ăn phải khô ráo để không làm bẩn bàn phím cơ và trackpad.' }] }],
+              },
+              {
+                type: 'listItem',
+                content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Hàm lượng đường thấp: ' }, { type: 'text', text: 'Hạn chế tối đa hiện tượng buồn ngủ sau ăn (Food Coma).' }] }],
+              },
+              {
+                type: 'listItem',
+                content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Kích thích giác quan nhẹ nhàng: ' }, { type: 'text', text: 'Vị cay nồng của ớt hoặc hương thơm của lá chanh giúp kích thích các nơ-ron thần kinh tỉnh táo tức thì.' }] }],
+              },
+            ],
+          },
+          {
+            type: 'heading',
+            attrs: { level: 2 },
+            content: [{ type: 'text', text: '2. Top 7 món ăn vặt cứu cánh đỉnh cao' }],
+          },
+          {
+            type: 'heading',
+            attrs: { level: 3 },
+            content: [{ type: 'text', text: 'Khô Gà Lá Chanh Xé Cay: Vị cay kích thích thần kinh' }],
+          },
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Khô gà lá chanh là món ăn quốc dân của giới IT mỗi mùa release. Từng thớ thịt gà ức giàu đạm được sấy giòn rụm kết hợp với ớt hiểm sấy khô và lá chanh tươi tạo nên vị cay the bùng nổ, đánh thức mọi giác quan ngay từ miếng đầu tiên.' }],
+          },
+          {
+            type: 'image',
+            attrs: {
+              src: 'https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=1000&h=560&fit=crop',
+              alt: 'Khô gà lá chanh xé cay giòn rụm TechBite',
+              caption: 'Khô gà xé cay giòn rụm - Người bạn đồng hành không thể thiếu lúc 2h sáng',
+            },
+          },
+          {
+            type: 'heading',
+            attrs: { level: 3 },
+            content: [{ type: 'text', text: 'Nước Tăng Lực Không Đường Celsius: Tập trung không crash' }],
+          },
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Khác với các dòng nước tăng lực truyền thống chứa tới 30-40g đường mỗi lon, Celsius sử dụng chiết xuất trà xanh (EGCG), gừng và guarana tự nhiên kết hợp 7 loại vitamin nhóm B giúp đốt mỡ sinh nhiệt và duy trì độ tập trung sắc bén mà không gây cảm giác tim đập thình thịch.' }],
+          },
+          {
+            type: 'heading',
+            attrs: { level: 2 },
+            content: [{ type: 'text', text: '3. Lời khuyên để tránh nặng bụng khi thức đêm' }],
+          },
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Bên cạnh việc chọn đúng món ăn, hãy luôn để sẵn một bình nước lọc 1 lít bên cạnh bàn làm việc. Cứ mỗi 45 phút code liên tục, hãy đứng dậy vươn vai, uống một ngụm nước và nhìn xa 20 giây (quy tắc 20-20-20) để đôi mắt và cơ thể luôn ở trạng thái tốt nhất.' }],
+          },
+        ],
+      },
+    },
+  });
+
+  // Post 2
+  const post2 = await prisma.post.create({
+    data: {
+      title: 'So Sánh Nước Tăng Lực Không Đường: Celsius vs Monster Đâu Là Chân Ái?',
+      slug: 'so-sanh-nuoc-tang-luc-khong-duong-celsius-vs-monster',
+      summary: 'Đánh giá chi tiết hàm lượng caffeine, vitamin B và cảm giác tim đập sau 4 tiếng chiến code liên tục.',
+      thumbnail: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&h=338&fit=crop',
+      status: PostStatus.PUBLISHED,
+      views: 920,
+      readTimeMinutes: 4,
+      authorId: staffUser1.id,
+      categoryId: blogCatDrinks.id,
+      publishedAt: new Date('2026-08-24T09:15:00.000Z'),
+      content: {
+        type: 'doc',
+        content: [
+          { type: 'paragraph', content: [{ type: 'text', text: 'Khi đối mặt với deadline cấp bách, một lon nước tăng lực không đường là lựa chọn phổ biến. Nhưng giữa Celsius và Monster Ultra, đâu mới là lựa chọn tối ưu cho lập trình viên?' }] },
+          { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: '1. So sánh hàm lượng caffeine và thành phần' }] },
+          { type: 'paragraph', content: [{ type: 'text', text: 'Celsius chứa 200mg caffeine chiết xuất từ trà xanh và hạt guarana, trong khi Monster Ultra chứa 150mg caffeine tổng hợp. Cả hai đều có 0g đường và bổ sung các vitamin nhóm B.' }] },
+        ],
+      },
+    },
+  });
+
+  // Post 3
+  const post3 = await prisma.post.create({
+    data: {
+      title: 'Đánh Giá Khô Gà Lá Chanh Xé Cay TechBite: Cay Nồng Kích Thích Não Bộ',
+      slug: 'danh-gia-kho-ga-la-chanh-xe-cay-techbite',
+      summary: 'Vị cay the kích thích vị giác cùng độ giòn rụm giúp bạn xua tan cơn buồn ngủ 2h sáng chỉ sau 3 miếng đầu tiên.',
+      thumbnail: 'https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=600&h=338&fit=crop',
+      status: PostStatus.PUBLISHED,
+      views: 1450,
+      readTimeMinutes: 5,
+      authorId: staffUser3.id,
+      categoryId: blogCatReview.id,
+      publishedAt: new Date('2026-08-23T16:45:00.000Z'),
+      content: {
+        type: 'doc',
+        content: [
+          { type: 'paragraph', content: [{ type: 'text', text: 'Được đóng gói hũ nhôm kín khí, Khô Gà Lá Chanh TechBite giữ trọn độ giòn và vị cay the nồng đượm của ớt sừng.' }] },
+        ],
+      },
+    },
+  });
+
+  // Post 4
+  const post4 = await prisma.post.create({
+    data: {
+      title: 'Bí Quyết Giữ Tỉnh Táo 12 Tiếng Không Cần Nạp Quá Nhiều Đường',
+      slug: 'bi-quyet-giu-tinh-tao-12-tieng-khong-can-duong',
+      summary: 'Cách phân bổ hạt dinh dưỡng macca, óc chó xen kẽ các cữ uống nước giúp não bộ hoạt động bền bỉ.',
+      thumbnail: 'https://images.unsplash.com/photo-1567892737950-30c4db39a622?w=600&h=338&fit=crop',
+      status: PostStatus.PUBLISHED,
+      views: 2130,
+      readTimeMinutes: 7,
+      authorId: adminUser.id,
+      categoryId: blogCatTips.id,
+      publishedAt: new Date('2026-08-22T08:30:00.000Z'),
+      content: {
+        type: 'doc',
+        content: [
+          { type: 'paragraph', content: [{ type: 'text', text: 'Chiến lược giữ tỉnh táo bền bỉ dựa trên việc duy trì đường huyết ổn định kết hợp chất béo lành mạnh từ các loại hạt cao cấp.' }] },
+        ],
+      },
+    },
+  });
+
+  // Post 5
+  const post5 = await prisma.post.create({
+    data: {
+      title: 'Top 5 Loại Hạt Dinh Dưỡng Giúp Tăng Khả Năng Tập Trung Khi Lập Trình',
+      slug: 'top-5-loai-hat-dinh-duong-tang-tap-trung',
+      summary: 'Khám phá lợi ích của Omega-3 và Magie có trong Macca, Hạnh nhân Úc và Hạt điều sấy nguyên vị.',
+      thumbnail: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=600&h=338&fit=crop',
+      status: PostStatus.PUBLISHED,
+      views: 870,
+      readTimeMinutes: 5,
+      authorId: staffUser1.id,
+      categoryId: blogCatTips.id,
+      publishedAt: new Date('2026-08-20T11:00:00.000Z'),
+      content: {
+        type: 'doc',
+        content: [
+          { type: 'paragraph', content: [{ type: 'text', text: 'Hạt Macca và Hạnh nhân chứa hàm lượng chất chống oxy hóa cao, bảo vệ tế bào thần kinh trước áp lực công việc dài ngày.' }] },
+        ],
+      },
+    },
+  });
+
+  // Post Tags Mapping
+  await prisma.postTag.createMany({
+    data: [
+      { postId: post1.id, tagId: tagDeadline.id },
+      { postId: post1.id, tagId: tagCoder.id },
+      { postId: post1.id, tagId: tagAnVat.id },
+      { postId: post2.id, tagId: tagEnergy.id },
+      { postId: post3.id, tagId: tagKhoGa.id },
+      { postId: post4.id, tagId: tagHealth.id },
+      { postId: post5.id, tagId: tagHat.id },
+    ],
+  });
+
+  // Post Products Cross-selling
+  if (khoGaProduct && celsiusProduct) {
+    await prisma.postProduct.createMany({
+      data: [
+        { postId: post1.id, productId: khoGaProduct.id, displayOrder: 1 },
+        { postId: post1.id, productId: celsiusProduct.id, displayOrder: 2 },
+        { postId: post2.id, productId: celsiusProduct.id, displayOrder: 1 },
+        { postId: post3.id, productId: khoGaProduct.id, displayOrder: 1 },
+        ...(maccaProduct ? [{ postId: post4.id, productId: maccaProduct.id, displayOrder: 1 }, { postId: post5.id, productId: maccaProduct.id, displayOrder: 1 }] : []),
+      ],
+    });
+  }
+
+  console.log('✅ Đã tạo 5 Blog Posts mẫu kèm Tags và Cross-selling Products');
 
   console.log(`✅ Đã tạo ${products.count} products`);
   console.log('');

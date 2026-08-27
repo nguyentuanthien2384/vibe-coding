@@ -101,6 +101,13 @@ enum EmailStatus {
   FAILED
 }
 
+enum PostStatus {
+  DRAFT      // Bản nháp, chỉ tác giả/admin xem được
+  SCHEDULED  // Đã lên lịch, tự động chuyển PUBLISHED khi đến thời điểm scheduledAt
+  PUBLISHED  // Đã công khai trên store
+  ARCHIVED   // Lưu trữ / ẩn bài viết
+}
+
 // =============================================================================
 // MODULE: HOME PAGE
 // Source: .docs/backend-plans/home-plan.md
@@ -170,9 +177,10 @@ model Product {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  category   Category    @relation(fields: [categoryId], references: [id])
-  cartItems  CartItem[]
-  orderItems OrderItem[]
+  category      Category      @relation(fields: [categoryId], references: [id])
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  postProducts  PostProduct[]
 
   @@index([isFeatured, isActive, createdAt(sort: Desc)], name: "idx_product_featured_active")
   @@index([categoryId, isActive], name: "idx_product_category")
@@ -239,6 +247,7 @@ model User {
   emailLogs     EmailLog[]
   notifications Notification[]
   pointsLedgers PointsLedger[]
+  posts         Post[]
 
   @@index([email], name: "idx_user_email")
   @@index([role, isActive], name: "idx_user_role_active")
@@ -517,4 +526,117 @@ model SystemSetting {
 
   @@index([key], name: "idx_setting_key")
   @@map("system_settings")
+}
+
+// =============================================================================
+// MODULE: BLOG & TIN TỨC
+// Source: .docs/backend-plans/blog-idea-plan.md
+// =============================================================================
+
+/// Bảng chuyên mục bài viết (Góc Coder, Review Đồ Ăn, Nước Tăng Lực...)
+model PostCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  icon        String?  @db.VarChar(100) // Emoji hoặc icon class/SVG url
+  orderIndex  Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  posts Post[]
+
+  @@index([slug], name: "idx_post_category_slug")
+  @@index([isActive, orderIndex], name: "idx_post_category_active_order")
+  @@map("post_categories")
+}
+
+/// Bảng bài viết Blog & Tin tức
+model Post {
+  id              Int        @id @default(autoincrement())
+  title           String     @db.VarChar(255)
+  slug            String     @unique @db.VarChar(255)
+  summary         String     @db.VarChar(500)
+  thumbnail       String     @db.VarChar(500)
+  content         Json       // Cấu trúc TipTap JSON Blocks chuẩn (Nodes, Marks, Blocks)
+  status          PostStatus @default(DRAFT)
+  readTimeMinutes Int        @default(5)
+  views           Int        @default(0) // Giá trị lưu bền vững (sync từ Redis theo batch)
+
+  // Tác giả & Chuyên mục
+  authorId        Int
+  categoryId      Int
+
+  // Thời gian lên lịch & Xuất bản
+  scheduledAt     DateTime?
+  publishedAt     DateTime?
+
+  // SEO Metadata
+  metaTitle       String?    @db.VarChar(255)
+  metaDescription String?    @db.VarChar(500)
+  canonicalUrl    String?    @db.VarChar(500)
+  ogImage         String?    @db.VarChar(500)
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  author          User         @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  category        PostCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  postTags        PostTag[]
+  postProducts    PostProduct[]
+
+  @@index([slug], name: "idx_post_slug")
+  @@index([status, publishedAt(sort: Desc)], name: "idx_post_status_published")
+  @@index([categoryId, status, publishedAt(sort: Desc)], name: "idx_post_category_status")
+  @@index([authorId], name: "idx_post_author")
+  @@index([status, scheduledAt], name: "idx_post_scheduled_scan")
+  @@map("posts")
+}
+
+/// Bảng thẻ bài viết (Hashtags)
+model Tag {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(50)
+  slug      String    @unique @db.VarChar(50)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  postTags  PostTag[]
+
+  @@index([slug], name: "idx_tag_slug")
+  @@map("tags")
+}
+
+/// Bảng trung gian liên kết Post và Tag
+model PostTag {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  tagId     Int
+  createdAt DateTime @default(now())
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, tagId], name: "idx_post_tag_unique")
+  @@index([postId], name: "idx_post_tag_post")
+  @@index([tagId], name: "idx_post_tag_tag")
+  @@map("post_tags")
+}
+
+/// Bảng liên kết sản phẩm được nhắc đến trong bài viết (Cross-selling)
+model PostProduct {
+  id           Int      @id @default(autoincrement())
+  postId       Int
+  productId    Int
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  post         Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, productId], name: "idx_post_product_unique")
+  @@index([postId, displayOrder], name: "idx_post_product_order")
+  @@index([productId], name: "idx_post_product_product")
+  @@map("post_products")
 }

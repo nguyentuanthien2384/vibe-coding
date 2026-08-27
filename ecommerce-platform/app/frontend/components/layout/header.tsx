@@ -54,6 +54,7 @@ const HeaderInner = () => {
     !isKhuyenMai &&
     !isComboDeadline &&
     (pathname === '/products' || (pathname.startsWith('/products/') && !pathname.includes('combo-deadline')));
+  const isBlog = pathname.startsWith('/blog');
   const isEmailLogs = pathname.startsWith('/admin/email-logs');
 
   return (
@@ -133,6 +134,16 @@ const HeaderInner = () => {
               }
             >
               Khuyến mãi 🔥
+            </Link>
+            <Link
+              href="/blog"
+              className={
+                isBlog
+                  ? 'text-orange-600 font-bold'
+                  : 'text-slate-700 hover:text-orange-600 transition-colors'
+              }
+            >
+              Blog ✍️
             </Link>
             {mounted && user?.role === 'ADMIN' && (
               <Link
@@ -332,6 +343,17 @@ const HeaderInner = () => {
                   }`}
                 >
                   <span>🔥</span> Khuyến mãi Hot
+                </Link>
+                <Link
+                  href="/blog"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-colors ${
+                    isBlog
+                      ? 'bg-orange-50 text-orange-600 font-bold'
+                      : 'hover:bg-slate-50 text-slate-700 font-medium'
+                  }`}
+                >
+                  <span>✍️</span> Blog & Mẹo Coder
                 </Link>
               </div>
 
