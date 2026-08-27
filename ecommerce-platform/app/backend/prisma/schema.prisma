@@ -591,6 +591,7 @@ model Post {
   @@index([categoryId, status, publishedAt(sort: Desc)], name: "idx_post_category_status")
   @@index([authorId], name: "idx_post_author")
   @@index([status, scheduledAt], name: "idx_post_scheduled_scan")
+  @@index([title], name: "idx_post_title")
   @@map("posts")
 }
 

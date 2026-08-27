@@ -1,7 +1,7 @@
 export interface PermissionItem {
   id: string;
   label: string;
-  category: 'PRODUCT' | 'ORDER' | 'CUSTOMER' | 'SYSTEM';
+  category: 'PRODUCT' | 'ORDER' | 'CUSTOMER' | 'SYSTEM' | 'BLOG';
 }
 
 export const SYSTEM_PERMISSIONS: PermissionItem[] = [
@@ -14,6 +14,9 @@ export const SYSTEM_PERMISSIONS: PermissionItem[] = [
   { id: 'report.export', label: 'Xuất báo cáo & Hóa đơn', category: 'ORDER' },
   { id: 'customer.view', label: 'Xem thông tin khách hàng', category: 'CUSTOMER' },
   { id: 'customer.manage', label: 'Quản lý thông tin khách hàng', category: 'CUSTOMER' },
+  { id: 'blog.view', label: 'Xem bài viết & chuyên mục', category: 'BLOG' },
+  { id: 'blog.manage', label: 'Thêm/Sửa/Xóa bài viết blog', category: 'BLOG' },
+  { id: 'blog.category_manage', label: 'Quản lý chuyên mục bài viết', category: 'BLOG' },
   { id: 'banner.manage', label: 'Quản lý Banner/Quảng cáo', category: 'SYSTEM' },
   { id: 'setting.manage', label: 'Cấu hình hệ thống', category: 'SYSTEM' },
   { id: 'point.manage', label: 'Quản lý & Cấu hình tích điểm', category: 'SYSTEM' },

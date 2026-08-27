@@ -1,7 +1,7 @@
-﻿import { PostStatus } from '@prisma/client';
+import { PostStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
-  IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -24,8 +24,8 @@ export class AdminGetPostsQueryDto {
   limit?: number = 10;
 
   @IsOptional()
-  @IsEnum(PostStatus)
-  status?: PostStatus;
+  @IsString()
+  status?: string; // PostStatus | 'ALL'
 
   @IsOptional()
   @Type(() => Number)
@@ -36,4 +36,12 @@ export class AdminGetPostsQueryDto {
   @IsOptional()
   @IsString()
   q?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @IsIn(['latest', 'views'])
+  sortBy?: 'latest' | 'views' = 'latest';
 }

@@ -1,7 +1,7 @@
 import { PermissionDefinition, StaffRoleGroup, StaffListItem, StaffDetail } from '../types/staff.types';
 
 export const PERMISSION_GROUPS: {
-  category: 'PRODUCT' | 'ORDER' | 'CUSTOMER' | 'SYSTEM';
+  category: 'PRODUCT' | 'ORDER' | 'CUSTOMER' | 'SYSTEM' | 'BLOG';
   title: string;
   permissions: PermissionDefinition[];
 }[] = [
@@ -30,6 +30,15 @@ export const PERMISSION_GROUPS: {
     permissions: [
       { id: 'customer.view', label: 'Xem thông tin khách hàng', category: 'CUSTOMER' },
       { id: 'customer.manage', label: 'Quản lý thông tin khách hàng', category: 'CUSTOMER' },
+    ],
+  },
+  {
+    category: 'BLOG',
+    title: 'BLOG & TIN TỨC',
+    permissions: [
+      { id: 'blog.view', label: 'Xem bài viết & chuyên mục', category: 'BLOG' },
+      { id: 'blog.manage', label: 'Thêm/Sửa/Xóa bài viết blog', category: 'BLOG' },
+      { id: 'blog.category_manage', label: 'Quản lý chuyên mục bài viết', category: 'BLOG' },
     ],
   },
   {

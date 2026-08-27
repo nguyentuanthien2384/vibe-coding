@@ -2,7 +2,7 @@ export type StaffRole = 'ADMIN' | 'STAFF';
 
 export type StaffStatus = 'ACTIVE' | 'BLOCKED';
 
-export type PermissionCategory = 'PRODUCT' | 'ORDER' | 'CUSTOMER' | 'SYSTEM';
+export type PermissionCategory = 'PRODUCT' | 'ORDER' | 'CUSTOMER' | 'SYSTEM' | 'BLOG';
 
 export interface PermissionDefinition {
   id: string;

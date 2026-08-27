@@ -1,78 +1,89 @@
-﻿import { PostStatus } from '@prisma/client';
+import { PostStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
   IsEnum,
   IsInt,
+  IsNotEmpty,
   IsObject,
   IsOptional,
   IsString,
-  IsUrl,
-  Matches,
   MaxLength,
   Min,
 } from 'class-validator';
 
 export class CreatePostDto {
-  @IsString({ message: 'Tieu de khong duoc de trong' })
-  @MaxLength(255, { message: 'Tieu de toi da 255 ky tu' })
+  @IsNotEmpty({ message: 'Tiêu đề bài viết không được để trống' })
+  @IsString({ message: 'Tiêu đề bài viết phải là chuỗi ký tự' })
+  @MaxLength(255, { message: 'Tiêu đề tối đa 255 ký tự' })
   title: string;
 
-  @IsString({ message: 'Slug khong duoc de trong' })
-  @MaxLength(255)
-  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
-    message: 'Slug khong dung dinh dang kebab-case',
-  })
-  slug: string;
+  @IsOptional()
+  @IsString({ message: 'Slug phải là chuỗi ký tự' })
+  @MaxLength(255, { message: 'Slug tối đa 255 ký tự' })
+  slug?: string;
 
-  @IsString({ message: 'Tom tat bai viet khong duoc de trong' })
-  @MaxLength(500)
+  @IsNotEmpty({ message: 'Tóm tắt bài viết không được để trống' })
+  @IsString({ message: 'Tóm tắt phải là chuỗi ký tự' })
+  @MaxLength(500, { message: 'Tóm tắt tối đa 500 ký tự' })
   summary: string;
 
-  @IsUrl({}, { message: 'Thumbnail phai la URL hop le' })
+  @IsNotEmpty({ message: 'Ảnh đại diện thumbnail không được để trống' })
+  @IsString({ message: 'Thumbnail phải là đường dẫn chuỗi hợp lệ' })
+  @MaxLength(500, { message: 'Đường dẫn thumbnail tối đa 500 ký tự' })
   thumbnail: string;
 
-  @IsObject({ message: 'Noi dung TipTap content phai la Object JSON' })
+  @IsNotEmpty({ message: 'Nội dung bài viết không được để trống' })
+  @IsObject({ message: 'Nội dung TipTap content phải là Object JSON' })
   content: Record<string, unknown>;
 
-  @IsEnum(PostStatus, { message: 'Trang thai bai viet khong hop le' })
+  @IsEnum(PostStatus, { message: 'Trạng thái bài viết không hợp lệ' })
   status: PostStatus;
 
-  @IsInt({ message: 'categoryId phai la so nguyen' })
-  @Min(1)
+  @IsNotEmpty({ message: 'Chuyên mục bài viết không được để trống' })
   @Type(() => Number)
+  @IsInt({ message: 'categoryId phải là số nguyên' })
+  @Min(1, { message: 'categoryId không hợp lệ' })
   categoryId: number;
 
   @IsOptional()
-  @IsArray()
-  @IsInt({ each: true })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  readTimeMinutes?: number;
+
+  @IsOptional()
+  @IsArray({ message: 'tagIds phải là một mảng' })
+  @IsInt({ each: true, message: 'Mỗi tagId phải là số nguyên' })
   tagIds?: number[];
 
   @IsOptional()
-  @IsArray()
-  @IsInt({ each: true })
+  @IsArray({ message: 'productIds phải là một mảng' })
+  @IsInt({ each: true, message: 'Mỗi productId phải là số nguyên' })
   productIds?: number[];
 
   @IsOptional()
-  @IsDateString()
-  scheduledAt?: string;
+  @IsDateString({}, { message: 'scheduledAt phải là định dạng ISO DateTime' })
+  scheduledAt?: string | null;
 
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  metaTitle?: string;
+  metaTitle?: string | null;
 
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  metaDescription?: string;
+  metaDescription?: string | null;
 
   @IsOptional()
-  @IsUrl()
-  ogImage?: string;
+  @IsString()
+  @MaxLength(500)
+  ogImage?: string | null;
 
   @IsOptional()
-  @IsUrl()
-  canonicalUrl?: string;
+  @IsString()
+  @MaxLength(500)
+  canonicalUrl?: string | null;
 }

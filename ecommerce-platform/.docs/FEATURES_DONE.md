@@ -368,3 +368,26 @@
   - Tạo `lib/blog.ts` kết nối trực tiếp API Backend, cập nhật `app/blog/page.tsx` và `app/blog/[slug]/page.tsx` với dynamic metadata SEO, schema JSON-LD, trích xuất mục lục (TOC) tự động từ TipTap doc và component `PostViewTracker` ghi nhận lượt xem.
 - **Database Seeding (`prisma/seed.ts`):**
   - Seed thành công 4 Blog Categories, 7 Hashtags, 5 Bài viết mẫu chất lượng cao kèm TipTap JSON blocks, SEO metadata và liên kết Cross-selling sản phẩm vào MySQL database. 0 lỗi TypeScript trên toàn bộ hệ thống (`npx tsc --noEmit`).
+
+## [2026-08-27] Hoàn thành UI Module Quản lý Blog (Admin Dashboard — Blog Feature)
+- **Kiến trúc & Types:** Tạo đầy đủ TypeScript interfaces tại `features/blog/types/` (`tiptap.types.ts`, `blog.types.ts`, `api.types.ts`) và mock data tại `features/blog/data/mock-blog-data.ts`.
+- **Trang Danh sách Bài viết (`/blog`):** Xây dựng hoàn chỉnh `BlogListPageClient` (Smart Container, useState + useDebounce 300ms, client-side filter/sort/pagination), `BlogPageHeader`, `BlogFilterBar` (Search + Category + Status + Sort), `BlogTable`, `BlogTableRow` (Thumbnail 16:9, Category badge, Author avatar, Views, Status badge, Action buttons), `BlogStatusBadge` (4 trạng thái PUBLISHED/SCHEDULED/DRAFT/ARCHIVED), `BlogPagination`, `DeletePostConfirmModal`.
+- **Trang Soạn thảo (`/blog/create` & `/blog/[id]/edit`):** Xây dựng `BlogFormContainer` (Smart), `BlogFormHeader`, `BlogFormLayout` (2-column grid sticky), `BlogGeneralSection` (Title + Auto-slug + Summary), `BlogEditorSection` (Tái sử dụng `JSONRichEditor` từ products feature), `BlogCrossSellSection` (Debounced 300ms product search + reorder), `BlogPublishingSection` (Status radio + Scheduled DatePicker), `BlogCategoryTagSection` (Multi-select tags), `BlogMediaSection` (16:9 thumbnail dropzone + URL input), `BlogSeoSection` (Meta title/desc với progress bar + `GoogleSerpPreviewCard`).
+- **Trang Chuyên mục (`/blog/categories`):** Xây dựng `BlogCategoriesPageClient`, `BlogCategoryPageHeader`, `BlogCategoryTable`, `BlogCategoryTableRow` (Icon, Tên/Slug, Mô tả, Số bài, Thứ tự, Active toggle, Actions), `CategoryFormModal` (Create/Edit, Emoji picker, Auto-slug, Active switch), `DeleteCategoryConfirmModal`.
+- **Pages (Server Components):** `app/(dashboard)/blog/page.tsx`, `blog/create/page.tsx`, `blog/[id]/edit/page.tsx`, `blog/categories/page.tsx`.
+- **Sidebar:** Thêm mục `Blog & Bài viết` (icon `NotebookPen`) vào `sidebar-nav.tsx`.
+- **Tuân thủ:** 100% Server Components cho pages, Client Components chỉ khi cần hook/event, `useDebounce` bắt buộc cho search, tái sử dụng `JSONRichEditor` từ products (Luật thép), 0 lỗi TypeScript (`npx tsc --noEmit`).
+
+## [2026-08-27] Hoàn thành Backend API & Tích hợp Full-stack Quản lý Blog (Admin Dashboard Blog Feature)
+- **Database Schema (`prisma/schema.prisma`):** Hoàn thiện các models `PostCategory`, `Post`, `Tag`, `PostTag`, `PostProduct`, enum `PostStatus`, đánh indexes tối ưu `idx_post_slug`, `idx_post_status_published`, `idx_post_category_status`, `idx_post_author`, `idx_post_scheduled_scan`, `idx_post_title`.
+- **Backend APIs & Service (`app/backend/src/blog`):**
+  - Xây dựng hoàn chỉnh 12 RESTful API Endpoints cho Admin Blog: Lấy danh sách bài viết phân trang + tìm kiếm + lọc (`GET /api/v1/admin/blog/posts`), chi tiết bài viết (`GET /:id`), tạo mới (`POST`), cập nhật (`PUT`/`PATCH`), đổi trạng thái nhanh (`PATCH /:id/status`), xóa bài viết + dọn dẹp file ảnh thumbnail thừa (`DELETE /:id`), upload thumbnail (`POST /upload-thumbnail`), CRUD chuyên mục bài viết (`GET`/`POST`/`PATCH`/`DELETE /categories`), tìm kiếm sản phẩm đính kèm (`GET /products/search-embed`).
+  - Bảo mật bằng `@UseGuards(JwtAuthGuard, RolesGuard)` và `@Roles(Role.ADMIN, Role.STAFF)`.
+  - Tích hợp tự động xóa cache Redis (`cache:v1:blog:*`) và bắn Webhook Next.js Revalidation.
+- **Tích hợp Dashboard UI (`app/dash/my-app`):**
+  - Xây dựng `lib/blog-api.ts` kết nối trực tiếp BFF Proxy và backend NestJS, loại bỏ 100% Mock Data.
+  - Tích hợp API vào `BlogListPageClient` (SSR + Server-side pagination, search debounced 300ms, filter chuyên mục, filter trạng thái, xóa bài viết).
+  - Tích hợp API vào `BlogFormContainer` (Load chi tiết bài viết khi edit theo `postId`, tạo mới / cập nhật bài viết, tìm kiếm live sản phẩm cross-sell qua API, upload file thumbnail trực tiếp từ máy tính hoặc dán link URL, điều hướng router sau khi lưu).
+  - Tích hợp API vào `BlogCategoriesPageClient` (Hiển thị danh sách chuyên mục thật kèm số lượng bài viết `postCount`, tạo mới, cập nhật, đổi trạng thái active thời gian thực, xóa chuyên mục có chặn an toàn nếu còn bài viết).
+- **Kiểm tra chất lượng:** 0 lỗi TypeScript trên cả 3 ứng dụng `app/backend`, `app/dash/my-app`, `app/frontend` (`npx tsc --noEmit`).
+

@@ -285,6 +285,14 @@ export class UploadService {
       });
       if (bannerCount > 0) return true;
 
+      // 5. Kiểm tra bảng Post (thumbnail)
+      const postCount = await this.prisma.post.count({
+        where: {
+          thumbnail: { contains: filename },
+        },
+      });
+      if (postCount > 0) return true;
+
       return false;
     } catch (error) {
       this.logger.error(`Error checking image reference for ${filename}`, error);
