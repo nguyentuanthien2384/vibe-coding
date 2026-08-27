@@ -1,10 +1,18 @@
 import { Search } from 'lucide-react';
 import GoogleSerpPreviewCard from '../google-serp-preview-card';
+import { TipTapDoc } from '../../../types/tiptap.types';
+import { PostStatus } from '../../../types/blog.types';
 
 interface BlogSeoSectionProps {
   metaTitle: string;
   metaDescription: string;
   slug: string;
+  title?: string;
+  summary?: string;
+  thumbnail?: string;
+  content?: TipTapDoc | null;
+  categoryName?: string;
+  status?: PostStatus;
   onChangeTitle: (val: string) => void;
   onChangeDescription: (val: string) => void;
 }
@@ -25,6 +33,12 @@ export default function BlogSeoSection({
   metaTitle,
   metaDescription,
   slug,
+  title,
+  summary,
+  thumbnail,
+  content,
+  categoryName,
+  status,
   onChangeTitle,
   onChangeDescription,
 }: BlogSeoSectionProps) {
@@ -110,6 +124,12 @@ export default function BlogSeoSection({
           metaTitle={metaTitle}
           metaDescription={metaDescription}
           slug={slug}
+          title={title}
+          summary={summary}
+          thumbnail={thumbnail}
+          content={content}
+          categoryName={categoryName}
+          status={status}
         />
       </div>
     </div>

@@ -1,4 +1,4 @@
-﻿import {
+import {
   Injectable,
   NotFoundException,
   Logger,
@@ -167,17 +167,21 @@ export class BlogPublicService {
   }
 
   // ---------- POST DETAIL ----------
-  async getPostBySlug(slug: string): Promise<PostDetailDto> {
+  async getPostBySlug(slug: string, isPreview = false): Promise<PostDetailDto> {
     const cacheKey = `cache:v1:blog:post:${slug}`;
-    try {
-      const cached = await this.redis.get(cacheKey);
-      if (cached) return JSON.parse(cached) as PostDetailDto;
-    } catch (err) {
-      this.logger.warn('Redis miss post detail: ' + err);
+    if (!isPreview) {
+      try {
+        const cached = await this.redis.get(cacheKey);
+        if (cached) return JSON.parse(cached) as PostDetailDto;
+      } catch (err) {
+        this.logger.warn('Redis miss post detail: ' + err);
+      }
     }
 
+    const whereCondition = isPreview ? { slug } : { slug, status: 'PUBLISHED' as const };
+
     const post = await this.prisma.post.findFirst({
-      where: { slug, status: 'PUBLISHED' },
+      where: whereCondition,
       include: {
         author: {
           select: {

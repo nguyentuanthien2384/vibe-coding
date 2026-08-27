@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Get,
   Param,
@@ -9,7 +9,7 @@ import { Throttle } from '@nestjs/throttler';
 import { BlogPublicService } from '../services/blog-public.service';
 import { GetBlogPostsQueryDto } from '../dtos/get-blog-posts-query.dto';
 
-@Controller('api/v1/blog')
+@Controller('blog')
 export class BlogPublicController {
   constructor(private readonly blogPublicService: BlogPublicService) {}
 
@@ -43,11 +43,14 @@ export class BlogPublicController {
 
   /**
    * GET /api/v1/blog/posts/:slug
-   * Lay chi tiet 1 bai viet theo slug
+   * Lay chi tiet 1 bai viet theo slug (co ho tro che do xem truoc preview=true)
    */
   @Get('posts/:slug')
-  async getPostBySlug(@Param('slug') slug: string) {
-    const data = await this.blogPublicService.getPostBySlug(slug);
+  async getPostBySlug(
+    @Param('slug') slug: string,
+    @Query('preview') preview?: string,
+  ) {
+    const data = await this.blogPublicService.getPostBySlug(slug, preview === 'true');
     return {
       statusCode: 200,
       message: 'Lay chi tiet bai viet thanh cong',

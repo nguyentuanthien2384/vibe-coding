@@ -1,4 +1,4 @@
-﻿// lib/blog.ts
+// lib/blog.ts
 // Server-side & Client-side data fetching functions cho Blog Module
 
 import { apiFetch, ApiResponse } from './api';
@@ -92,16 +92,19 @@ export async function getBlogPosts(
  * Lấy chi tiết bài viết theo Slug
  */
 export async function getBlogPostDetail(
-  slug: string
+  slug: string,
+  preview = false
 ): Promise<{
   post: BlogPostDetail | null;
   isError: boolean;
 }> {
   try {
-    const res = await apiFetch<ApiResponse<BlogPostDetail>>(
-      `/api/v1/blog/posts/${slug}`,
-      { next: { revalidate: 120 } }
-    );
+    const endpoint = `/api/v1/blog/posts/${slug}${preview ? '?preview=true' : ''}`;
+    const options = preview
+      ? { cache: 'no-store' as const }
+      : { next: { revalidate: 120 } };
+
+    const res = await apiFetch<ApiResponse<BlogPostDetail>>(endpoint, options);
     return { post: res.data ?? null, isError: false };
   } catch (error) {
     console.error(`Failed to fetch blog post (${slug}):`, error);

@@ -24,11 +24,15 @@ interface PageProps {
   params: Promise<{
     slug: string;
   }>;
+  searchParams?: Promise<{
+    preview?: string;
+  }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const res = await getBlogPostDetail(slug);
+  const isPreview = (await searchParams)?.preview === 'true';
+  const res = await getBlogPostDetail(slug, isPreview);
   const post = res.post || getPostBySlug(slug);
 
   if (!post) {
@@ -58,9 +62,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function BlogPostDetailPage({ params }: PageProps) {
+export default async function BlogPostDetailPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
-  const res = await getBlogPostDetail(slug);
+  const isPreview = (await searchParams)?.preview === 'true';
+  const res = await getBlogPostDetail(slug, isPreview);
   const post = res.post || getPostBySlug(slug);
 
   if (!post) {
@@ -94,6 +99,13 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
 
   return (
     <StorefrontShell>
+      {/* Admin Preview Mode Notice */}
+      {isPreview && (
+        <div className="bg-amber-500 text-slate-950 font-bold text-xs md:text-sm py-2 px-4 text-center sticky top-16 z-30 shadow-md flex items-center justify-center gap-2">
+          <span>⚠️ <strong>CHẾ ĐỘ XEM TRƯỚC (PREVIEW MODE)</strong> — Bài viết đang ở trạng thái <code>{post.status}</code></span>
+        </div>
+      )}
+
       {/* Schema.org Article JSON-LD */}
       <script
         type="application/ld+json"
@@ -101,7 +113,7 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
       />
 
       {/* Track Post View count */}
-      <PostViewTracker slug={post.slug} />
+      {!isPreview && <PostViewTracker slug={post.slug} />}
 
       <article className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
         {/* Breadcrumbs */}

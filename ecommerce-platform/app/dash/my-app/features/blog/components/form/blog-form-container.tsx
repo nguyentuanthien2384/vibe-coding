@@ -310,6 +310,12 @@ export default function BlogFormContainer({ mode, postId, initialData }: BlogFor
               metaTitle={form.metaTitle ?? ''}
               metaDescription={form.metaDescription ?? ''}
               slug={form.slug}
+              title={form.title}
+              summary={form.summary}
+              thumbnail={form.thumbnail}
+              content={form.content}
+              categoryName={categories.find((c) => c.id === form.categoryId)?.name}
+              status={form.status}
               onChangeTitle={(val) => updateForm('metaTitle', val)}
               onChangeDescription={(val) => updateForm('metaDescription', val)}
             />

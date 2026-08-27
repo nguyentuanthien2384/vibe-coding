@@ -42,7 +42,7 @@ if (!existsSync(UPLOAD_DIR)) {
   mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
-@Controller('api/v1/admin/blog')
+@Controller('admin/blog')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.STAFF)
 export class BlogAdminController {
