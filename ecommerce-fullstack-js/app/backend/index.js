@@ -9,6 +9,11 @@ dotenv.config({ path: ".env" })
 const app = express()
 app.use(morgan("tiny"))
 app.use(cors())
+const OrdersController = require("./controllers/Orders")
+
+// Stripe Webhook yêu cầu raw body để verify signature (BẮT BUỘC đặt trước express.json)
+app.post("/webhook/stripe", express.raw({ type: "application/json" }), OrdersController.stripeWebhook)
+
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
 
@@ -23,6 +28,7 @@ app.get("/",(req,res)=>{
 })
 
 app.use("/", require("./routes/products"))
+app.use("/", require("./routes/orders"))
 
 const start = async() => {
     await connectDB()

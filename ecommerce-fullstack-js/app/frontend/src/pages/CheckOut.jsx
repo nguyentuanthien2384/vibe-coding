@@ -12,6 +12,7 @@ import BillingForm from '../components/Checkout/BillingForm'
 import PaymentMethodSelector from '../components/Checkout/PaymentMethodSelector'
 import StripeCardInput from '../components/Checkout/StripeCardInput'
 import OrderSummaryPanel from '../components/Checkout/OrderSummaryPanel'
+import { createCODOrder, createPaymentIntent } from '../services/orderService'
 import { clearCart } from '../store/CartSlice'
 import '../styles/checkout.css'
 
@@ -57,11 +58,11 @@ const CheckoutFormInner = () => {
 
   // State form
   const [formData, setFormData] = useState({
-    customerName: 'Nguyễn Văn A',
-    customerEmail: 'nguyenvana@gmail.com',
-    customerPhone: '0901234567',
-    street: '123 Đường Lê Lợi',
-    city: 'Hồ Chí Minh',
+    customerName: '',
+    customerEmail: '',
+    customerPhone: '',
+    street: '',
+    city: '',
   })
 
   const [errors, setErrors] = useState({})
@@ -113,27 +114,49 @@ const CheckoutFormInner = () => {
 
     setIsLoading(true)
 
+    // Chuẩn bị payload chuẩn gửi Backend
+    const orderPayload = {
+      customerName: formData.customerName.trim(),
+      customerEmail: formData.customerEmail.trim().toLowerCase(),
+      customerPhone: formData.customerPhone.trim(),
+      shippingAddress: {
+        street: formData.street.trim(),
+        city: formData.city.trim(),
+        country: 'Vietnam',
+      },
+      paymentMethod,
+      items: cartItems.map((item) => ({
+        productId: item.id || item._id,
+        productName: item.product,
+        price: item.price,
+        quantity: item.cartQuantity || 1,
+        image: item.image || '',
+      })),
+    }
+
     try {
       if (paymentMethod === 'COD') {
-        // Giả lập đặt hàng COD
-        await new Promise((resolve) => setTimeout(resolve, 800))
+        // Gọi API tạo đơn hàng COD thực tế
+        const response = await createCODOrder(orderPayload)
+        const createdOrder = response.data
 
-        const orderId = `COD-${Date.now().toString().slice(-6)}`
         dispatch(clearCart())
-
         toast.success('Đặt hàng thành công!', { position: 'top-right' })
+
         navigate('/order-success', {
           state: {
-            orderId,
-            totalAmount,
+            orderId: createdOrder._id || `COD-${Date.now().toString().slice(-6)}`,
+            totalAmount: createdOrder.totalAmount || totalAmount,
             paymentMethod: 'COD',
-            customerName: formData.customerName,
-            customerEmail: formData.customerEmail,
-            shippingAddress: `${formData.street}, ${formData.city}`,
+            customerName: createdOrder.customerName || formData.customerName,
+            customerEmail: createdOrder.customerEmail || formData.customerEmail,
+            shippingAddress: createdOrder.shippingAddress
+              ? `${createdOrder.shippingAddress.street}, ${createdOrder.shippingAddress.city}`
+              : `${formData.street}, ${formData.city}`,
           },
         })
       } else {
-        // Xử lý thanh toán Stripe
+        // Gọi API khởi tạo Stripe PaymentIntent thực tế
         if (!stripe || !elements) {
           toast.error('Cổng thanh toán Stripe chưa sẵn sàng!', { position: 'top-right' })
           setIsLoading(false)
@@ -142,21 +165,41 @@ const CheckoutFormInner = () => {
 
         const cardElement = elements.getElement(CardElement)
         if (!cardElement) {
-          toast.error('Vui lòng nhập thông tin thẻ!', { position: 'top-right' })
+          toast.error('Vui lòng nhập đầy đủ thông tin thẻ!', { position: 'top-right' })
           setIsLoading(false)
           return
         }
 
-        // Giả lập thanh toán Stripe thành công trong môi trường UI
-        await new Promise((resolve) => setTimeout(resolve, 1200))
-        const orderId = `STP-${Date.now().toString().slice(-6)}`
-        dispatch(clearCart())
+        const intentResponse = await createPaymentIntent(orderPayload)
+        const { clientSecret, orderId, totalAmount: serverTotal } = intentResponse.data
 
+        // Nếu có clientSecret hợp lệ từ Stripe thực
+        if (clientSecret && !clientSecret.startsWith('pi_mock_')) {
+          const result = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+              card: cardElement,
+              billing_details: {
+                name: formData.customerName,
+                email: formData.customerEmail,
+                phone: formData.customerPhone,
+              },
+            },
+          })
+
+          if (result.error) {
+            toast.error(result.error.message || 'Thanh toán thẻ thất bại!', { position: 'top-right' })
+            setIsLoading(false)
+            return
+          }
+        }
+
+        dispatch(clearCart())
         toast.success('Thanh toán thẻ thành công!', { position: 'top-right' })
+
         navigate('/order-success', {
           state: {
-            orderId,
-            totalAmount,
+            orderId: orderId || `STP-${Date.now().toString().slice(-6)}`,
+            totalAmount: serverTotal || totalAmount,
             paymentMethod: 'STRIPE',
             customerName: formData.customerName,
             customerEmail: formData.customerEmail,
@@ -165,7 +208,10 @@ const CheckoutFormInner = () => {
         })
       }
     } catch (err) {
-      toast.error('Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại!', { position: 'top-right' })
+      console.error('Lỗi khi submit đơn hàng:', err)
+      const errorMsg =
+        err.response?.data?.message || err.message || 'Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại!'
+      toast.error(errorMsg, { position: 'top-right' })
     } finally {
       setIsLoading(false)
     }
