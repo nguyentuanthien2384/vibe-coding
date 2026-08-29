@@ -1,0 +1,31 @@
+/* Checkout Styles */
+.checkout__section {
+  background-color: #f8f9fa;
+  min-height: calc(100vh - 200px);
+}
+
+.payment__option {
+  transition: all 0.2s ease-in-out;
+}
+
+.payment__option:hover {
+  border-color: var(--primary-color) !important;
+  background-color: rgba(10, 29, 55, 0.03);
+}
+
+.order__summary-panel {
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.order__items-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.order__items-list::-webkit-scrollbar-thumb {
+  background-color: #dee2e6;
+  border-radius: 4px;
+}
+
+.order__items-list::-webkit-scrollbar-track {
+  background: transparent;
+}
