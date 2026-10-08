@@ -7,7 +7,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    rootDir: app/backend
+    rootDir: ecommerce-platform/app/backend
     buildCommand: npm install && npm run build
     startCommand: npm run start:prod
     healthCheckPath: /
@@ -47,7 +47,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    rootDir: app/frontend
+    rootDir: ecommerce-platform/app/frontend
     buildCommand: npm install && npm run build
     startCommand: npm run start -- -p $PORT
     envVars:
@@ -67,7 +67,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    rootDir: app/dash/my-app
+    rootDir: ecommerce-platform/app/dash/my-app
     buildCommand: npm install && npm run build
     startCommand: npm run start -- -p $PORT
     envVars:
