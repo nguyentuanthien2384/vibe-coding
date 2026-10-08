@@ -6,7 +6,7 @@ import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
-import { CORS_WHITELIST } from './config/cors.constants';
+import { isOriginAllowed } from './config/cors.constants';
 
 async function bootstrap() {
   // Đảm bảo thư mục uploads/images tồn tại khi khởi động server
@@ -38,11 +38,11 @@ async function bootstrap() {
   );
   app.enableCors({
     origin: (origin, callback) => {
-      // Cho phép requests không có origin (mobile apps, curl, Postman)
-      if (!origin || CORS_WHITELIST.includes(origin)) {
+      // Cho phép requests không có origin (mobile apps, curl, Postman) hoặc origin hợp lệ
+      if (isOriginAllowed(origin)) {
         callback(null, true);
       } else {
-        callback(new Error(`CORS: Origin "${origin}" không được phép`), false);
+        callback(null, false);
       }
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

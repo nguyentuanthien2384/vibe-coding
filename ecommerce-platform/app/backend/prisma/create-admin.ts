@@ -17,17 +17,22 @@ if (!email || !password) {
 const adminEmail: string = email;
 const adminPassword: string = password;
 
-const dbUrl = new URL(
-  process.env.DATABASE_URL ?? 'mysql://root:123456@127.0.0.1:3306/ecommerce_db',
-);
+const rawUrl =
+  process.env.DATABASE_URL ?? 'mysql://root:123456@127.0.0.1:3306/ecommerce_db';
+const dbUrl = new URL(rawUrl);
+const isSsl =
+  dbUrl.searchParams.get('ssl-mode') ||
+  dbUrl.searchParams.get('ssl') ||
+  process.env.DATABASE_SSL === 'true';
 
 const adapter = new PrismaMariaDb({
   host: dbUrl.hostname,
   port: parseInt(dbUrl.port || '3306', 10),
   user: dbUrl.username,
   password: dbUrl.password,
-  database: dbUrl.pathname.replace('/', ''),
+  database: dbUrl.pathname.replace('/', '').split('?')[0],
   allowPublicKeyRetrieval: true,
+  ssl: isSsl ? { rejectUnauthorized: false } : undefined,
 });
 
 const prisma = new PrismaClient({ adapter });

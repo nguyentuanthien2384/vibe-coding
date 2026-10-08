@@ -1,0 +1,80 @@
+services:
+  # =============================================================================
+  # 1. TechBite Backend API (NestJS + Prisma + MariaDB Driver)
+  # =============================================================================
+  - type: web
+    name: techbite-backend
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: app/backend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: DATABASE_URL
+        sync: false # Điền connection string MySQL từ Aiven / TiDB Cloud
+      - key: DATABASE_SSL
+        value: "true"
+      - key: REDIS_URL
+        sync: false # Điền Redis URI từ Upstash (hoặc để trống để tự động fallback In-Memory)
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false # Nhập domain frontend/admin nếu host trên Vercel
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: techbite-frontend
+          property: host
+      - key: ADMIN_URL
+        fromService:
+          type: web
+          name: techbite-dash
+          property: host
+
+  # =============================================================================
+  # 2. TechBite Frontend (Next.js Customer App)
+  # =============================================================================
+  - type: web
+    name: techbite-frontend
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: app/frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start -- -p $PORT
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: techbite-backend
+          property: host
+
+  # =============================================================================
+  # 3. TechBite Admin Dashboard (Next.js Admin App)
+  # =============================================================================
+  - type: web
+    name: techbite-dash
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: app/dash/my-app
+    buildCommand: npm install && npm run build
+    startCommand: npm run start -- -p $PORT
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: techbite-backend
+          property: host

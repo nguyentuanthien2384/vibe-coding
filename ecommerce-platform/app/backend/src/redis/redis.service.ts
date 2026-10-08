@@ -9,22 +9,36 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private inMemoryFallback = new Map<string, { value: string; expiresAt?: number }>();
 
   onModuleInit() {
+    const redisUrl = process.env.REDIS_URL;
     const host = process.env.REDIS_HOST || '127.0.0.1';
     const port = Number(process.env.REDIS_PORT) || 6379;
+    const password = process.env.REDIS_PASSWORD || undefined;
 
-    this.client = new Redis({
-      host,
-      port,
-      lazyConnect: true,
-      maxRetriesPerRequest: 1,
-      retryStrategy: (times) => {
-        if (times > 3) {
-          this.logger.warn('⚠️ Không thể kết nối Redis Server, chuyển sang In-Memory Fallback mode.');
-          return null; // Stop retrying
-        }
-        return 1000;
-      },
-    });
+    const retryStrategy = (times: number) => {
+      if (times > 3) {
+        this.logger.warn('⚠️ Không thể kết nối Redis Server, chuyển sang In-Memory Fallback mode.');
+        return null; // Stop retrying
+      }
+      return 1000;
+    };
+
+    if (redisUrl) {
+      this.client = new Redis(redisUrl, {
+        lazyConnect: true,
+        maxRetriesPerRequest: 1,
+        retryStrategy,
+        tls: redisUrl.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
+      });
+    } else {
+      this.client = new Redis({
+        host,
+        port,
+        password,
+        lazyConnect: true,
+        maxRetriesPerRequest: 1,
+        retryStrategy,
+      });
+    }
 
     this.client.on('connect', () => {
       this.isConnected = true;
