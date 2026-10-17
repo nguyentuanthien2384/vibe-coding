@@ -23,7 +23,11 @@ export function getImageUrl(path: string | null | undefined, fallback: string = 
     trimmed.startsWith('uploads/') ||
     /\.(png|jpg|jpeg|webp|svg)($|\?)/i.test(trimmed)
   ) {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const rawBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const baseUrl =
+      rawBase.startsWith('http://') || rawBase.startsWith('https://')
+        ? rawBase
+        : `https://${rawBase}`;
     const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
     return `${cleanBase}${cleanPath}`;

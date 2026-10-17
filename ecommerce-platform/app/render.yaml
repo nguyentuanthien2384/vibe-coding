@@ -8,16 +8,14 @@ services:
     plan: free
     region: singapore
     rootDir: ecommerce-platform/app/backend
-    buildCommand: npm install && npm run build
-    startCommand: npm run start:prod
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: (npx prisma db push || true) && npm run start:prod
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3001
       - key: DATABASE_URL
-        sync: false # Điền connection string MySQL từ Aiven / TiDB Cloud
+        sync: false # Điền connection string MySQL từ TiDB Cloud / Aiven (ví dụ: mysql://user:pass@host:4000/db?ssl={"rejectUnauthorized":true})
       - key: DATABASE_SSL
         value: "true"
       - key: REDIS_URL
@@ -27,7 +25,7 @@ services:
       - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: CORS_ORIGINS
-        sync: false # Nhập domain frontend/admin nếu host trên Vercel
+        sync: false # Nhập domain frontend/admin nếu host trên Vercel hoặc domain tuỳ chỉnh
       - key: FRONTEND_URL
         fromService:
           type: web
@@ -49,7 +47,7 @@ services:
     region: singapore
     rootDir: ecommerce-platform/app/frontend
     buildCommand: npm install && npm run build
-    startCommand: npm run start -- -p $PORT
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -69,7 +67,7 @@ services:
     region: singapore
     rootDir: ecommerce-platform/app/dash/my-app
     buildCommand: npm install && npm run build
-    startCommand: npm run start -- -p $PORT
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
