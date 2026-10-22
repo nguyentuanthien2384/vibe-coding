@@ -28,8 +28,8 @@ const isSsl =
 const adapter = new PrismaMariaDb({
   host: dbUrl.hostname,
   port: parseInt(dbUrl.port || '3306', 10),
-  user: dbUrl.username,
-  password: dbUrl.password,
+  user: decodeURIComponent(dbUrl.username),
+  password: decodeURIComponent(dbUrl.password),
   database: dbUrl.pathname.replace('/', '').split('?')[0],
   allowPublicKeyRetrieval: true,
   ssl: isSsl ? { rejectUnauthorized: false } : undefined,

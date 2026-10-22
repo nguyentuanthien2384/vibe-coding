@@ -22,8 +22,8 @@ const isSsl =
 const adapter = new PrismaMariaDb({
   host: dbUrl.hostname,
   port: parseInt(dbUrl.port || '3306', 10),
-  user: dbUrl.username,
-  password: dbUrl.password,
+  user: decodeURIComponent(dbUrl.username),
+  password: decodeURIComponent(dbUrl.password),
   database: dbUrl.pathname.replace('/', '').split('?')[0],
   allowPublicKeyRetrieval: true,
   ssl: isSsl ? { rejectUnauthorized: false } : undefined,
@@ -32,6 +32,12 @@ const adapter = new PrismaMariaDb({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+  const existingProducts = await prisma.product.count();
+  if (existingProducts > 0 && process.env.FORCE_SEED !== 'true') {
+    console.log(`ℹ️ Đã có ${existingProducts} sản phẩm trong database, bỏ qua seeding.`);
+    return;
+  }
+
   console.log('🌱 Bắt đầu seeding...');
 
   // ─── CLEAN UP (idempotent) ─────────────────────────────────────────────────
