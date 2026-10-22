@@ -7,7 +7,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    rootDir: app/backend
+    rootDir: ecommerce-platform/app/backend
     buildCommand: npm install --include=dev && npm run build
     startCommand: (npx prisma db push || true) && npm run start:prod
     healthCheckPath: /
@@ -45,7 +45,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    rootDir: app/frontend
+    rootDir: ecommerce-platform/app/frontend
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
@@ -65,7 +65,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    rootDir: app/dash/my-app
+    rootDir: ecommerce-platform/app/dash/my-app
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
