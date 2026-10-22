@@ -6,6 +6,7 @@ import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { PrismaService } from './prisma/prisma.service';
 import { isOriginAllowed } from './config/cors.constants';
 
 async function bootstrap() {
@@ -58,6 +59,20 @@ async function bootstrap() {
       status: 'ok',
       apiBaseUrl: '/api/v1',
     });
+  });
+
+  app.getHttpAdapter().get('/api/v1/health/init-db', (_request: Request, response: Response) => {
+    try {
+      const prismaService = app.get(PrismaService);
+      prismaService.runBootstrap();
+      response.status(200).json({
+        status: 'ok',
+        message: 'Database tables synchronized and seeded successfully',
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      response.status(500).json({ status: 'error', message: msg });
+    }
   });
 
   const port = process.env.PORT ?? 3001;
