@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '@/store/use-auth-store';
 import { notificationsApi, InAppNotification } from '@/lib/notifications';
+import { API_BASE } from '@/lib/env';
 
 export function useRealtimeNotifications() {
   const { isAuthenticated, user } = useAuthStore();
@@ -33,8 +34,7 @@ export function useRealtimeNotifications() {
   useEffect(() => {
     if (!isAuthenticated || typeof window === 'undefined') return;
 
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    const sseUrl = `${backendUrl}/api/v1/notifications/sse`;
+    const sseUrl = `${API_BASE}/api/v1/notifications/sse`;
 
     let eventSource: EventSource | null = null;
 

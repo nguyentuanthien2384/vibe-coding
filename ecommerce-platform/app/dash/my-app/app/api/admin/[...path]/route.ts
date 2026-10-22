@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const rawApiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-const API_BASE = rawApiBase.startsWith('http://') || rawApiBase.startsWith('https://')
-  ? rawApiBase
-  : `https://${rawApiBase}`;
+import { API_BASE } from '@/lib/env';
 
 const FORWARDED_RESPONSE_HEADERS = [
   'content-type',

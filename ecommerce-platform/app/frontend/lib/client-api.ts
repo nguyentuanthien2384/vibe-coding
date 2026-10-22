@@ -2,6 +2,8 @@
 // Client-side Fetch Interceptor dành riêng cho React Client Components
 // Tự động bắt 401 Unauthorized, gọi /api/auth/refresh để lấy token mới và retry request gốc
 
+import { API_BASE } from './env';
+
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (tokenUpdated: boolean) => void;
@@ -27,15 +29,11 @@ export async function clientApiFetch<T>(
   options?: RequestInit
 ): Promise<T> {
   const isCustomUrl = path.startsWith('http://') || path.startsWith('https://');
-  const rawBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-  const apiBase = rawBase.startsWith('http://') || rawBase.startsWith('https://')
-    ? rawBase
-    : `https://${rawBase}`;
   const url = isCustomUrl
     ? path
     : path.startsWith('/api/')
     ? path
-    : `${apiBase}${path}`;
+    : `${API_BASE}${path}`;
 
   const res = await fetch(url, {
     ...options,

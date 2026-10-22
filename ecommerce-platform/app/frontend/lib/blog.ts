@@ -2,6 +2,7 @@
 // Server-side & Client-side data fetching functions cho Blog Module
 
 import { apiFetch, ApiResponse } from './api';
+import { API_BASE } from './env';
 import {
   BlogPostListItem,
   BlogPostDetail,
@@ -117,8 +118,7 @@ export async function getBlogPostDetail(
  */
 export async function recordBlogPostView(slug: string): Promise<void> {
   try {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-    await fetch(`${apiBase}/api/v1/blog/posts/${slug}/view`, {
+    await fetch(`${API_BASE}/api/v1/blog/posts/${slug}/view`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
