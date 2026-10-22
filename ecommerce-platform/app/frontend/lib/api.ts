@@ -23,9 +23,11 @@ async function apiFetch<T>(
   options?: RequestInit,
 ): Promise<T> {
   const url = `${API_BASE}${path}`;
+  const signal = options?.signal ?? AbortSignal.timeout(4000);
   const res = await fetch(url, {
     next: { revalidate: 60 },
     ...options,
+    signal,
   });
 
   if (!res.ok) {
