@@ -40,8 +40,12 @@ export class PrismaService
   }
 
   async onModuleInit(): Promise<void> {
-    await this.$connect();
-    this.logger.log('✅ Database connected successfully');
+    try {
+      await this.$connect();
+      this.logger.log('✅ Database connected successfully');
+    } catch (err) {
+      this.logger.error(`❌ Failed to connect to database: ${err.message}. Please check DATABASE_URL.`);
+    }
   }
 
   async onModuleDestroy(): Promise<void> {
