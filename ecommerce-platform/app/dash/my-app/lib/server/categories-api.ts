@@ -7,7 +7,10 @@
 import { cookies } from 'next/headers';
 import { AdminCategoriesListResponse } from '../../features/categories/types/category.types';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const rawBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const BASE_URL = rawBase.startsWith('http://') || rawBase.startsWith('https://')
+  ? rawBase
+  : `https://${rawBase}`;
 
 /**
  * Server-side fetch helper cho Server Components.

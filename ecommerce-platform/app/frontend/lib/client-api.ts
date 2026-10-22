@@ -27,11 +27,15 @@ export async function clientApiFetch<T>(
   options?: RequestInit
 ): Promise<T> {
   const isCustomUrl = path.startsWith('http://') || path.startsWith('https://');
+  const rawBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+  const apiBase = rawBase.startsWith('http://') || rawBase.startsWith('https://')
+    ? rawBase
+    : `https://${rawBase}`;
   const url = isCustomUrl
     ? path
     : path.startsWith('/api/')
     ? path
-    : `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}${path}`;
+    : `${apiBase}${path}`;
 
   const res = await fetch(url, {
     ...options,

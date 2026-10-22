@@ -1,6 +1,9 @@
 import { SearchSuggestApiResponse } from "../types/search.types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const rawApiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const API_BASE = rawApiBase.startsWith('http://') || rawApiBase.startsWith('https://')
+  ? rawApiBase
+  : `https://${rawApiBase}`;
 
 /**
  * Gọi API backend NestJS GET /api/v1/products/search-suggest?q=...&limit=5
