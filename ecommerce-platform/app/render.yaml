@@ -15,7 +15,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false # Điền connection string MySQL từ TiDB Cloud / Aiven (ví dụ: mysql://user:pass@host:4000/db?ssl={"rejectUnauthorized":true})
+        sync: false # Điền connection string TiDB: mysql://user:pass@host:4000/test?sslaccept=strict
       - key: DATABASE_SSL
         value: "true"
       - key: REDIS_URL
