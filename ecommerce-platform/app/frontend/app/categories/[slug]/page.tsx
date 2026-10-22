@@ -18,6 +18,14 @@ interface PageProps {
   searchParams: Promise<ProductsPageSearchParams> | ProductsPageSearchParams;
 }
 
+const KNOWN_CATEGORIES: Record<string, string> = {
+  'combo-deadline': 'Combo Deadline 💻',
+  'do-an-vat': 'Đồ Ăn Vặt 🍟',
+  'nuoc-uong': 'Nước Uống 🧃',
+  'trai-cay-to': 'Trái Cây Tô 🍓',
+  'tra-sua': 'Trà Sữa 🧋',
+};
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
@@ -48,6 +56,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     } catch {
       // Ignored
     }
+  }
+
+  if (!category && KNOWN_CATEGORIES[slug]) {
+    category = {
+      id: slug,
+      name: KNOWN_CATEGORIES[slug],
+      slug,
+      count: 0,
+    };
   }
 
   if (!category || slug === 'all') {
@@ -104,6 +121,20 @@ export default async function CategoryProductsPage({ params, searchParams }: Pag
     } catch {
       // Ignored
     }
+  }
+
+  // Fallback an toàn cho các danh mục tiêu chuẩn (như combo-deadline, do-an-vat, ...)
+  if (!currentCategory && KNOWN_CATEGORIES[slug]) {
+    currentCategory = {
+      id: slug,
+      name: KNOWN_CATEGORIES[slug],
+      slug,
+      count: 0,
+    };
+    filterMeta = {
+      ...filterMeta,
+      categories: [...filterMeta.categories, currentCategory],
+    };
   }
 
   if (!currentCategory || slug === 'all') {

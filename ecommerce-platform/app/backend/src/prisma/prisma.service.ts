@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/commo
 import { execSync } from 'child_process';
 import { PrismaClient } from '@prisma/client';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
+import { seedDatabase, SeedResult } from './database-seeder';
 
 function buildAdapter(): PrismaMariaDb {
   const rawUrl =
@@ -47,20 +48,39 @@ export class PrismaService
       await this.$connect();
       this.logger.log('✅ Database connected successfully');
 
-      // Tự động kiểm tra bảng, nếu chưa có bảng thì tự động push schema và seed
+      // Tự động kiểm tra sản phẩm, nếu chưa có bảng thì push schema, nếu bảng rỗng thì seed
       try {
-        await this.category.count();
+        const productCount = await this.product.count();
+        if (productCount === 0) {
+          this.logger.warn('⚠️ Cơ sở dữ liệu đang có 0 sản phẩm. Đang tự động nạp dữ liệu mẫu...');
+          const seedRes = await seedDatabase(this, false);
+          this.logger.log(`🎉 Tự động nạp dữ liệu thành công: ${seedRes.productsCount} sản phẩm, ${seedRes.categoriesCount} danh mục.`);
+        } else {
+          this.logger.log(`ℹ️ Cơ sở dữ liệu hiện có ${productCount} sản phẩm.`);
+        }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes("doesn't exist") || msg.includes('does not exist')) {
-          this.logger.warn('⚠️ Cơ sở dữ liệu chưa có bảng. Đang tự động tạo bảng và nạp dữ liệu...');
+          this.logger.warn('⚠️ Cơ sở dữ liệu chưa có bảng. Đang đồng bộ bảng...');
           this.runBootstrap();
+          try {
+            await seedDatabase(this, true);
+            this.logger.log('🎉 Tự động nạp dữ liệu sau khi đồng bộ bảng thành công!');
+          } catch (seedErr: unknown) {
+            this.logger.error('Lỗi khi nạp seed sau bootstrap:', seedErr);
+          }
+        } else {
+          this.logger.error(`❌ Lỗi kiểm tra bảng: ${msg}`);
         }
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       this.logger.error(`❌ Failed to connect to database: ${msg}. Please check DATABASE_URL.`);
     }
+  }
+
+  async seedDirectly(force = false): Promise<SeedResult> {
+    return seedDatabase(this, force);
   }
 
   runBootstrap(): void {
@@ -73,14 +93,10 @@ export class PrismaService
       const env = { ...process.env, DATABASE_URL: pushUrl };
       this.logger.log('🚀 Đang đồng bộ cấu trúc bảng (prisma db push)...');
       execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit', env });
-      this.logger.log('🌱 Đang nạp dữ liệu mẫu (db:seed)...');
-      execSync('npm run db:seed', { stdio: 'inherit', env });
-      this.logger.log('👑 Đang tạo tài khoản admin (db:create-admin)...');
-      execSync('npm run db:create-admin', { stdio: 'inherit', env });
-      this.logger.log('🎉 Khởi tạo cơ sở dữ liệu hoàn tất thành công!');
+      this.logger.log('🎉 Đồng bộ cấu trúc bảng hoàn tất!');
     } catch (bootstrapErr: unknown) {
       const msg = bootstrapErr instanceof Error ? bootstrapErr.message : String(bootstrapErr);
-      this.logger.error(`❌ Khởi tạo cơ sở dữ liệu thất bại: ${msg}`);
+      this.logger.error(`❌ Khởi tạo cấu trúc bảng thất bại: ${msg}`);
     }
   }
 

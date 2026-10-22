@@ -61,17 +61,34 @@ async function bootstrap() {
     });
   });
 
-  app.getHttpAdapter().get('/api/v1/health/init-db', (_request: Request, response: Response) => {
+  app.getHttpAdapter().get('/api/v1/health/init-db', async (_request: Request, response: Response) => {
     try {
       const prismaService = app.get(PrismaService);
-      prismaService.runBootstrap();
+      const result = await prismaService.seedDirectly(true);
       response.status(200).json({
         status: 'ok',
-        message: 'Database tables synchronized and seeded successfully',
+        message: 'Database tables seeded successfully',
+        data: result,
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      response.status(500).json({ status: 'error', message: msg });
+      response.status(500).json({ status: 'error', message: msg, stack: err instanceof Error ? err.stack : undefined });
+    }
+  });
+
+  app.getHttpAdapter().get('/api/v1/health/seed-db', async (request: Request, response: Response) => {
+    try {
+      const prismaService = app.get(PrismaService);
+      const force = (request.query as any)?.force === 'true';
+      const result = await prismaService.seedDirectly(force);
+      response.status(200).json({
+        status: 'ok',
+        message: 'Seed executed successfully',
+        data: result,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      response.status(500).json({ status: 'error', message: msg, stack: err instanceof Error ? err.stack : undefined });
     }
   });
 
