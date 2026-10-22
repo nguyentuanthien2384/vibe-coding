@@ -9,6 +9,8 @@ function buildAdapter(): PrismaMariaDb {
   const isSsl =
     dbUrl.searchParams.get('ssl-mode') ||
     dbUrl.searchParams.get('ssl') ||
+    dbUrl.searchParams.get('sslaccept') ||
+    dbUrl.hostname.includes('tidbcloud.com') ||
     process.env.DATABASE_SSL === 'true';
 
   return new PrismaMariaDb({

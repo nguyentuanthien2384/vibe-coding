@@ -17,6 +17,8 @@ const dbUrl = new URL(rawUrl);
 const isSsl =
   dbUrl.searchParams.get('ssl-mode') ||
   dbUrl.searchParams.get('ssl') ||
+  dbUrl.searchParams.get('sslaccept') ||
+  dbUrl.hostname.includes('tidbcloud.com') ||
   process.env.DATABASE_SSL === 'true';
 
 const adapter = new PrismaMariaDb({
