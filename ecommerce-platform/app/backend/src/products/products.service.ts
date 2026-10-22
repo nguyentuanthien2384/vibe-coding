@@ -101,7 +101,9 @@ export class ProductsService {
       ) as FeaturedProductsResponse;
     } catch (error) {
       this.logger.error('Failed to fetch featured products', error);
-      throw new InternalServerErrorException('Không thể lấy danh sách sản phẩm nổi bật');
+      throw new InternalServerErrorException(
+        `Không thể lấy danh sách sản phẩm nổi bật: ${(error as any)?.message || error}`,
+      );
     }
   }
 

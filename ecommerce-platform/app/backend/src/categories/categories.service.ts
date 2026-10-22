@@ -61,7 +61,9 @@ export class CategoriesService {
       };
     } catch (error) {
       this.logger.error('Failed to fetch categories', error);
-      throw new InternalServerErrorException('Không thể lấy danh sách danh mục');
+      throw new InternalServerErrorException(
+        `Không thể lấy danh sách danh mục: ${(error as any)?.message || error}`,
+      );
     }
   }
 

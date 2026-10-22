@@ -103,7 +103,9 @@ export class BannersService {
       };
     } catch (error) {
       this.logger.error('Failed to fetch banners', error);
-      throw new InternalServerErrorException('Không thể lấy danh sách banner');
+      throw new InternalServerErrorException(
+        `Không thể lấy danh sách banner: ${(error as any)?.message || error}`,
+      );
     }
   }
 
