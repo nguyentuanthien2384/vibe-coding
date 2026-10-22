@@ -58,8 +58,9 @@ export async function adminFetchResponse(path: string, options: RequestInit = {}
     const error = cause instanceof Error ? cause : new Error('Không thể làm mới phiên đăng nhập.');
     processQueue(error);
     if (typeof window !== 'undefined') {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
       const currentPath = window.location.pathname + window.location.search;
-      window.location.assign(`/login?expired=1&redirect=${encodeURIComponent(currentPath)}`);
+      window.location.assign(`${basePath}/login?expired=1&redirect=${encodeURIComponent(currentPath)}`);
     }
     throw error;
   } finally {

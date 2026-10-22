@@ -69,6 +69,28 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true,
     remotePatterns,
   },
+  async rewrites() {
+    const backendUrl = (
+      process.env.BACKEND_INTERNAL_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      'https://techbite-backend.onrender.com'
+    ).replace(/\/+$/, '');
+    const dashUrl = (
+      process.env.DASH_INTERNAL_URL ||
+      'https://techbite-dash.onrender.com'
+    ).replace(/\/+$/, '');
+
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${backendUrl}/api/:path*`,
+      },
+      {
+        source: '/admin/:path*',
+        destination: `${dashUrl}/admin/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

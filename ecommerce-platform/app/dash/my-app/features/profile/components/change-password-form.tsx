@@ -98,7 +98,8 @@ export default function ChangePasswordForm() {
       // Tự động dọn dẹp và điều hướng về trang đăng nhập sau 1.5s
       setTimeout(async () => {
         await logout();
-        window.location.assign('/login');
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+        window.location.assign(`${basePath}/login`);
       }, 1500);
     } catch (err: any) {
       const msg = err?.message || 'Không thể đổi mật khẩu. Vui lòng kiểm tra lại thông tin.';

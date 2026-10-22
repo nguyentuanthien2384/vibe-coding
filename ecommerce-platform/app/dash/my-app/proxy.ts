@@ -18,7 +18,8 @@ export function proxy(request: NextRequest) {
   const refreshToken = request.cookies.get('refreshToken')?.value;
 
   if (!accessToken && !refreshToken) {
-    const loginUrl = new URL('/login', request.url);
+    const basePath = request.nextUrl.basePath || process.env.NEXT_PUBLIC_BASE_PATH || '';
+    const loginUrl = new URL(`${basePath}/login`, request.url);
     loginUrl.searchParams.set('redirect', `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }

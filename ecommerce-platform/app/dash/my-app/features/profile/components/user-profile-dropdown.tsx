@@ -23,7 +23,8 @@ const UserProfileDropdown = () => {
 
   const handleLogout = async () => {
     await logout();
-    window.location.assign('/login');
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+    window.location.assign(`${basePath}/login`);
   };
 
   const displayName = user?.fullName || 'Admin User';

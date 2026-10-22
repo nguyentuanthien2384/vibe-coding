@@ -64,3 +64,5 @@ services:
         value: production
       - key: NEXT_PUBLIC_API_URL
         value: https://techbite-backend.onrender.com
+      - key: NEXT_PUBLIC_BASE_PATH
+        value: "/admin"

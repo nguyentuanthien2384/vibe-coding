@@ -48,7 +48,11 @@ if (process.env.NEXT_PUBLIC_API_URL) {
   }
 }
 
+const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/+$/, '');
+
 const nextConfig: NextConfig = {
+  basePath: basePath ? basePath : undefined,
+  assetPrefix: basePath ? basePath : undefined,
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',

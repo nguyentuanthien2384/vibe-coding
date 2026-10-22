@@ -12,7 +12,8 @@ const AdminLogoutButton = ({ isCollapsed = false }: AdminLogoutButtonProps) => {
 
   const handleLogout = async () => {
     await logout();
-    window.location.assign('/login');
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+    window.location.assign(`${basePath}/login`);
   };
 
   return (
